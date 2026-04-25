@@ -27,7 +27,7 @@
     },
   ];
   const ADMIN_PAGES = new Set([
-    "index.html",
+    "squad.html",
     "player.html",
     "matchday.html",
     "standings.html",

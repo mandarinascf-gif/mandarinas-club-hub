@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260425b" />
+    <title>Staff · Squad</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./assets/js/core/club_logic.js"></script>
+    <script src="./assets/js/core/supabase_config.js"></script>
+    <script src="./assets/js/ui/shell.js?v=20260425a"></script>
+  </head>
+  <body class="manager-touch">
+    <nav class="site-nav">
+      <div class="site-nav-inner">
+        <a href="./squad.html" class="site-logo">
+          <span class="logo-dot"></span>
+          <span>Mandarinas <span class="logo-accent">CF</span></span>
+        </a>
+        <div class="nav-links">
+          <a class="nav-link active" href="./squad.html">Squad</a>
+          <a class="nav-link" href="./seasons.html">Season</a>
+          <a class="nav-link" href="./matchday.html">Match Centre</a>
+          <a class="nav-link" href="./submissions.html?preview=1">Reports</a>
+          <a class="nav-link" href="./standings.html">Table</a>
+          <a class="nav-link" href="./tiers.html">Planner</a>
+        </div>
+        <a href="./home.html" class="nav-mode-badge">Club</a>
+      </div>
+    </nav>
+
+    <main class="page">
+      <section class="panel page-header">
+        <div class="page-header-main">
+          <div class="section-label">Staff · Squad</div>
+          <h1>Squad Register</h1>
+          <p>
+            Use the list first. Open an existing player to review details or edit that profile. Use
+            the form to add a new player record.
+          </p>
+        </div>
+        <div class="actions hero-actions">
+          <button class="primary-button" type="button" data-player-view-trigger="browse">Squad list</button>
+          <button class="secondary-button" type="button" data-player-view-trigger="add">Add player</button>
+          <a class="secondary-button" href="./seasons.html">Next: season centre</a>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-label">Overview</div>
+        <h2>Squad Register</h2>
+        <div class="summary-grid">
+          <div class="summary-card">
+            <span>Registered players</span>
+            <strong id="hero-player-count">0</strong>
+            <span class="summary-copy">Directory records</span>
+          </div>
+          <div class="summary-card">
+            <span>Average rating</span>
+            <strong id="hero-average-rating">0</strong>
+            <span class="summary-copy">Current squad baseline</span>
+          </div>
+          <div class="summary-card">
+            <span>Current / next-season Core</span>
+            <strong id="hero-active-count">0</strong>
+            <span class="summary-copy">Current / next-season tier used for bulk season setup</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="workspace-shell" id="player-workspace">
+        <div class="workspace-toolbar">
+          <div class="workspace-toolbar-copy">
+            <div class="section-label">Work Mode</div>
+            <h2>Squad Desk</h2>
+            <p>Keep one task open at a time: review the squad register or jump straight into player creation.</p>
+          </div>
+          <div class="workspace-switcher" role="tablist" aria-label="Players workspace">
+            <button
+              class="workspace-btn active"
+              type="button"
+              data-player-view-trigger="browse"
+              role="tab"
+              aria-selected="true"
+            >
+              Browse
+            </button>
+            <button
+              class="workspace-btn"
+              type="button"
+              data-player-view-trigger="add"
+              role="tab"
+              aria-selected="false"
+            >
+              Add player
+            </button>
+          </div>
+        </div>
+
+        <div class="workspace-frame" id="player-workspace-frame" data-player-view-mode="browse">
+          <section class="panel master-panel workspace-pane" id="player-list-panel" data-player-view="browse">
+          <div class="section-label">List</div>
+          <h2>Squad List</h2>
+          <p>Search and filter the squad register. Use the quick tier picker here to prep the next campaign, then bulk-load the season squad from Season Centre.</p>
+
+          <div class="field">
+            <label for="search-input">Search players</label>
+            <input id="search-input" type="search" placeholder="Search by name, nickname, nationality, role, or notes" />
+          </div>
+
+          <div class="filter-row" id="filter-row">
+            <button class="filter-chip active" type="button" data-filter="all">All</button>
+            <button class="filter-chip" type="button" data-filter="core">Core</button>
+            <button class="filter-chip" type="button" data-filter="rotation">Rotation</button>
+            <button class="filter-chip" type="button" data-filter="flex_sub">Flex/Sub</button>
+          </div>
+
+          <section class="section-block">
+            <div class="panel-header">
+              <div>
+                <h3 class="section-title">Season prep</h3>
+                <p class="section-copy" id="season-prep-copy">
+                  Update each player's current or next-season tier here. Season Centre can then bulk-add only the players currently marked Core or Rotation.
+                </p>
+              </div>
+              <a class="secondary-button" href="./seasons.html#active-roster">Open seasons</a>
+            </div>
+          </section>
+
+          <div id="roster-grid" class="roster-grid" aria-live="polite"></div>
+          </section>
+
+          <section class="panel detail-panel workspace-pane" id="add-player" data-player-view="add" hidden>
+            <div class="section-label">Add</div>
+            <h2>New Player</h2>
+            <p>Create a player here. Existing players are edited from their detail page.</p>
+
+            <form id="player-form" class="form-grid">
+              <fieldset>
+                <legend>Basic details</legend>
+                <div class="field-row">
+                  <div class="field">
+                    <label for="first-name">First name</label>
+                    <input id="first-name" name="first-name" type="text" maxlength="40" autocomplete="given-name" required />
+                  </div>
+                  <div class="field">
+                    <label for="last-name">Last name</label>
+                    <input id="last-name" name="last-name" type="text" maxlength="40" autocomplete="family-name" required />
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label for="nickname">Nickname</label>
+                  <input id="nickname" name="nickname" type="text" maxlength="50" autocomplete="nickname" />
+                </div>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label for="phone">Phone</label>
+                    <input id="phone" name="phone" type="tel" maxlength="24" autocomplete="tel" />
+                  </div>
+                  <div class="field">
+                    <label for="nationality">Nationality</label>
+                    <input id="nationality" name="nationality" type="text" maxlength="50" autocomplete="country-name" required />
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label for="birth-date">Birth date</label>
+                  <input id="birth-date" name="birth-date" type="date" />
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>Playing details</legend>
+                <div class="field-row">
+                  <div class="field">
+                    <label for="status-select">Current / next-season tier</label>
+                    <select id="status-select" name="status-select">
+                      <option value="core" selected>Core</option>
+                      <option value="rotation">Rotation</option>
+                      <option value="flex_sub">Flex/Sub</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="dominant-foot">Preferred foot</label>
+                    <select id="dominant-foot" name="dominant-foot">
+                      <option value="right" selected>Right</option>
+                      <option value="left">Left</option>
+                      <option value="both">Both</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label>Positions (1 to 3)</label>
+                  <div class="role-selector">
+                    <div class="role-grid" id="role-grid">
+                      <button class="role-chip active" type="button" data-role="GK">GK</button>
+                      <button class="role-chip" type="button" data-role="DEF">DEF</button>
+                      <button class="role-chip" type="button" data-role="MID">MID</button>
+                      <button class="role-chip" type="button" data-role="ATT">ATT</button>
+                    </div>
+                    <p class="micro-note" id="role-note">Selected roles: GK</p>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label for="skill-rating">Overall rating</label>
+                  <input id="skill-rating" name="skill-rating" type="range" min="40" max="99" value="78" />
+                  <p class="micro-note">Current rating: <strong id="rating-value">78</strong></p>
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>Notes</legend>
+                <div class="field">
+                  <label for="notes">Notes</label>
+                  <textarea id="notes" name="notes" maxlength="240"></textarea>
+                </div>
+              </fieldset>
+
+              <div class="actions">
+                <button class="primary-button" type="submit" id="submit-button">Save player</button>
+                <button class="secondary-button" type="button" id="clear-button">Clear</button>
+                <button class="secondary-button" type="button" id="refresh-button">Reload list</button>
+              </div>
+
+              <p id="status-line" class="status-line">Loading club data...</p>
+              <p class="micro-note">
+                Next step after squad prep: open Season Centre and use <strong>Add current Core + Rotation</strong>.
+              </p>
+            </form>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <footer class="club-footer">
+      <div class="club-footer-copy">Staff · Squad</div>
+    </footer>
+
+    <script src="./assets/js/pages/admin/players.js?v=20260425a"></script>
+  </body>
+</html>

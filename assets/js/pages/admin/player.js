@@ -633,7 +633,7 @@ deleteButton.addEventListener("click", async () => {
     return;
   }
 
-  window.location.href = "./index.html";
+  window.location.href = "./squad.html";
 });
 
 loadPlayer();

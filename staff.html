@@ -88,22 +88,22 @@
 
         function safeNextHref() {
           const params = new URLSearchParams(window.location.search);
-          const rawNext = params.get("next") || "./index.html";
+          const rawNext = params.get("next") || "./squad.html";
 
           try {
             const nextUrl = new URL(rawNext, window.location.href);
             if (nextUrl.origin !== window.location.origin) {
-              return "./index.html";
+              return "./squad.html";
             }
 
-            const pageName = nextUrl.pathname.split("/").pop() || "index.html";
+            const pageName = nextUrl.pathname.split("/").pop() || "squad.html";
             if (pageName === "staff.html") {
-              return "./index.html";
+              return "./squad.html";
             }
 
             return `./${pageName}${nextUrl.search || ""}${nextUrl.hash || ""}`;
           } catch (error) {
-            return "./index.html";
+            return "./squad.html";
           }
         }
 
