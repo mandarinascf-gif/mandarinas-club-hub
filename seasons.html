@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260425b" />
+    <title>Staff · Season Centre</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./assets/js/core/club_logic.js"></script>
+    <script src="./assets/js/core/supabase_config.js"></script>
+    <script src="./assets/js/ui/shell.js?v=20260425a"></script>
+  </head>
+  <body class="manager-touch">
+    <nav class="site-nav">
+      <div class="site-nav-inner">
+        <a href="./index.html" class="site-logo">
+          <span class="logo-dot"></span>
+          <span>Mandarinas <span class="logo-accent">CF</span></span>
+        </a>
+        <div class="nav-links">
+          <a class="nav-link" href="./index.html">Squad</a>
+          <a class="nav-link active" href="./seasons.html">Season</a>
+          <a class="nav-link" href="./matchday.html">Match Centre</a>
+          <a class="nav-link" href="./submissions.html?preview=1">Reports</a>
+          <a class="nav-link" href="./standings.html">Table</a>
+          <a class="nav-link" href="./tiers.html">Planner</a>
+        </div>
+        <a href="./home.html" class="nav-mode-badge">Club</a>
+      </div>
+    </nav>
+
+    <main class="page">
+      <section class="panel page-header">
+        <div class="page-header-main">
+          <div class="section-label">Staff · Season Centre</div>
+          <h1>Season Centre</h1>
+          <p>
+            Start with the season list. Selecting a season opens its live squad and fixture plan.
+            Use the form to launch a new campaign.
+          </p>
+        </div>
+        <div class="actions">
+          <button class="primary-button" type="button" data-season-view-trigger="list">Season list</button>
+          <button class="secondary-button" type="button" data-season-view-trigger="create">Add season</button>
+          <button class="secondary-button" type="button" data-season-view-trigger="roster">Season squad</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-label">Overview</div>
+        <h2>Season Snapshot</h2>
+        <div class="summary-grid">
+          <div class="summary-card">
+            <span>Total seasons</span>
+            <strong id="season-count">0</strong>
+            <span class="summary-copy">Saved season records</span>
+          </div>
+          <div class="summary-card">
+            <span>Total generated matchdays</span>
+            <strong id="matchday-count">0</strong>
+            <span class="summary-copy">Across all seasons</span>
+          </div>
+          <div class="summary-card">
+            <span>Kickoffs scheduled</span>
+            <strong id="scheduled-count">0</strong>
+            <span class="summary-copy">Ready for match center</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="workspace-shell" id="season-workspace">
+        <div class="workspace-toolbar">
+          <div class="workspace-toolbar-copy">
+            <div class="section-label">Work Mode</div>
+            <h2>Season Desk</h2>
+            <p>Run the campaign in focused steps instead of one long stacked staff page.</p>
+          </div>
+          <div class="workspace-switcher" role="tablist" aria-label="Season workspace">
+            <button
+              class="workspace-btn active"
+              type="button"
+              data-season-view-trigger="list"
+              role="tab"
+              aria-selected="true"
+            >
+              Season list
+            </button>
+            <button
+              class="workspace-btn"
+              type="button"
+              data-season-view-trigger="create"
+              role="tab"
+              aria-selected="false"
+            >
+              Create
+            </button>
+            <button
+              class="workspace-btn"
+              type="button"
+              data-season-view-trigger="roster"
+              role="tab"
+              aria-selected="false"
+            >
+              Squad
+            </button>
+            <button
+              class="workspace-btn"
+              type="button"
+              data-season-view-trigger="schedule"
+              role="tab"
+              aria-selected="false"
+            >
+              Fixtures
+            </button>
+          </div>
+        </div>
+
+        <div class="workspace-frame" id="season-workspace-frame" data-season-view-mode="list">
+          <section class="panel master-panel workspace-pane" id="season-list-panel" data-season-view="list">
+          <div class="section-label">List</div>
+          <h2>Seasons</h2>
+          <p>Select a season to review its roster and kickoff schedule.</p>
+          <div class="actions">
+            <button class="secondary-button" type="button" id="season-refresh-button">Reload season list</button>
+            <a class="secondary-button" href="./matchday.html">Open matchdays</a>
+          </div>
+          <div id="season-grid" class="season-grid" aria-live="polite"></div>
+          </section>
+
+          <section class="panel detail-panel workspace-pane" id="create-season" data-season-view="create" hidden>
+            <div class="section-label">Add</div>
+            <h2>Create Season</h2>
+            <p>Add a season first, then choose it from the list to manage roster and kickoff times.</p>
+
+            <form id="season-form">
+              <fieldset>
+                <legend>Season basics</legend>
+                <div class="field">
+                  <label for="season-name">Season name</label>
+                  <input
+                    id="season-name"
+                    name="season-name"
+                    type="text"
+                    maxlength="80"
+                    placeholder="Spring 2026"
+                    autocomplete="off"
+                    required
+                  />
+                </div>
+
+                <div class="field">
+                  <label for="total-matchdays">Matchdays</label>
+                  <input
+                    id="total-matchdays"
+                    name="total-matchdays"
+                    type="number"
+                    min="1"
+                    max="60"
+                    value="10"
+                    required
+                  />
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>Squad targets</legend>
+                <div class="field-grid">
+                  <div class="field">
+                    <label for="core-spots">Core spots</label>
+                    <input id="core-spots" name="core-spots" type="number" min="0" max="60" value="18" required />
+                  </div>
+                  <div class="field">
+                    <label for="rotation-spots">Rotation spots</label>
+                    <input id="rotation-spots" name="rotation-spots" type="number" min="0" max="60" value="10" required />
+                  </div>
+                  <div class="field">
+                    <label for="model-start-matchday">Queue start matchday</label>
+                    <input
+                      id="model-start-matchday"
+                      name="model-start-matchday"
+                      type="number"
+                      min="1"
+                      max="60"
+                      value="1"
+                      required
+                    />
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>Fixture defaults</legend>
+                <div class="field-grid">
+                  <div class="field">
+                    <label for="season-start-date">Start date</label>
+                    <input id="season-start-date" name="season-start-date" type="date" />
+                  </div>
+                  <div class="field">
+                    <label for="season-weekday">Weekly day</label>
+                    <select id="season-weekday" name="season-weekday">
+                      <option value="0">Sunday</option>
+                      <option value="1">Monday</option>
+                      <option value="2">Tuesday</option>
+                      <option value="3">Wednesday</option>
+                      <option value="4" selected>Thursday</option>
+                      <option value="5">Friday</option>
+                      <option value="6">Saturday</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="season-kickoff-time">Kickoff time</label>
+                    <input
+                      id="season-kickoff-time"
+                      name="season-kickoff-time"
+                      type="time"
+                      value="21:00"
+                    />
+                  </div>
+                  <div class="field">
+                    <label for="season-venue-name">Venue</label>
+                    <input
+                      id="season-venue-name"
+                      name="season-venue-name"
+                      type="text"
+                      maxlength="80"
+                      value="Alden E. Oliver"
+                      autocomplete="off"
+                    />
+                  </div>
+                </div>
+                <p class="micro-note">
+                  If you set a start date, the app will prebuild weekly matchdays from these defaults.
+                  Leave the date empty if you want to schedule each matchday manually later.
+                </p>
+              </fieldset>
+
+              <div class="actions">
+                <button class="primary-button" type="submit" id="season-submit-button">Create season</button>
+              </div>
+
+              <p id="season-status-line" class="status-line">Loading club data...</p>
+              <p class="micro-note">
+                Core and Rotation targets define the intended mix. Queue start matchday tells the
+                model where the current queue logic should begin.
+              </p>
+            </form>
+          </section>
+
+          <section class="panel detail-panel workspace-pane" id="active-roster" data-season-view="roster" hidden>
+            <div class="section-label">Squad</div>
+            <h2>Season Squad</h2>
+            <p id="roster-board-copy">
+              Choose a season from the list to manage who is active for that season.
+            </p>
+            <p>Selected season: <strong id="roster-season-pill">Choose a season</strong></p>
+
+            <div class="actions">
+              <button class="secondary-button" type="button" id="roster-refresh-button">Reload roster</button>
+              <button class="secondary-button" type="button" id="seed-roster-button">Add current Core + Rotation</button>
+              <button class="secondary-button" type="button" id="sync-season-tier-button">Use squad tier status</button>
+              <a class="secondary-button" id="open-tiers-link" href="./tiers.html">Open planner</a>
+              <a class="secondary-button" href="./index.html#player-list-panel">Open squad register</a>
+            </div>
+            <p class="micro-note" id="roster-bulk-note">
+              For now, bulk add uses the squad register tier and only pulls players marked Core or Rotation.
+            </p>
+
+            <details class="disclosure-card" id="season-settings-disclosure">
+              <summary class="disclosure-summary">
+                <div class="disclosure-copy">
+                  <div class="section-label">Build</div>
+                  <div class="disclosure-title">Season settings</div>
+                  <div class="micro-note">Targets, queue start, weekly defaults, and venue.</div>
+                </div>
+              </summary>
+              <div class="disclosure-body">
+                <fieldset>
+                  <legend>Season settings</legend>
+                  <div class="field-grid">
+                    <div class="field">
+                      <label for="selected-core-spots">Core spots</label>
+                      <input id="selected-core-spots" type="number" min="0" max="60" value="18" disabled />
+                    </div>
+                    <div class="field">
+                      <label for="selected-rotation-spots">Rotation spots</label>
+                      <input id="selected-rotation-spots" type="number" min="0" max="60" value="10" disabled />
+                    </div>
+                    <div class="field">
+                      <label for="selected-model-start-matchday">Queue start matchday</label>
+                      <input id="selected-model-start-matchday" type="number" min="1" max="60" value="1" disabled />
+                    </div>
+                    <div class="field">
+                      <label for="selected-season-start-date">Start date</label>
+                      <input id="selected-season-start-date" type="date" disabled />
+                    </div>
+                    <div class="field">
+                      <label for="selected-season-weekday">Weekly day</label>
+                      <select id="selected-season-weekday" disabled>
+                        <option value="0">Sunday</option>
+                        <option value="1">Monday</option>
+                        <option value="2">Tuesday</option>
+                        <option value="3">Wednesday</option>
+                        <option value="4">Thursday</option>
+                        <option value="5">Friday</option>
+                        <option value="6">Saturday</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label for="selected-season-kickoff-time">Kickoff time</label>
+                      <input id="selected-season-kickoff-time" type="time" disabled />
+                    </div>
+                    <div class="field">
+                      <label for="selected-season-venue-name">Venue</label>
+                      <input id="selected-season-venue-name" type="text" maxlength="80" disabled />
+                    </div>
+                  </div>
+                  <div class="actions">
+                    <button class="primary-button" type="button" id="save-season-settings-button" disabled>
+                      Save season settings
+                    </button>
+                    <button class="secondary-button" type="button" id="apply-schedule-defaults-button" disabled>
+                      Fill unscheduled matchdays
+                    </button>
+                  </div>
+                  <p class="micro-note" id="season-settings-note">
+                    Choose a campaign first. These settings control the weekly queue and when the current model begins.
+                  </p>
+                </fieldset>
+              </div>
+            </details>
+
+            <details class="disclosure-card" id="season-roster-tools-disclosure">
+              <summary class="disclosure-summary">
+                <div class="disclosure-copy">
+                  <div class="section-label">Add</div>
+                  <div class="disclosure-title">Squad tools</div>
+                  <div class="micro-note">Search active registrations or add someone from the squad register.</div>
+                </div>
+              </summary>
+              <div class="disclosure-body">
+                <fieldset>
+                  <legend>Squad tools</legend>
+                  <div class="field-grid">
+                    <div class="field">
+                      <label for="season-roster-search">Search active roster</label>
+                      <input
+                        id="season-roster-search"
+                        type="search"
+                        placeholder="Search by player, nickname, nationality, or tier"
+                      />
+                    </div>
+                    <div class="field">
+                      <label for="season-roster-add-select">Add player from squad register</label>
+                      <select id="season-roster-add-select">
+                        <option value="">Select a player from the squad register</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label for="season-roster-registration-tier">Requested season tier</label>
+                      <select id="season-roster-registration-tier">
+                        <option value="core">Core</option>
+                        <option value="rotation" selected>Rotation</option>
+                        <option value="flex_sub">Flex/Sub</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label for="season-roster-tier-status">This season tier</label>
+                      <select id="season-roster-tier-status">
+                        <option value="core">Core</option>
+                        <option value="rotation" selected>Rotation</option>
+                        <option value="flex_sub">Flex/Sub</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label for="season-roster-payment-status">Payment</label>
+                      <select id="season-roster-payment-status">
+                        <option value="unknown" selected>Unknown</option>
+                        <option value="pending">Pending</option>
+                        <option value="paid">Paid</option>
+                        <option value="comped">Comped</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="actions">
+                    <button class="primary-button" type="button" id="season-roster-add-button">Add player to season</button>
+                  </div>
+                  <p class="micro-note">
+                    Requested season tier is what the player asked for. This season tier is the live bucket for
+                    this season. The Squad page current / next-season tier stays the default source, and you can
+                    sync it into this season with <strong>Use squad tier status</strong>.
+                  </p>
+                </fieldset>
+              </div>
+            </details>
+
+            <details class="disclosure-card" id="season-directory-prep-disclosure">
+              <summary class="disclosure-summary">
+                <div class="disclosure-copy">
+                  <div class="section-label">Prep</div>
+                  <div class="disclosure-title">Directory prep</div>
+                  <div class="micro-note">Update current or next-season tiers without leaving Season Centre.</div>
+                </div>
+              </summary>
+              <div class="disclosure-body">
+                <div class="summary-grid" id="season-directory-prep-summary"></div>
+                <div id="season-directory-prep-wrap" class="table-wrap" aria-live="polite"></div>
+              </div>
+            </details>
+
+            <details class="disclosure-card" id="season-roster-list-disclosure" open>
+              <summary class="disclosure-summary">
+                <div class="disclosure-copy">
+                  <div class="section-label">Squad</div>
+                  <div class="disclosure-title">Season roster players</div>
+                  <div class="micro-note">Review the live roster, tiers, payments, and active status.</div>
+                </div>
+              </summary>
+              <div class="disclosure-body">
+                <div class="summary-grid" id="roster-summary-grid"></div>
+                <div id="season-roster-wrap" class="table-wrap" aria-live="polite"></div>
+              </div>
+            </details>
+          </section>
+
+          <section class="panel detail-panel workspace-pane" id="season-schedule" data-season-view="schedule" hidden>
+            <div class="section-label">Fixtures</div>
+            <h2>Matchday Fixtures</h2>
+            <p id="matchday-board-copy">Choose a season above, then set each matchday kickoff time here.</p>
+            <p>Selected season: <strong id="selected-season-pill">No season selected</strong></p>
+            <p class="micro-note">
+              Default kickoff time is <strong>9:00 PM</strong> local unless you choose a different time.
+            </p>
+            <div class="actions">
+              <a class="secondary-button" href="./matchday.html">Open matchday ops</a>
+            </div>
+            <div id="matchday-grid" class="matchday-grid" aria-live="polite"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <footer class="club-footer">
+      <div class="club-footer-copy">Staff · Season Centre</div>
+    </footer>
+
+    <script src="./assets/js/pages/admin/seasons.js?v=20260425a"></script>
+  </body>
+</html>

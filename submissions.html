@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("preview") !== "1") {
+          return;
+        }
+
+        let unlocked = false;
+        try {
+          const raw = String(window.name || "").trim();
+          const state = raw.startsWith("{") ? JSON.parse(raw) : {};
+          unlocked = state?.mcfAdminUnlocked === true;
+        } catch (error) {
+          unlocked = false;
+        }
+
+        if (!unlocked) {
+          const next = `./submissions.html${window.location.search || ""}${window.location.hash || ""}`;
+          const target = new URL("./staff.html", window.location.href);
+          target.searchParams.set("next", next);
+          window.location.replace(target.href);
+        }
+      })();
+    </script>
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260425c" />
+    <title>Match Centre · Report</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./assets/js/core/club_logic.js"></script>
+    <script src="./assets/js/core/supabase_config.js"></script>
+    <script src="./assets/js/core/app.js?v=20260425b" defer></script>
+    <script src="./assets/js/ui/shell.js?v=20260425a"></script>
+  </head>
+  <body class="manager-touch">
+    <nav class="site-nav">
+      <div class="site-nav-inner">
+        <a href="./home.html" class="site-logo">
+          <span class="logo-dot"></span>
+          <span>Mandarinas <span class="logo-accent">CF</span></span>
+        </a>
+        <div class="nav-links">
+          <a class="nav-link" href="./home.html">Club HQ</a>
+          <a class="nav-link active" href="./schedule.html">Fixtures</a>
+          <a class="nav-link" href="./public_standings.html">Table</a>
+          <a class="nav-link" href="./roster.html">Squad</a>
+          <a class="nav-link" href="./tier_system.html">Pathway</a>
+          <a class="nav-link" href="./tier_watch.html">Tracker</a>
+        </div>
+        <a href="./staff.html" class="nav-mode-badge">Staff</a>
+      </div>
+    </nav>
+
+    <main class="page manager-page">
+      <section class="panel page-header manager-header-card">
+        <div class="page-header-main">
+          <div class="section-label">Fixtures · Matchday report</div>
+          <h1>Player Report</h1>
+          <p id="submission-hero-copy">
+            Pick your name first. Your team and scores load automatically, then you save your stat
+            line and unlock ratings for the rest of the players.
+          </p>
+        </div>
+        <div class="actions">
+          <a class="primary-button" href="#submission-player-select">Choose your name</a>
+          <a class="secondary-button" id="submission-schedule-link" href="./schedule.html">Back to fixtures</a>
+        </div>
+      </section>
+
+      <section class="panel manager-panel">
+        <div class="section-label">Step 1</div>
+        <h2>Choose Your Name</h2>
+        <p id="submission-player-copy">
+          Open the report by choosing your name from the players who were on the field for this
+          matchday.
+        </p>
+
+        <div class="field">
+          <label for="submission-player-select">Player</label>
+          <select id="submission-player-select">
+            <option value="">Choose your name</option>
+          </select>
+        </div>
+
+        <div id="submission-selected-player-card" class="detail-card">
+          <div class="empty-state">Choose your name first.</div>
+        </div>
+      </section>
+
+      <section class="panel manager-panel">
+        <div class="section-label">Match Hub</div>
+        <h2 id="submission-report-title">Current Player Report</h2>
+        <p id="submission-status-line" class="status-line">Loading player report...</p>
+        <p class="micro-note" id="submission-window-note">
+          Staff confirm the official records after the match. Player reports stay separate until
+          they are checked.
+        </p>
+
+        <div class="field" id="submission-season-field">
+          <label for="submission-season-select">Season</label>
+          <select id="submission-season-select"></select>
+        </div>
+
+        <div class="field" id="submission-matchday-field">
+          <label for="submission-matchday-select">Matchday</label>
+          <select id="submission-matchday-select"></select>
+        </div>
+
+        <div class="detail-card" id="submission-report-card">
+          <div class="empty-state">Waiting for the current player report.</div>
+        </div>
+      </section>
+
+      <section class="panel detail-panel manager-panel">
+        <div class="section-label">Step 2</div>
+        <h2>Stats Console</h2>
+        <p id="submission-stats-copy">
+          Review the scores you played in, then enter your own goals, goalkeeper points, and clean
+          sheet.
+        </p>
+
+        <div id="submission-match-scores-card" class="detail-card">
+          <div class="empty-state">Choose your name first.</div>
+        </div>
+
+        <form id="submission-stats-form" hidden>
+          <fieldset>
+            <legend>Match totals</legend>
+            <div class="field-grid">
+              <div class="field">
+                <label for="submission-goals">Goals</label>
+                <input id="submission-goals" name="goals" type="number" min="0" value="0" />
+              </div>
+              <div class="field">
+                <label for="submission-goal-keeps">Goalkeeper points</label>
+                <input id="submission-goal-keeps" name="goal_keeps" type="number" min="0" value="0" />
+              </div>
+            </div>
+            <label class="mini-field checkbox" for="submission-clean-sheet">
+              <input id="submission-clean-sheet" name="clean_sheet" type="checkbox" />
+              Clean sheet
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Optional note</legend>
+            <div class="field">
+              <label for="submission-stat-note">Anything the admin should review?</label>
+              <textarea
+                id="submission-stat-note"
+                name="note"
+                rows="3"
+                maxlength="400"
+                placeholder="Optional context for your stat line"
+              ></textarea>
+            </div>
+          </fieldset>
+
+          <div class="actions">
+            <button class="primary-button" type="submit" id="submission-save-stats-button">Save my stats</button>
+          </div>
+          <p class="micro-note" id="submission-stats-note">
+            Your saved stats will appear here after the first submission.
+          </p>
+        </form>
+      </section>
+
+      <section class="panel detail-panel manager-panel" id="submission-ratings-panel">
+        <div class="section-label">Step 3</div>
+        <h2>Ratings Console</h2>
+        <p id="submission-ratings-copy">
+          Rate every teammate and opponent except yourself using the same scale for each player.
+        </p>
+
+        <div id="submission-rating-summary" class="summary-grid manager-summary-grid">
+          <div class="summary-card">
+            <span>Teammates</span>
+            <strong id="submission-rating-teammate-count">0</strong>
+            <span class="summary-copy">Same team queue</span>
+          </div>
+          <div class="summary-card">
+            <span>Opponents</span>
+            <strong id="submission-rating-opponent-count">0</strong>
+            <span class="summary-copy">Across the other teams</span>
+          </div>
+          <div class="summary-card">
+            <span>Saved ratings</span>
+            <strong id="submission-rating-saved-count">0</strong>
+            <span class="summary-copy">Already submitted</span>
+          </div>
+          <div class="summary-card">
+            <span>Queue progress</span>
+            <strong id="submission-rating-progress-pill">0 / 0</strong>
+            <span class="summary-copy" id="submission-rating-progress-copy">Choose your name to open the queue.</span>
+          </div>
+        </div>
+
+        <div id="submission-rating-targets" class="submission-target-strip">
+          <div class="empty-state">Choose your name first.</div>
+        </div>
+
+        <form id="submission-rating-form" hidden>
+          <div class="detail-card submission-rating-card">
+            <div class="submission-rating-head">
+              <div>
+                <div class="section-label" id="submission-rating-relationship">Teammate</div>
+                <h3 id="submission-rating-name">Choose a player to rate</h3>
+                <p class="section-copy" id="submission-rating-progress-line">
+                  Saved ratings appear as you move through the queue.
+                </p>
+              </div>
+              <span class="tag-pill" id="submission-rating-team-pill">-</span>
+            </div>
+
+            <div id="submission-rating-question-list" class="submission-rating-list"></div>
+
+            <div class="field">
+              <label for="submission-rating-comment">Optional comment</label>
+              <textarea
+                id="submission-rating-comment"
+                rows="3"
+                maxlength="400"
+                placeholder="Optional note about this player's match"
+              ></textarea>
+            </div>
+
+            <div class="actions">
+              <button class="primary-button" type="submit" id="submission-save-rating-button">Save rating</button>
+              <button class="secondary-button" type="button" id="submission-next-rating-button">Next player</button>
+            </div>
+            <p class="micro-note" id="submission-rating-note">
+              Each player gets one saved rating per matchday from you.
+            </p>
+          </div>
+        </form>
+
+        <div id="submission-ratings-empty" class="empty-state">
+          Choose your name first.
+        </div>
+      </section>
+    </main>
+
+    <footer class="club-footer">
+      <div class="club-footer-copy">Match Centre · Report</div>
+    </footer>
+
+    <script src="./assets/js/pages/public/submissions.js?v=20260425e"></script>
+  </body>
+</html>

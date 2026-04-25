@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260425b" />
+    <title>Club · Fixtures</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./assets/js/core/club_logic.js"></script>
+    <script src="./assets/js/core/supabase_config.js"></script>
+    <script src="./assets/js/core/weather.js"></script>
+    <script src="./assets/js/core/app.js?v=20260425b" defer></script>
+    <script src="./assets/js/ui/shell.js?v=20260425a" defer></script>
+  </head>
+  <body class="manager-touch">
+    <nav class="site-nav">
+      <div class="site-nav-inner">
+        <a href="./home.html" class="site-logo">
+          <span class="logo-dot"></span>
+          <span>Mandarinas <span class="logo-accent">CF</span></span>
+        </a>
+        <div class="nav-links">
+          <a class="nav-link" href="./home.html">Club HQ</a>
+          <a class="nav-link active" href="./schedule.html">Fixtures</a>
+          <a class="nav-link" href="./public_standings.html">Table</a>
+          <a class="nav-link" href="./roster.html">Squad</a>
+          <a class="nav-link" href="./tier_system.html">Pathway</a>
+          <a class="nav-link" href="./tier_watch.html">Tracker</a>
+        </div>
+        <a href="./staff.html" class="nav-mode-badge">Staff</a>
+      </div>
+    </nav>
+
+    <main class="page">
+      <section class="panel page-header">
+        <div class="page-header-main">
+          <div class="section-label">Club · Fixtures</div>
+          <h1>Fixtures & Results</h1>
+          <p id="hero-copy">Browse matchdays for the selected season and open one detail view at a time.</p>
+          <div class="field">
+            <label for="season-select">Season</label>
+            <select id="season-select"></select>
+          </div>
+        </div>
+        <div class="actions">
+          <a class="primary-button" href="#matchday-list-panel">Open fixtures</a>
+          <a class="secondary-button" href="./public_standings.html">Open table</a>
+          <a class="secondary-button" href="./home.html">Club HQ</a>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-label">Overview</div>
+        <h2>Fixture Snapshot</h2>
+        <div class="summary-grid">
+          <div class="summary-card">
+            <span>Total matchdays</span>
+            <strong id="total-matchdays">0</strong>
+            <span class="summary-copy">Generated for this season</span>
+          </div>
+          <div class="summary-card">
+            <span>Upcoming matchdays</span>
+            <strong id="scheduled-matchdays">0</strong>
+            <span class="summary-copy">Scheduled but not complete</span>
+          </div>
+          <div class="summary-card">
+            <span>Played matchdays</span>
+            <strong id="played-matchdays">0</strong>
+            <span class="summary-copy">Fully scored days</span>
+          </div>
+          <div class="summary-card">
+            <span>Next matchday</span>
+            <strong id="next-matchday">-</strong>
+            <span class="summary-copy" id="next-matchday-copy">Waiting for season details.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="master-detail">
+        <section class="panel master-panel" id="matchday-list-panel">
+          <div class="section-label">List</div>
+          <h2>Fixture List</h2>
+          <div class="status-line" id="schedule-status-line">Loading the schedule...</div>
+          <div id="matchday-grid" class="matchday-grid"></div>
+        </section>
+
+        <div class="detail-stack">
+          <section class="panel detail-panel">
+            <div class="section-label">Detail</div>
+            <h2>Match Centre</h2>
+            <div id="matchday-detail" class="history-shell">
+              <div class="empty-state">Select a matchday from the list.</div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <footer class="club-footer">
+      <div class="club-footer-copy">Club · Fixtures</div>
+    </footer>
+
+    <script src="./assets/js/pages/public/schedule.js?v=20260425b"></script>
+  </body>
+</html>

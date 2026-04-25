@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260425b" />
+    <title>Club HQ · Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./assets/js/core/club_logic.js"></script>
+    <script src="./assets/js/core/supabase_config.js"></script>
+    <script src="./assets/js/core/weather.js"></script>
+    <script src="./assets/js/core/app.js?v=20260425b" defer></script>
+    <script src="./assets/js/ui/shell.js?v=20260425a" defer></script>
+  </head>
+  <body class="manager-touch">
+    <nav class="site-nav">
+      <div class="site-nav-inner">
+        <a href="./home.html" class="site-logo">
+          <span class="logo-dot"></span>
+          <span>Mandarinas <span class="logo-accent">CF</span></span>
+        </a>
+        <div class="nav-links">
+          <a class="nav-link active" href="./home.html">Club HQ</a>
+          <a class="nav-link" href="./schedule.html">Fixtures</a>
+          <a class="nav-link" href="./public_standings.html">Table</a>
+          <a class="nav-link" href="./roster.html">Squad</a>
+          <a class="nav-link" href="./tier_system.html">Pathway</a>
+          <a class="nav-link" href="./tier_watch.html">Tracker</a>
+        </div>
+        <a href="./staff.html" class="nav-mode-badge">Staff</a>
+      </div>
+    </nav>
+
+    <main class="page">
+      <section class="panel page-header home-hero">
+        <div class="home-hero-copy">
+          <div class="page-header-main">
+            <div class="section-label">Club HQ · Dashboard</div>
+            <h1>Club HQ</h1>
+            <p id="hero-copy">
+              Loading the current season, next kickoff, latest results, and standings leaders.
+            </p>
+          </div>
+          <div class="actions home-hero-actions">
+            <a class="primary-button" href="./schedule.html">Open fixtures</a>
+            <a class="secondary-button" href="./public_standings.html">Open table</a>
+            <a class="secondary-button" href="./roster.html">Open squad</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="master-detail">
+        <section class="panel master-panel">
+          <div class="section-label">Overview</div>
+          <h2>Live Season</h2>
+          <div class="summary-grid">
+            <div class="summary-card">
+              <span>Season</span>
+              <strong id="season-name">-</strong>
+              <span class="summary-copy" id="season-sub">Waiting for season details.</span>
+            </div>
+            <div class="summary-card">
+              <span>Next matchday</span>
+              <strong id="next-matchday-number">-</strong>
+              <span class="summary-copy" id="next-matchday-date">No kickoff scheduled yet.</span>
+            </div>
+            <div class="summary-card">
+              <span>Forecast</span>
+              <strong>Weather</strong>
+              <span class="summary-copy" id="next-matchday-weather">
+                The forecast appears after a kickoff time is scheduled.
+              </span>
+            </div>
+            <div class="summary-card">
+              <span>Completed matchdays</span>
+              <strong id="completed-days">0</strong>
+              <span class="summary-copy">Scored and counted</span>
+            </div>
+            <div class="summary-card">
+              <span>Ranked players</span>
+              <strong id="ranked-players">0</strong>
+              <span class="summary-copy">Active table entries</span>
+            </div>
+          </div>
+
+          <div class="detail-card">
+            <div class="section-label">Shortcuts</div>
+            <ul>
+              <li><a href="./schedule.html">Fixtures</a></li>
+              <li><a href="./public_standings.html">Table</a></li>
+              <li><a href="./roster.html">Squad</a></li>
+              <li><a href="./tier_watch.html">Tracker</a></li>
+            </ul>
+          </div>
+        </section>
+
+        <div class="detail-stack">
+          <section class="panel detail-panel" id="latest-results-card" hidden>
+            <div class="section-label">Latest</div>
+            <h2 id="latest-results-title">Results coming soon</h2>
+            <p id="latest-results-copy">Completed matchdays appear here with scores and scorers.</p>
+            <div id="latest-results-body"></div>
+          </section>
+
+          <section class="panel detail-panel">
+            <div class="section-label">Leaders</div>
+            <h2>Current Leaders</h2>
+            <h3>Points</h3>
+            <div class="leader-list" id="leaders-points"></div>
+            <h3>Goals</h3>
+            <div class="leader-list" id="leaders-goals"></div>
+            <h3>Attendance</h3>
+            <div class="leader-list" id="leaders-attendance"></div>
+          </section>
+
+          <section class="panel detail-panel" id="mvp-card" hidden>
+            <div class="section-label">Detail</div>
+            <h2 id="mvp-name">Loading season leader</h2>
+            <p id="mvp-subtitle">Top-ranked player this season.</p>
+            <div id="mvp-body"></div>
+          </section>
+
+          <section class="panel detail-panel" id="past-winners-card" hidden>
+            <div class="section-label">History</div>
+            <h2>Past Champions</h2>
+            <p class="section-copy">A look back at the players who finished previous seasons on top.</p>
+            <div class="leader-list champion-card-list" id="past-winners-list"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <footer class="club-footer">
+      <div class="club-footer-copy">Club HQ · Dashboard</div>
+    </footer>
+
+    <script src="./assets/js/pages/public/home.js"></script>
+  </body>
+</html>

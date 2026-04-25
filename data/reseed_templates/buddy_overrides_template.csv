@@ -1,0 +1,6 @@
+season_name,matchday_number,raw_label,actual_player,team_code,reason,notes
+2026 Spring,8,URIEL / GUSTAVO,Uriel,blue,manager_confirmed,"April 23, 2026 attendance confirmed by league manager."
+2026 Spring,8,KEVIN / MIKE,Mike,green,manager_confirmed,"April 23, 2026 attendance confirmed by league manager."
+2026 Spring,8,EFRAIN / FABIAN,Efrain,orange,manager_confirmed,"April 23, 2026 attendance confirmed by league manager."
+2026 Spring,8,ALEXIS / LOPEZ,Alexis,magenta,manager_confirmed,"April 23, 2026 attendance confirmed by league manager."
+2026 Spring,0,RAW_LABEL_HERE,CANONICAL_NAME_HERE,TEAM_CODE_HERE,reason_here,"Use one row per ambiguous buddy or sub label that needs a forced owner."

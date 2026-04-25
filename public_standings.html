@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260425b" />
+  <title>Club · Table</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./assets/js/core/club_logic.js"></script>
+  <script src="./assets/js/core/supabase_config.js"></script>
+  <script src="./assets/js/core/app.js?v=20260425b"></script>
+  <script src="./assets/js/ui/shell.js?v=20260425a" defer></script>
+</head>
+<body class="manager-touch">
+  <nav class="site-nav">
+    <div class="site-nav-inner">
+      <a href="./home.html" class="site-logo"><span class="logo-dot"></span><span>Mandarinas <span class="logo-accent">CF</span></span></a>
+      <div class="nav-links">
+        <a class="nav-link" href="./home.html">Club HQ</a>
+        <a class="nav-link" href="./schedule.html">Fixtures</a>
+        <a class="nav-link active" href="./public_standings.html">Table</a>
+        <a class="nav-link" href="./roster.html">Squad</a>
+        <a class="nav-link" href="./tier_system.html">Pathway</a>
+          <a class="nav-link" href="./tier_watch.html">Tracker</a>
+      </div>
+      <a href="./staff.html" class="nav-mode-badge">Staff</a>
+    </div>
+  </nav>
+
+  <main class="page">
+    <section class="panel page-header">
+      <div class="page-header-main">
+        <div class="section-label">Club · League Table</div>
+        <h1>League Table</h1>
+        <p id="hero-copy">Review the season table and filter the ranked player list.</p>
+        <div class="field">
+          <label for="season-select">Season</label>
+          <select id="season-select" class="select-input"></select>
+        </div>
+      </div>
+      <div class="actions">
+        <a class="primary-button" href="#standings-table-wrap">Open table</a>
+        <a class="secondary-button" href="./schedule.html">Open fixtures</a>
+        <a class="secondary-button" href="./roster.html">Open squad</a>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-label">Overview</div>
+      <h2>Table Snapshot</h2>
+      <div class="summary-grid">
+        <div class="summary-card">
+          <span>Completed matchdays</span>
+          <strong id="completed-count">0</strong>
+          <span class="summary-copy">Counted in the table</span>
+        </div>
+        <div class="summary-card">
+          <span>Ranked players</span>
+          <strong id="ranked-count">0</strong>
+          <span class="summary-copy">Active entries</span>
+        </div>
+        <div class="summary-card">
+          <span>Latest matchday</span>
+          <strong id="latest-day">-</strong>
+          <span class="summary-copy" id="latest-day-copy">Waiting for results</span>
+        </div>
+        <div class="summary-card">
+          <span>Goal setting</span>
+          <strong id="goal-rule">-</strong>
+          <span class="summary-copy">Season scoring mode</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-label">Leaders</div>
+      <h2>Top performers</h2>
+      <div class="leader-list" id="top-players-board">
+        <div class="status-line">Loading...</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-label">Table</div>
+      <h2>Season Table</h2>
+      <p id="table-note">Full season rankings</p>
+      <div class="field">
+        <label for="standings-search">Search the table</label>
+        <input
+          id="standings-search"
+          class="search-input"
+          type="search"
+          placeholder="Search by player, nickname, or nationality"
+        />
+      </div>
+      <div class="filter-row" id="tier-filter-row">
+        <button class="chip-button active" type="button" data-tier-filter="all">All</button>
+        <button class="chip-button" type="button" data-tier-filter="core">Core</button>
+        <button class="chip-button" type="button" data-tier-filter="rotation">Rotation</button>
+        <button class="chip-button" type="button" data-tier-filter="flex_sub">Flex/Sub</button>
+      </div>
+      <div class="status-line" id="standings-status-line">Loading the table...</div>
+      <div class="status-line warning" id="standings-data-note" hidden></div>
+      <div class="table-shell" id="standings-table-wrap"></div>
+      <p class="table-foot">
+        Select any header to sort. Official rank remains the main order, with ties breaking by total
+        points, PPG, wins, draws, losses, goals, goalkeeping, then clean sheets.
+      </p>
+    </section>
+  </main>
+
+  <footer class="club-footer">
+      <div class="club-footer-copy">Club · Table</div>
+  </footer>
+
+  <script src="./assets/js/pages/shared/standings.js"></script>
+  </body>
+</html>

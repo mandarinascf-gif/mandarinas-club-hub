@@ -1,0 +1,3 @@
+season_name,season_folder,workbook_file,match_dates_csv,weekly_teams_csv,weekly_roster_csv,match_input_csv,player_stat_csv,league_standings_csv,player_profile_csv,ready_for_import,notes
+2026 Spring,data/reseed_source/2026_spring,workbook.xlsx,MATCH_DATES.csv,WEEKLY_TEAMS.csv,,MATCH_INPUT.csv,PLAYER_STAT.csv,LEAGUE_STANDINGS.csv,PLAYER_PROFILE.csv,no,"Example row. Update file names to match what you exported."
+2026 Summer,data/reseed_source/2026_summer,workbook.xlsx,MATCH_DATES.csv,WEEKLY_TEAMS.csv,,MATCH_INPUT.csv,PLAYER_STAT.csv,LEAGUE_STANDINGS.csv,PLAYER_PROFILE.csv,no,"Add one row for each season you want included in the rebuild."

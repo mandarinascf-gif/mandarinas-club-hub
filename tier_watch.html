@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260425b" />
+    <title>Club · Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./assets/js/core/club_logic.js"></script>
+    <script src="./assets/js/core/supabase_config.js"></script>
+    <script src="./assets/js/core/app.js?v=20260425b" defer></script>
+    <script src="./assets/js/ui/shell.js?v=20260425a" defer></script>
+  </head>
+  <body class="manager-touch">
+    <nav class="site-nav">
+      <div class="site-nav-inner">
+        <a href="./home.html" class="site-logo">
+          <span class="logo-dot"></span>
+          <span>Mandarinas <span class="logo-accent">CF</span></span>
+        </a>
+        <div class="nav-links">
+          <a class="nav-link" href="./home.html">Club HQ</a>
+          <a class="nav-link" href="./schedule.html">Fixtures</a>
+          <a class="nav-link" href="./public_standings.html">Table</a>
+          <a class="nav-link" href="./roster.html">Squad</a>
+          <a class="nav-link" href="./tier_system.html">Pathway</a>
+          <a class="nav-link active" href="./tier_watch.html">Tracker</a>
+        </div>
+        <a href="./staff.html" class="nav-mode-badge">Staff</a>
+      </div>
+    </nav>
+
+    <main class="page">
+      <section class="panel page-header">
+        <div class="page-header-main">
+          <div class="section-label">Club · Tracker</div>
+          <h1>Pathway Tracker</h1>
+          <p id="hero-copy">
+            Keep the live rotation queue visible first, and open recommendation details only when you need them.
+          </p>
+          <div class="field">
+            <label for="season-select">Season</label>
+            <select id="season-select" class="select-input"></select>
+          </div>
+        </div>
+        <div class="actions">
+          <a class="primary-button" href="#queue-table-wrap">Open live queue</a>
+          <a class="secondary-button" href="#suggestion-summary-panel">Open recommendation plan</a>
+          <a class="secondary-button" href="./tier_system.html">How tiers work</a>
+        </div>
+      </section>
+
+      <section class="panel" id="summary-bar">
+        <div class="section-label">Snapshot</div>
+        <h2>Tracker Snapshot</h2>
+        <div class="summary-grid">
+          <div class="summary-card">
+            <span>Weighted spot plan</span>
+            <strong id="spot-mix-count">0 / 36</strong>
+            <span class="summary-copy">Suggested season mix</span>
+          </div>
+          <div class="summary-card">
+            <span>Core</span>
+            <strong id="core-count">0</strong>
+            <span class="summary-copy">Suggested Core players</span>
+          </div>
+          <div class="summary-card">
+            <span>Rotation</span>
+            <strong id="rotation-count">0</strong>
+            <span class="summary-copy">Queue-managed players</span>
+          </div>
+          <div class="summary-card">
+            <span>Flex/Sub</span>
+            <strong id="flex-count">0</strong>
+            <span class="summary-copy">Depth spots</span>
+          </div>
+          <div class="summary-card">
+            <span>Recommended changes</span>
+            <strong id="change-count">0</strong>
+            <span class="summary-copy">Current vs suggested</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-label">Live</div>
+        <h2>Live queue</h2>
+        <div class="status-line" id="tier-status-line">Loading the tier tracker...</div>
+        <div class="table-shell tw-table-wrap" id="queue-table-wrap"></div>
+      </section>
+
+      <section class="panel" id="suggestion-summary-panel">
+        <div class="section-label">Recommendations</div>
+        <h2>Recommended tier plan</h2>
+        <p id="suggestion-panel-copy">
+          Recommendations stay in a separate view so the live queue stays easy to read.
+        </p>
+        <button class="secondary-button" type="button" id="open-tier-suggestion-modal">
+          View recommendations
+        </button>
+      </section>
+    </main>
+
+    <footer class="club-footer">
+      <div class="club-footer-copy">Club · Tracker</div>
+    </footer>
+
+    <script src="./assets/js/pages/public/tier-watch.js?v=20260424"></script>
+    <div class="site-modal" id="tier-suggestion-modal" hidden>
+      <div class="site-modal-backdrop" data-modal-close></div>
+      <div
+        class="site-modal-card site-modal-card-wide"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="tier-suggestion-modal-title"
+      >
+        <div class="site-modal-head">
+          <div>
+            <div class="section-label">Tier Recommendations</div>
+            <h2 class="site-modal-title" id="tier-suggestion-modal-title">Recommended Tier Plan</h2>
+            <p class="site-modal-copy" id="tier-suggestion-modal-copy">
+              Weighted spots, season attendance, and recent form shape the recommendation order.
+            </p>
+          </div>
+          <button class="ghost-button" type="button" data-modal-close>Close</button>
+        </div>
+        <div class="site-modal-tools">
+          <input
+            id="tier-search"
+            class="search-input"
+            type="search"
+            placeholder="Search players..."
+          />
+          <div class="filter-row" id="tier-filter-row">
+            <button class="chip-button active" type="button" data-filter="all">All</button>
+            <button class="chip-button" type="button" data-filter="core">Core</button>
+            <button class="chip-button" type="button" data-filter="rotation">Rotation</button>
+            <button class="chip-button" type="button" data-filter="flex_sub">Flex/Sub</button>
+          </div>
+        </div>
+        <div class="table-shell tw-table-wrap" id="tier-table-wrap"></div>
+      </div>
+    </div>
+    <div class="site-modal" id="tier-detail-modal" hidden>
+      <div class="site-modal-backdrop" data-modal-close></div>
+      <div
+        class="site-modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="tier-detail-modal-title"
+      >
+        <div class="site-modal-head">
+          <div>
+            <div class="section-label">Why it was recommended</div>
+            <h2 class="site-modal-title" id="tier-detail-modal-title">Recommendation Details</h2>
+          </div>
+          <button class="ghost-button" type="button" data-modal-close>Close</button>
+        </div>
+        <div class="site-modal-body" id="tier-detail-content"></div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,9 @@
+canonical_name,first_name,last_name,nickname,aliases,merge_sub_into_canonical,preferred_nationality,preferred_positions,default_tier,notes
+Uriel,Uriel,Player,Uriel,"URIEL; URIEL / GUSTAVO; (Sub) Uriel",yes,Mexico,"MID",rotation,"Use Uriel when confirmed instead of Gustavo on ambiguous slash rows."
+Mike,Mike,Player,Mike,"MIKE; KEVIN / MIKE; (Sub) Mike",yes,Unknown,"MID",rotation,"Merge sub appearances into Mike when they are the same person."
+Efrain,Efrain,Player,Efrain,"EFRAIN; EFRAIN / FABIAN; (Sub) Efra",yes,Unknown,"MID",rotation,"Use Efrain on confirmed slash rows."
+Alexis,Alexis,Player,Alexis,"ALEXIS; ALEXIS / LOPEZ",yes,Unknown,"MID",rotation,"Use Alexis on confirmed slash rows."
+Fabian,Fabian,Player,Fabian,"FABIAN; EFRAIN / FABIAN",no,Unknown,"MID",rotation,"Keep separate from Efrain unless a matchday override says otherwise."
+Gustavo,Gustavo,Ortiz,Gustavo,"GUSTAVO; URIEL / GUSTAVO",no,Mexico,"MID",rotation,"Keep separate from Uriel unless a matchday override says otherwise."
+Kevin,Kevin,Player,Kevin,"KEVIN; KEVIN / MIKE",no,Unknown,"MID",rotation,"Keep separate from Mike unless a matchday override says otherwise."
+Lopez,Lopez,Player,Lopez,"LOPEZ; ALEXIS / LOPEZ",no,Unknown,"MID",rotation,"Keep separate from Alexis unless a matchday override says otherwise."

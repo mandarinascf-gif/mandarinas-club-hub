@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260425b" />
+    <title>Staff · Match Centre</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./assets/js/core/club_logic.js"></script>
+    <script src="./assets/js/core/supabase_config.js"></script>
+    <script src="./assets/js/core/weather.js"></script>
+    <script src="./assets/js/ui/shell.js?v=20260425a"></script>
+  </head>
+  <body class="manager-touch">
+    <nav class="site-nav">
+      <div class="site-nav-inner">
+        <a href="./index.html" class="site-logo">
+          <span class="logo-dot"></span>
+          <span>Mandarinas <span class="logo-accent">CF</span></span>
+        </a>
+        <div class="nav-links">
+          <a class="nav-link" href="./index.html">Squad</a>
+          <a class="nav-link" href="./seasons.html">Season</a>
+          <a class="nav-link active" href="./matchday.html">Match Centre</a>
+          <a class="nav-link" href="./submissions.html?preview=1">Reports</a>
+          <a class="nav-link" href="./standings.html">Table</a>
+          <a class="nav-link" href="./tiers.html">Planner</a>
+        </div>
+        <a href="./home.html" class="nav-mode-badge">Club</a>
+      </div>
+    </nav>
+
+    <main class="page">
+      <section class="panel page-header">
+        <div class="page-header-main">
+          <div class="section-label">Staff · Match Centre</div>
+          <h1>Match Centre</h1>
+          <p id="hero-copy">
+            Open the active matchday first. Then update attendance, team assignments, player stats,
+            and results from the detail panels.
+          </p>
+        </div>
+        <div class="actions">
+          <a class="primary-button" href="#open-matchday">Open night</a>
+          <a class="secondary-button" href="#attendance-step">Availability</a>
+          <a class="secondary-button" href="#scores-step">Scores</a>
+          <a class="secondary-button" href="./submissions.html?preview=1" id="open-player-stats-link">Open report preview</a>
+          <a class="secondary-button" href="./seasons.html" id="open-season-centre-link">Season Centre</a>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-label">Overview</div>
+        <h2>Night Snapshot</h2>
+        <div class="summary-grid">
+          <div class="summary-card">
+            <span>Checked in</span>
+            <strong id="attending-count">0</strong>
+            <span class="summary-copy">Available for selection</span>
+          </div>
+          <div class="summary-card">
+            <span>Assigned to a team</span>
+            <strong id="assigned-count">0</strong>
+            <span class="summary-copy">Placed on a side</span>
+          </div>
+          <div class="summary-card">
+            <span>Teams at full size</span>
+            <strong id="full-team-count">0</strong>
+            <span class="summary-copy">Ready to play</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="master-detail">
+        <section class="panel master-panel" id="open-matchday">
+          <div class="section-label">Control</div>
+          <h2>Live Matchday</h2>
+          <p id="matchday-info-copy">
+            Open the live night here. Only players on that season squad can appear in the rest
+            of this workflow.
+          </p>
+
+          <div class="section-block" id="matchday-launcher-block" hidden>
+            <h3>Choose a campaign</h3>
+            <p id="matchday-launcher-copy">
+              This page opens the first incomplete matchday for the selected campaign, or the latest
+              one if the campaign is already complete.
+            </p>
+            <div class="field">
+              <label for="matchday-season-select">Campaign</label>
+              <select id="matchday-season-select">
+                <option value="">Loading seasons...</option>
+              </select>
+            </div>
+            <div class="actions">
+              <button class="primary-button" type="button" id="open-season-matchday-button">Open night</button>
+              <a class="secondary-button" href="./seasons.html" id="create-season-link">Season Centre</a>
+            </div>
+            <p class="micro-note" id="matchday-launcher-note">Choose a campaign to continue.</p>
+          </div>
+
+          <div class="field">
+            <label for="player-search">Search players on this matchday</label>
+            <input id="player-search" type="search" placeholder="Search by name, nickname, nationality, or position" />
+          </div>
+
+          <section class="section-block">
+            <div class="panel-header">
+              <div>
+                <h3 class="section-title">Late replacements</h3>
+                <p class="section-copy">
+                  Rostered players already appear in attendance below. Use this only when a replacement
+                  exists in the squad register but is missing from the current season squad.
+                </p>
+              </div>
+              <a class="ghost-link" href="./index.html" id="open-player-directory-link">Open squad register</a>
+            </div>
+            <div class="field-grid">
+              <div class="field">
+                <label for="replacement-player-select">Replacement player</label>
+                <select id="replacement-player-select">
+                  <option value="">Choose a replacement player</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="replacement-tier-status">This season tier</label>
+                <select id="replacement-tier-status">
+                  <option value="core">Core</option>
+                  <option value="rotation" selected>Rotation</option>
+                  <option value="flex_sub">Flex/Sub</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="replacement-attendance-status">Set availability</label>
+                <select id="replacement-attendance-status">
+                  <option value="available" selected>Available</option>
+                  <option value="in">IN now</option>
+                </select>
+              </div>
+            </div>
+            <div class="actions">
+              <button class="secondary-button" type="button" id="replacement-add-button">Add to season squad</button>
+              <a class="secondary-button" href="./seasons.html" id="open-season-roster-link">Open season squad</a>
+            </div>
+            <p class="micro-note" id="replacement-note">
+              Pull from an inactive season squad spot or add a squad player into this season,
+              then continue with attendance and team assignment.
+            </p>
+          </section>
+
+          <p id="matchday-status-line" class="status-line">Loading the match center...</p>
+
+          <section class="weather-panel" id="matchday-weather-panel">
+            <h3>Weather</h3>
+            <p><strong id="matchday-weather-venue">Alden E. Oliver</strong></p>
+            <p id="matchday-weather-headline">Kickoff not scheduled</p>
+            <p id="matchday-weather-copy">Set a kickoff time to load the forecast for this matchday.</p>
+            <div class="badge-row weather-chip-row" id="matchday-weather-chips"></div>
+          </section>
+
+          <section class="rule-toggle">
+            <h3>Goal rule</h3>
+            <p id="goals-points-copy">
+              Open a matchday to decide whether team goals add directly to total points on this day.
+            </p>
+            <button id="goals-points-toggle" class="secondary-button toggle-button" type="button">Goals excluded</button>
+          </section>
+
+          <details open>
+            <summary>Scoring settings</summary>
+            <p>These season-wide rules apply everywhere. Team goals only count on matchdays where the toggle above is enabled.</p>
+            <div class="field-grid">
+              <div class="field">
+                <label for="attendance-points">Attendance points</label>
+                <input id="attendance-points" type="number" min="0" step="1" value="2" />
+              </div>
+              <div class="field">
+                <label for="win-points">Win points</label>
+                <input id="win-points" type="number" min="0" step="1" value="2" />
+              </div>
+              <div class="field">
+                <label for="draw-points">Draw points</label>
+                <input id="draw-points" type="number" min="0" step="1" value="1" />
+              </div>
+              <div class="field">
+                <label for="loss-points">Loss points</label>
+                <input id="loss-points" type="number" min="0" step="1" value="0" />
+              </div>
+              <div class="field">
+                <label for="goal-keep-points">Goalkeeper points</label>
+                <input id="goal-keep-points" type="number" min="0" step="1" value="1" />
+              </div>
+              <div class="field">
+                <label for="team-goal-points">Team-goal points</label>
+                <input id="team-goal-points" type="number" min="0" step="1" value="1" />
+              </div>
+            </div>
+            <div class="actions">
+              <button class="secondary-button" type="button" id="save-scoring-button">Save scoring rules</button>
+            </div>
+          </details>
+
+          <details>
+            <summary>Team labels</summary>
+            <p>Edit team names and colors for the season. Admin and public pages use the same labels.</p>
+            <div class="team-display-grid" id="team-display-grid"></div>
+            <div class="actions">
+              <button class="secondary-button" type="button" id="reset-team-display-button">Reset team labels</button>
+              <button class="secondary-button" type="button" id="save-team-display-button">Save team labels</button>
+            </div>
+          </details>
+
+          <div class="actions">
+            <a class="secondary-button" href="./standings.html">Open standings</a>
+            <a class="secondary-button" href="./tiers.html">Open tiers</a>
+          </div>
+        </section>
+
+        <div class="detail-stack">
+          <section class="panel detail-panel" id="attendance-step" hidden>
+            <div class="group-head">
+              <div>
+                <div class="section-label">Step 1</div>
+                <h2>Attendance</h2>
+                <p>Set each player's matchday status. Only players marked as <strong>IN</strong> can be placed on a team.</p>
+              </div>
+              <div class="count-badge">
+                <span>Current pool</span>
+                <strong id="attendance-badge">0</strong>
+              </div>
+            </div>
+
+            <section class="section-block">
+              <div class="panel-header">
+                <div>
+                  <h3 class="section-title">Weekly queue</h3>
+                  <p class="section-copy">
+                    Core players are considered first. Rotation players with fewer model-era appearances
+                    come next. Flex/Sub fills the remaining space.
+                  </p>
+                </div>
+                <button class="secondary-button" type="button" id="priority-fill-button" disabled>Apply queue priority</button>
+              </div>
+              <div id="priority-summary-grid" class="summary-grid"></div>
+              <div id="priority-board-wrap" class="table-wrap"></div>
+            </section>
+
+            <div id="attendance-grid" class="player-grid"></div>
+          </section>
+
+          <section class="panel detail-panel" id="teams-step" hidden>
+            <div class="section-label">Step 2</div>
+            <h2>Teams and Player Stats</h2>
+            <p>Assign checked-in players to the four teams. Player stat entry lives inside the team cards.</p>
+            <section class="team-grid" id="team-grid"></section>
+          </section>
+
+          <section class="panel detail-panel" id="scores-step" hidden>
+            <div class="section-label">Step 3</div>
+            <h2>Match Results</h2>
+            <p>
+              Save the four bracket scores. Round 1 is fixed. Round 2 resolves from those results as
+              winners vs winners and losers vs losers unless a draw needs a manual choice or a coin flip.
+            </p>
+            <div id="matches-grid" class="match-grid"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <footer class="club-footer">
+      <div class="club-footer-copy">Staff · Match Centre</div>
+    </footer>
+
+    <script src="./assets/js/pages/admin/matchday.js?v=20260425a"></script>
+  </body>
+</html>

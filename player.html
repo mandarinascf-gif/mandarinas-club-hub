@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260425b" />
+    <title>Staff · Player Card</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./assets/js/core/club_logic.js"></script>
+    <script src="./assets/js/core/supabase_config.js"></script>
+    <script src="./assets/js/ui/shell.js?v=20260425a"></script>
+  </head>
+  <body class="manager-touch">
+    <nav class="site-nav">
+      <div class="site-nav-inner">
+        <a href="./index.html" class="site-logo">
+          <span class="logo-dot"></span>
+          <span>Mandarinas <span class="logo-accent">CF</span></span>
+        </a>
+        <div class="nav-links">
+          <a class="nav-link active" href="./index.html">Squad</a>
+          <a class="nav-link" href="./seasons.html">Season</a>
+          <a class="nav-link" href="./matchday.html">Match Centre</a>
+          <a class="nav-link" href="./submissions.html?preview=1">Reports</a>
+          <a class="nav-link" href="./standings.html">Table</a>
+          <a class="nav-link" href="./tiers.html">Planner</a>
+        </div>
+        <a href="./home.html" class="nav-mode-badge">Club</a>
+      </div>
+    </nav>
+
+    <main class="page">
+      <section class="panel page-header">
+        <div class="page-header-main">
+          <div class="section-label">Staff · Player Card</div>
+          <h1 id="hero-copy">Player</h1>
+          <p>View the saved player record first. Edit only when you need to change the data.</p>
+        </div>
+        <div class="actions">
+          <a class="secondary-button" href="./index.html">Back to squad</a>
+          <a class="secondary-button" href="#history-panel">Recent matchdays</a>
+          <button class="primary-button" type="button" id="edit-button">Edit</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-label">Overview</div>
+        <h2>Player Snapshot</h2>
+        <div class="summary-grid">
+          <div class="summary-card">
+            <span>Player ID</span>
+            <strong id="player-id-stat">-</strong>
+            <span class="summary-copy">Squad register id</span>
+          </div>
+          <div class="summary-card">
+            <span>Current rating</span>
+            <strong id="player-rating-stat">-</strong>
+            <span class="summary-copy">Saved overall rating</span>
+          </div>
+        </div>
+      </section>
+
+      <div id="empty-state" class="empty-state" hidden>
+        Missing or invalid player ID. Open this page from the player list.
+      </div>
+
+      <section class="master-detail" id="player-shell" hidden>
+        <section class="panel master-panel" id="player-view-panel">
+          <div class="section-label">View</div>
+          <h2>Player Information</h2>
+          <div id="player-view-body"></div>
+        </section>
+
+        <div class="detail-stack">
+          <section class="panel detail-panel" id="player-edit-panel" hidden>
+            <div class="section-label">Edit</div>
+            <h2>Edit Player</h2>
+
+            <form id="player-form">
+              <fieldset>
+                <legend>Basic details</legend>
+                <div class="field-row">
+                  <div class="field">
+                    <label for="first-name">First name</label>
+                    <input id="first-name" type="text" maxlength="40" required />
+                  </div>
+                  <div class="field">
+                    <label for="last-name">Last name</label>
+                    <input id="last-name" type="text" maxlength="40" required />
+                  </div>
+                </div>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label for="nickname">Nickname</label>
+                    <input id="nickname" type="text" maxlength="50" autocomplete="nickname" />
+                  </div>
+                  <div class="field">
+                    <label for="phone">Phone</label>
+                    <input id="phone" type="tel" maxlength="24" autocomplete="tel" />
+                  </div>
+                </div>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label for="nationality">Nationality</label>
+                    <input id="nationality" type="text" maxlength="50" required />
+                  </div>
+                  <div class="field">
+                    <label for="birth-date">Birth date</label>
+                    <input id="birth-date" type="date" />
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>Playing details</legend>
+                <div class="field-row">
+                  <div class="field">
+                    <label for="status-select">Current / next-season tier</label>
+                    <select id="status-select">
+                      <option value="core">Core</option>
+                      <option value="rotation">Rotation</option>
+                      <option value="flex_sub">Flex/Sub</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="dominant-foot">Preferred foot</label>
+                    <select id="dominant-foot">
+                      <option value="right">Right</option>
+                      <option value="left">Left</option>
+                      <option value="both">Both</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label>Positions (1 to 3)</label>
+                  <div class="role-selector">
+                    <div class="role-grid" id="role-grid">
+                      <button class="role-chip" type="button" data-role="GK">GK</button>
+                      <button class="role-chip" type="button" data-role="DEF">DEF</button>
+                      <button class="role-chip" type="button" data-role="MID">MID</button>
+                      <button class="role-chip" type="button" data-role="ATT">ATT</button>
+                    </div>
+                    <p class="micro-note" id="role-note">Selected roles:</p>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label for="skill-rating">Overall rating</label>
+                  <input id="skill-rating" type="range" min="40" max="99" value="78" />
+                  <p class="micro-note">Current rating: <strong id="rating-value">78</strong></p>
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>Notes</legend>
+                <div class="field">
+                  <label for="notes">Notes</label>
+                  <textarea id="notes" maxlength="240"></textarea>
+                </div>
+              </fieldset>
+
+              <div class="actions">
+                <button class="primary-button" type="submit" id="save-button">Save</button>
+                <button class="secondary-button" type="button" id="cancel-button">Cancel</button>
+                <button class="danger-button" type="button" id="delete-button">Delete</button>
+              </div>
+
+              <p id="status-line" class="status-line">Loading profile...</p>
+            </form>
+          </section>
+
+          <section class="panel detail-panel" id="history-panel">
+            <div class="section-label">Timeline</div>
+            <h2>Recent Matchdays</h2>
+            <p><strong id="history-summary">0 entries</strong></p>
+            <p id="history-status" class="status-line">Loading matchday history...</p>
+            <div class="history-shell" id="history-shell"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <footer class="club-footer">
+      <div class="club-footer-copy">Staff · Player Card</div>
+    </footer>
+
+    <script src="./assets/js/pages/admin/player.js?v=20260425a"></script>
+  </body>
+</html>

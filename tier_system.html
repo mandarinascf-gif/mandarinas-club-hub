@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260425b" />
+  <title>Club · Pathway</title>
+  <script src="./assets/js/ui/shell.js?v=20260425a" defer></script>
+</head>
+<body class="manager-touch">
+  <nav class="site-nav">
+    <div class="site-nav-inner">
+      <a href="./home.html" class="site-logo">
+        <span class="logo-dot"></span>
+        <span>Mandarinas <span class="logo-accent">CF</span></span>
+      </a>
+      <div class="nav-links">
+        <a class="nav-link" href="./home.html">Club HQ</a>
+        <a class="nav-link" href="./schedule.html">Fixtures</a>
+        <a class="nav-link" href="./public_standings.html">Table</a>
+        <a class="nav-link" href="./roster.html">Squad</a>
+        <a class="nav-link active" href="./tier_system.html">Pathway</a>
+        <a class="nav-link" href="./tier_watch.html">Tracker</a>
+      </div>
+      <a href="./staff.html" class="nav-mode-badge">Staff</a>
+    </div>
+  </nav>
+
+    <main class="page tier-page">
+    <section class="panel page-header">
+      <div class="page-header-main">
+        <div class="section-label">Club · Pathway</div>
+        <h1>Pathway Guide</h1>
+        <p>
+          This guide explains the tier system in plain language. The goal is simple: reward reliable
+          attendance, keep weekly access fair, and make roster choices easy to explain.
+        </p>
+      </div>
+      <div class="actions">
+        <a class="primary-button" href="./tier_watch.html">Open tracker</a>
+        <a class="secondary-button" href="./roster.html">Open squad</a>
+        <a class="secondary-button" href="#common-questions">Common questions</a>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-label">Snapshot</div>
+      <h2>Short version</h2>
+      <div class="summary-grid">
+        <div class="summary-card">
+          <span>Core</span>
+          <strong>First access</strong>
+          <span class="summary-copy">Reliable weekly players are considered first.</span>
+        </div>
+        <div class="summary-card">
+          <span>Rotation</span>
+          <strong>Queue based</strong>
+          <span class="summary-copy">Active players share the next set of spots through a queue.</span>
+        </div>
+        <div class="summary-card">
+          <span>Flex/Sub</span>
+          <strong>Remaining openings</strong>
+          <span class="summary-copy">Depth players fill what is left after Core and Rotation.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-label">Flow</div>
+      <h2>How weekly access works</h2>
+      <ol>
+        <li>Core players get first claim on the available roster spots.</li>
+        <li>Rotation players are then ordered by fewer season appearances first.</li>
+        <li>Flex/Sub fills whatever spots are still open.</li>
+        <li>On matchday, the confirmed roster moves into team assignment and stat tracking.</li>
+      </ol>
+    </section>
+
+    <section class="panel">
+      <div class="section-label">Definitions</div>
+      <h2>What each tier usually means</h2>
+      <dl>
+        <dt>Core</dt>
+        <dd>Most reliable weekly players. They are usually in if they are available.</dd>
+        <dt>Rotation</dt>
+        <dd>Active players sharing weekly access fairly. The queue decides who is next up.</dd>
+        <dt>Flex/Sub</dt>
+        <dd>Depth players, occasional players, or newer players who fill the remaining openings.</dd>
+      </dl>
+    </section>
+
+    <section class="panel">
+      <div class="section-label">Example</div>
+      <h2>Queue example</h2>
+      <p>
+        If ten Rotation spots are open, the players with the fewest season appearances go first.
+        A player with 3 games is ahead of a player with 5 games. If two players are tied, the app
+        keeps them in the queue order it already has for that season.
+      </p>
+      <ol>
+        <li>Alex has 3 games, so Alex is near the front.</li>
+        <li>Ben also has 3 games, so Ben is also near the front.</li>
+        <li>Chris has 4 games, so Chris is after the 3-game group.</li>
+        <li>Players with 5 or 6 games wait until the lower totals are handled first.</li>
+      </ol>
+    </section>
+
+    <section class="panel" id="common-questions">
+      <div class="section-label">Questions</div>
+      <h2>Common questions</h2>
+      <details open>
+        <summary>Does a strong player always belong in Core?</summary>
+        <p>No. The app focuses on reliability and season attendance, not just playing level.</p>
+      </details>
+      <details>
+        <summary>Can a player move up or down?</summary>
+        <p>Yes. Pathway Planner reviews attendance evidence and recommends changes for the next season.</p>
+      </details>
+      <details>
+        <summary>What is the difference between current / next-season tier and this season tier?</summary>
+        <p>
+          Current / next-season tier comes from the squad register. This season tier is the actual tier used on the
+          active roster for the selected season.
+        </p>
+      </details>
+      <details>
+        <summary>Why is the queue important?</summary>
+        <p>It helps Rotation players share access fairly over the full season.</p>
+      </details>
+    </section>
+  </main>
+
+  <footer class="club-footer">
+    <div class="club-footer-copy">Club · Pathway</div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Mandarinas CF">
+  <defs>
+    <linearGradient id="mcf-peel" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#f7a64e" />
+      <stop offset="100%" stop-color="#d96c1f" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="#fff7ee" />
+  <path
+    d="M32 11c-11.6 0-21 9.4-21 21 0 12 9.7 21 21 21s21-9 21-21c0-11.6-9.4-21-21-21Z"
+    fill="url(#mcf-peel)"
+  />
+  <path
+    d="M32 17c-8.3 0-15 6.7-15 15 0 8.6 6.9 15 15 15s15-6.4 15-15c0-8.3-6.7-15-15-15Z"
+    fill="none"
+    opacity=".24"
+    stroke="#fff7ee"
+    stroke-width="2.5"
+  />
+  <path
+    d="M32 14c2.6-4 6.8-5.8 12.5-5.5-1.4 4.8-4.5 7.5-9.4 8.3"
+    fill="none"
+    stroke="#2f8b55"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="3"
+  />
+  <path
+    d="M25.5 26.5 19 37.5h6l4.2-7 4.2 7h6l-6.5-11h-7.4Zm13.3 0-2.7 4.5 5.2 8.5h6.2l-5.2-8.5 2.8-4.5h-6.3Z"
+    fill="#fffaf3"
+  />
+</svg>

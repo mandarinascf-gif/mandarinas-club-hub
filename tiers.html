@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260425b" />
+    <title>Staff · Planner</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./assets/js/core/club_logic.js"></script>
+    <script src="./assets/js/core/supabase_config.js"></script>
+    <script src="./assets/js/ui/shell.js?v=20260425a"></script>
+  </head>
+  <body class="manager-touch">
+    <nav class="site-nav">
+      <div class="site-nav-inner">
+        <a href="./index.html" class="site-logo"><span class="logo-dot"></span><span>Mandarinas <span class="logo-accent">CF</span></span></a>
+        <div class="nav-links">
+          <a class="nav-link" href="./index.html">Squad</a>
+          <a class="nav-link" href="./seasons.html">Season</a>
+          <a class="nav-link" href="./matchday.html">Match Centre</a>
+          <a class="nav-link" href="./submissions.html?preview=1">Reports</a>
+          <a class="nav-link" href="./standings.html">Table</a>
+          <a class="nav-link active" href="./tiers.html">Planner</a>
+        </div>
+        <a href="./home.html" class="nav-mode-badge">Club</a>
+      </div>
+    </nav>
+    <main class="page tier-admin-layout">
+      <section class="panel page-header">
+        <div class="page-header-main">
+          <div class="section-label">Staff · Planner</div>
+          <h1>Pathway Planner</h1>
+          <p id="hero-copy">
+            This page keeps the live queue separate from the future recommendation plan. Read the queue
+            first, then review recommended changes.
+          </p>
+        </div>
+        <div class="actions">
+          <a class="primary-button" href="#priority-strip">Open live queue</a>
+          <a class="secondary-button" href="#tier-grid">Open recommendation board</a>
+          <a class="secondary-button" href="./matchday.html">Back to matchday</a>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-label">Overview</div>
+        <h2>Planner Snapshot</h2>
+        <div class="summary-grid">
+          <div class="summary-card">
+            <span>Season</span>
+            <strong id="season-count-stat">-</strong>
+            <span class="summary-copy">Current planning context</span>
+          </div>
+          <div class="summary-card">
+            <span>Weighted spot plan</span>
+            <strong id="spot-mix-stat">0 / 36</strong>
+            <span class="summary-copy">Suggested season mix</span>
+          </div>
+          <div class="summary-card">
+            <span>Recommended changes</span>
+            <strong id="change-count-stat">0</strong>
+            <span class="summary-copy">Current vs suggested</span>
+          </div>
+          <div class="summary-card">
+            <span>Players evaluated</span>
+            <strong id="eligible-count-stat">0</strong>
+            <span class="summary-copy">Rows in the planner</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-label">Controls</div>
+        <h2>Choose a Campaign</h2>
+        <p id="board-copy">
+          Queue order uses season totals. Recommendations compare recent, season, and historical
+          attendance and always land on a weighted 36-spot plan.
+        </p>
+        <p>Selected season: <strong id="selected-season-pill">No season selected</strong></p>
+
+        <div class="field">
+          <label for="season-select">Season</label>
+          <select id="season-select"></select>
+        </div>
+
+        <div class="actions">
+          <button class="secondary-button" type="button" id="refresh-button">Reload planner</button>
+          <button class="primary-button" type="button" id="apply-all-button">Apply all recommendations</button>
+        </div>
+
+        <div class="filter-row" id="filter-row">
+          <button class="filter-chip active" type="button" data-filter="all">All</button>
+          <button class="filter-chip" type="button" data-filter="core">Core</button>
+          <button class="filter-chip" type="button" data-filter="rotation">Rotation</button>
+          <button class="filter-chip" type="button" data-filter="flex_sub">Flex/Sub</button>
+        </div>
+
+        <p id="status-line" class="status-line">Loading club data...</p>
+      </section>
+
+      <section class="panel">
+        <div class="section-label">Live</div>
+        <h2>Live Queue</h2>
+        <p>Use this list for the current season. It shows who is next up right now.</p>
+        <div class="table-shell tier-admin-table-wrap" id="priority-strip"></div>
+      </section>
+
+      <section class="panel">
+        <div class="section-label">Recommendations</div>
+        <h2>Recommended Tier Plan</h2>
+        <p>Use this list for review. It is the forward-looking recommendation, not the live queue.</p>
+        <div class="table-shell tier-admin-table-wrap" id="tier-grid" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <footer class="club-footer">
+      <div class="club-footer-copy">Staff · Planner</div>
+    </footer>
+
+    <script src="./assets/js/pages/admin/tiers.js?v=20260425a"></script>
+  </body>
+</html>

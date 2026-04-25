@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260425c" />
+    <title>Club · Squad</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./assets/js/core/club_logic.js"></script>
+    <script src="./assets/js/core/supabase_config.js"></script>
+    <script src="./assets/js/core/app.js?v=20260425b" defer></script>
+    <script src="./assets/js/ui/shell.js?v=20260425a" defer></script>
+  </head>
+  <body class="manager-touch">
+    <nav class="site-nav">
+      <div class="site-nav-inner">
+        <a href="./home.html" class="site-logo">
+          <span class="logo-dot"></span>
+          <span>Mandarinas <span class="logo-accent">CF</span></span>
+        </a>
+        <div class="nav-links">
+          <a class="nav-link" href="./home.html">Club HQ</a>
+          <a class="nav-link" href="./schedule.html">Fixtures</a>
+          <a class="nav-link" href="./public_standings.html">Table</a>
+          <a class="nav-link active" href="./roster.html">Squad</a>
+          <a class="nav-link" href="./tier_system.html">Pathway</a>
+          <a class="nav-link" href="./tier_watch.html">Tracker</a>
+        </div>
+        <a href="./staff.html" class="nav-mode-badge">Staff</a>
+      </div>
+    </nav>
+
+    <main class="page">
+      <section class="panel page-header">
+        <div class="page-header-main">
+          <div class="section-label">Club · Squad</div>
+          <h1>Squad</h1>
+          <p>Start with the list. Select a player to open the full detail panel.</p>
+          <div class="field">
+            <label for="season-select">Season</label>
+            <select id="season-select"></select>
+          </div>
+        </div>
+        <div class="actions">
+          <a class="primary-button" href="#player-list-panel">Open squad</a>
+          <a class="secondary-button" href="./tier_system.html">Open pathway</a>
+          <a class="secondary-button" href="./public_standings.html">Open table</a>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-label">Overview</div>
+        <h2>Squad Snapshot</h2>
+        <div class="summary-grid">
+          <div class="summary-card">
+            <span>Players</span>
+            <strong id="total-players">0</strong>
+            <span class="summary-copy">Current active roster</span>
+          </div>
+          <div class="summary-card">
+            <span>Rotation tier players</span>
+            <strong id="rotation-players">0</strong>
+            <span class="summary-copy">Active week-to-week depth</span>
+          </div>
+          <div class="summary-card">
+            <span>Core tier players</span>
+            <strong id="core-players">0</strong>
+            <span class="summary-copy">Preferred weekly backbone</span>
+          </div>
+          <div class="summary-card">
+            <span>Season</span>
+            <strong id="season-name">-</strong>
+            <span class="summary-copy">Selected live roster</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="master-detail">
+        <section class="panel master-panel" id="player-list-panel">
+          <div class="section-label">List</div>
+          <h2>Squad List</h2>
+
+          <div class="field">
+            <label for="roster-search">Search roster</label>
+            <input
+              id="roster-search"
+              type="search"
+              placeholder="Search by name, nationality, or position"
+            />
+          </div>
+
+          <div class="section-block">
+            <div class="section-label">Filters</div>
+            <p>Filter by role:</p>
+            <div class="roster-filter-group">
+              <button class="filter-chip active" type="button" data-filter="position" data-value="all">All</button>
+              <button class="filter-chip" type="button" data-filter="position" data-value="GK">GK</button>
+              <button class="filter-chip" type="button" data-filter="position" data-value="DEF">DEF</button>
+              <button class="filter-chip" type="button" data-filter="position" data-value="MID">MID</button>
+              <button class="filter-chip" type="button" data-filter="position" data-value="ATT">ATT</button>
+            </div>
+
+            <p>Filter by tier:</p>
+            <div class="roster-filter-group">
+              <button class="filter-chip active" type="button" data-filter="tier" data-value="all">All</button>
+              <button class="filter-chip" type="button" data-filter="tier" data-value="core">Core</button>
+              <button class="filter-chip" type="button" data-filter="tier" data-value="rotation">Rotation</button>
+              <button class="filter-chip" type="button" data-filter="tier" data-value="flex_sub">Flex/Sub</button>
+            </div>
+          </div>
+
+          <div class="status-line" id="status-line">
+            <span id="status-text">Loading the roster...</span>
+          </div>
+          <div id="player-list" class="roster-grid"></div>
+        </section>
+
+        <div class="detail-stack">
+          <section class="panel detail-panel">
+            <div class="section-label">Detail</div>
+            <h2>Player Detail</h2>
+            <div id="player-detail" class="history-shell">
+              <div class="empty-state">Select a player from the list.</div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <footer class="club-footer">
+      <div class="club-footer-copy">Club · Squad</div>
+    </footer>
+
+    <script src="./assets/js/pages/public/roster.js?v=20260425c"></script>
+  </body>
+</html>

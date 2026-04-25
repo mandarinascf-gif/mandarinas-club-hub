@@ -1,0 +1,82 @@
+# Canonical Players
+
+- A. Espinoza
+- Alex
+- Alex Meneses
+- Alexis
+- Andres Aguayo
+- Antonio Puente
+- Asdruval Villanueva
+- Axel Aguilera
+- Carlos Haro (nickname: Calin)
+- Carlos Silva (nickname: Carlos S)
+- Cesar Lopez
+- Cevallos
+- Chilas
+- Christian
+- Crisanto Valencia (nickname: Valencia)
+- David Toro
+- Eddie
+- Eder Martinez (nickname: Eder)
+- Efrain Jauregui (nickname: Poli)
+- Emilio
+- Enerson
+- Ernesto Haro (nickname: Netto)
+- Estavillo
+- Fabian
+- Fernando Urbano (nickname: Fer)
+- Gabriel Alava (nickname: Gabo)
+- Gerardo Mendizabal
+- Guillermo Lenz (nickname: Bolivia)
+- Gus
+- Gustavo Moreno-Ortiz (nickname: Gustavo)
+- Honorio Hernandez (nickname: Honorio)
+- Iury Da Silva (nickname: Da Silva)
+- Jamie
+- Jayden
+- Jeff
+- Jesus David (nickname: Chuchin)
+- Jhonatan (nickname: Jhonatan A)
+- Jhonatan Ochoa (nickname: Coti)
+- Jhony Sanchez
+- Joaquin
+- Joel Toledo
+- Jordan Toledo (nickname: Jordan)
+- Jose Cerf (nickname: Chato)
+- Jose Sarza
+- Joseph Muro
+- José Blanco (nickname: Isco)
+- José Núñez
+- Juan Pablo Valladares (nickname: Juanpi)
+- Karter
+- Kevin
+- Luis de la Rosa (nickname: Chavito/Taliban)
+- Luis Enrique Martinez (nickname: Cuñis)
+- Luis Marroquin
+- Luis Urueta (nickname: Javier)
+- Michael Enriquez (nickname: Mikey)
+- Miguel (nickname: Miguel A)
+- Mike
+- Min Kim
+- Nicky Diaz
+- Nicolás Galviz
+- Oscar Rosales (nickname: Pirlo)
+- Osmin
+- Pablo Crespin
+- Pedro Silva
+- Ramón
+- Rob
+- Rodolfo Toledo
+- Rodrigo Mena
+- Ruben
+- Rudy Ramirez (nickname: Rudy)
+- Saul
+- Sebastian Leal
+- Sergio
+- Toño
+- Uriel
+- Valverde
+- Victor Nizama (nickname: Victor N)
+- Victor S
+- Walter Acero
+- Yan Carlos
