@@ -150,10 +150,13 @@ li + li {
   grid-area: logo;
   display: inline-flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.8rem;
   color: var(--text);
   font-weight: 700;
   min-height: 44px;
+  font-size: 1.2rem;
+  line-height: 1;
+  letter-spacing: -0.02em;
 }
 
 .site-logo:hover {
@@ -161,8 +164,8 @@ li + li {
 }
 
 .logo-dot {
-  width: 2.3rem;
-  height: 2.3rem;
+  width: 2.9rem;
+  height: 2.9rem;
   flex: none;
   background:
     center / contain no-repeat
@@ -2505,9 +2508,14 @@ body.manager-touch::before {
 }
 
 @media (max-width: 719px) {
+  .site-logo {
+    gap: 0.95rem;
+    font-size: 1.45rem;
+  }
+
   .logo-dot {
-    width: 2rem;
-    height: 2rem;
+    width: 3.5rem;
+    height: 3.5rem;
   }
 
   .club-footer-copy::before,
