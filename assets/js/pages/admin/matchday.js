@@ -1979,6 +1979,86 @@
         }
       }
 
+      async function autoBalanceTeams() {
+        if (!matchday) {
+          return;
+        }
+
+        const attendingPlayers = getAttendingPlayers();
+
+        if (!attendingPlayers.length) {
+          setStatus("No one is marked as IN yet. Build the availability pool first.", "warning");
+          return;
+        }
+
+        if (attendingPlayers.length > ROSTER_CAP) {
+          setStatus(`The current IN pool is above the ${ROSTER_CAP}-player team cap. Use the queue tools first.`, "warning");
+          return;
+        }
+
+        const button = teamGrid.querySelector("#auto-balance-button");
+
+        try {
+          if (button) {
+            button.disabled = true;
+            button.textContent = "Balancing...";
+          }
+
+          const result = buildBalancedTeams(attendingPlayers, buildTeamBalanceOptions());
+
+          if (!result?.ok) {
+            setStatus(result?.reason || "Auto-balance could not build teams from the current IN pool.", "error");
+            return;
+          }
+
+          const payload = result.assignments.map((assignment) => ({
+            matchday_id: matchday.id,
+            player_id: assignment.player_id,
+            team_code: assignment.team_code,
+          }));
+
+          const { error: upsertError } = await supabaseClient
+            .from("matchday_assignments")
+            .upsert(payload, { onConflict: "matchday_id,player_id" });
+
+          if (upsertError) {
+            throw upsertError;
+          }
+
+          const attendingIds = new Set(attendingPlayers.map((player) => player.id));
+          const staleAssignmentIds = assignments
+            .filter((assignment) => !attendingIds.has(assignment.player_id))
+            .map((assignment) => assignment.id);
+
+          if (staleAssignmentIds.length) {
+            const { error: deleteError } = await supabaseClient
+              .from("matchday_assignments")
+              .delete()
+              .in("id", staleAssignmentIds);
+
+            if (deleteError) {
+              throw deleteError;
+            }
+          }
+
+          await loadMatchdayEngine();
+          setStatus(
+            `Auto-balance saved. Skill spread ${formatBalanceMetric(result.summary.skillSpread)} · age spread ${formatBalanceMetric(
+              result.summary.ageSpread,
+              "y"
+            )} · repeat load ${formatBalanceMetric(result.summary.teammateRepeatLoad, "", 0)}.`,
+            "success"
+          );
+        } catch (error) {
+          setStatus(readableError(error), "error");
+        } finally {
+          if (button) {
+            button.disabled = false;
+            button.textContent = "Auto-balance teams";
+          }
+        }
+      }
+
       async function saveStatForm(playerId, form) {
         const goals = Number(form.querySelector("[name='goals']").value || "0");
         const goalKeeps = Number(form.querySelector("[name='goal_keeps']").value || "0");
@@ -2311,10 +2391,21 @@
 
       function renderTeams() {
         const unassignedPlayers = getUnassignedPlayers();
+        const balanceSummary = currentTeamBalanceSummary();
 
         teamGrid.innerHTML = `
           <div class="resolution-box team-guide">
-            <strong>Move players quickly</strong>
+            <strong>Balance teams for tonight</strong>
+            <p class="micro-note">
+              Auto-balance uses player skill rating, birth date, primary position, and same-team history
+              from earlier matchdays in this season. You can still drag cards after it runs.
+            </p>
+            <div class="actions">
+              <button class="secondary-button" type="button" id="auto-balance-button" ${
+                getAttendingPlayers().length ? "" : "disabled"
+              }>Auto-balance teams</button>
+            </div>
+            ${autoBalanceSummaryMarkup(balanceSummary)}
             <p class="micro-note">
               Drag cards between team panels on desktop. On mobile, use the team buttons inside each player card.
             </p>
@@ -2348,6 +2439,7 @@
                   <div>
                     <h2 class="group-title">${team.label}</h2>
                     <p class="group-copy">${team.maxPlayers} player cap for this team.</p>
+                    ${teamBalanceSummaryMarkup(balanceSummary, team.code)}
                   </div>
                   <div class="count-badge">
                     <span>Count</span>
@@ -2673,6 +2765,13 @@
       });
 
       teamGrid.addEventListener("click", async (event) => {
+        const autoBalanceButton = event.target.closest("#auto-balance-button");
+
+        if (autoBalanceButton) {
+          await autoBalanceTeams();
+          return;
+        }
+
         const assignButton = event.target.closest("[data-player-id][data-team-code]");
 
         if (assignButton) {
