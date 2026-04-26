@@ -92,6 +92,33 @@ function formatStatusLabel(value) {
   return value ? value.charAt(0).toUpperCase() + value.slice(1) : "Rotation";
 }
 
+function tierSortRank(status) {
+  if (status === "core") {
+    return 0;
+  }
+  if (status === "rotation") {
+    return 1;
+  }
+  if (status === "flex_sub") {
+    return 2;
+  }
+  return 3;
+}
+
+function comparePlayersForRoster(left, right) {
+  const tierDifference = tierSortRank(left?.status) - tierSortRank(right?.status);
+  if (tierDifference !== 0) {
+    return tierDifference;
+  }
+
+  const displayDifference = displayName(left).localeCompare(displayName(right));
+  if (displayDifference !== 0) {
+    return displayDifference;
+  }
+
+  return fullName(left).localeCompare(fullName(right));
+}
+
 function tierOptionsMarkup(selectedValue) {
   return ["core", "rotation", "flex_sub"]
     .map(
@@ -248,7 +275,7 @@ function getFilteredPlayers() {
 
       return haystack.includes(searchValue);
     })
-    .sort((left, right) => displayName(left).localeCompare(displayName(right)));
+    .sort(comparePlayersForRoster);
 }
 
 function renderRoster() {

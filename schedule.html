@@ -4,13 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="./assets/css/app.css?v=20260425b" />
-    <title>Club · Fixtures</title>
+    <title>Club · Season</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/js/core/club_logic.js"></script>
     <script src="./assets/js/core/supabase_config.js"></script>
     <script src="./assets/js/core/weather.js"></script>
     <script src="./assets/js/core/app.js?v=20260425b" defer></script>
-    <script src="./assets/js/ui/shell.js?v=20260425a" defer></script>
+    <script src="./assets/js/ui/shell.js?v=20260426e" defer></script>
   </head>
   <body class="manager-touch">
     <nav class="site-nav">
@@ -20,21 +20,20 @@
           <span>Mandarinas <span class="logo-accent">CF</span></span>
         </a>
         <div class="nav-links">
-          <a class="nav-link" href="./home.html">Club HQ</a>
-          <a class="nav-link active" href="./schedule.html">Fixtures</a>
-          <a class="nav-link" href="./public_standings.html">Table</a>
+          <a class="nav-link" href="./home.html">Home</a>
+          <a class="nav-link active" href="./schedule.html">Season</a>
           <a class="nav-link" href="./roster.html">Squad</a>
-          <a class="nav-link" href="./tier_system.html">Pathway</a>
-          <a class="nav-link" href="./tier_watch.html">Tracker</a>
+          <a class="nav-link" href="./videos.html">Match Videos</a>
+          <a class="nav-link" href="./submissions.html?view=suggestions">Suggestions</a>
         </div>
-        <a href="./staff.html" class="nav-mode-badge">Staff</a>
+        <a href="./busses.html" class="nav-mode-badge">Busses</a>
       </div>
     </nav>
 
     <main class="page">
       <section class="panel page-header">
         <div class="page-header-main">
-          <div class="section-label">Club · Fixtures</div>
+          <div class="section-label">Club · Season</div>
           <h1>Fixtures & Results</h1>
           <p id="hero-copy">Browse matchdays for the selected season and open one detail view at a time.</p>
           <div class="field">
@@ -44,8 +43,8 @@
         </div>
         <div class="actions">
           <a class="primary-button" href="#matchday-list-panel">Open fixtures</a>
-          <a class="secondary-button" href="./public_standings.html">Open table</a>
-          <a class="secondary-button" href="./home.html">Club HQ</a>
+          <a class="secondary-button" href="./public_standings.html">Open standings</a>
+          <a class="secondary-button" href="./tier_watch.html">Open queue</a>
         </div>
       </section>
 
@@ -97,7 +96,7 @@
     </main>
 
     <footer class="club-footer">
-      <div class="club-footer-copy">Club · Fixtures</div>
+      <div class="club-footer-copy">Club · Season</div>
     </footer>
 
     <script src="./assets/js/pages/public/schedule.js?v=20260426a"></script>

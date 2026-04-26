@@ -4,14 +4,16 @@
   const ADMIN_CODE = "1234";
   const ADMIN_STATE_KEY = "mcfAdminUnlocked";
   const PUBLIC_FALLBACK = "./home.html";
-  const STAFF_ACCESS_PAGE = "staff.html";
+  const BUSSES_ACCESS_PAGE = "busses.html";
   const SEASON_CONTEXT_PAGES = new Set([
     "schedule.html",
     "public_standings.html",
     "roster.html",
+    "submissions.html",
     "tier_watch.html",
+    "videos.html",
   ]);
-  const STAFF_PREVIEW_PAGES = new Set(["submissions.html", "ratings.html"]);
+  const BUSSES_PREVIEW_PAGES = new Set(["submissions.html", "ratings.html"]);
   const SOCIAL_LINKS = [
     {
       label: "Instagram",
@@ -38,31 +40,7 @@
   let adminAccessModalRefs = null;
   let pendingAdminAccess = null;
   const scrollHintRefs = new WeakMap();
-  const numberAnimationFrames = new WeakMap();
-  const motionTargetsSelector = [
-    ".page > .panel",
-    ".page > .master-detail > *",
-    ".detail-stack > .panel",
-    ".summary-card",
-    ".section-block",
-    ".workspace-toolbar",
-    ".site-modal-card",
-    ".leader-row",
-    ".list-item",
-    ".detail-card",
-    ".timeline-item",
-    ".champion-card",
-    ".match-row",
-    ".status-line",
-    ".empty-state",
-  ].join(", ");
-  const motionPreferenceQuery =
-    typeof window.matchMedia === "function"
-      ? window.matchMedia("(prefers-reduced-motion: reduce)")
-      : null;
-  const modalHideTimers = new WeakMap();
   let historyListenersInstalled = false;
-  let motionObserver = null;
 
   function currentPageName() {
     const path = window.location.pathname || "";
@@ -93,14 +71,14 @@
     return Number.isFinite(seasonId) && seasonId > 0 ? seasonId : null;
   }
 
-  function isStaffPreviewUrl(urlLike) {
+  function isBussesPreviewUrl(urlLike) {
     const url = resolveUrl(urlLike);
     if (!url) {
       return false;
     }
 
     const pageName = url.pathname.split("/").pop() || "index.html";
-    return STAFF_PREVIEW_PAGES.has(pageName) && url.searchParams.get("preview") === "1";
+    return BUSSES_PREVIEW_PAGES.has(pageName) && url.searchParams.get("preview") === "1";
   }
 
   function isProtectedUrl(urlLike) {
@@ -110,15 +88,15 @@
     }
 
     const pageName = url.pathname.split("/").pop() || "index.html";
-    return ADMIN_PAGES.has(pageName) || isStaffPreviewUrl(url);
+    return ADMIN_PAGES.has(pageName) || isBussesPreviewUrl(url);
   }
 
-  function staffAccessHref(nextHref = window.location.href) {
-    const accessUrl = resolveUrl(`./${STAFF_ACCESS_PAGE}`);
+  function bussesAccessHref(nextHref = window.location.href) {
+    const accessUrl = resolveUrl(`./${BUSSES_ACCESS_PAGE}`);
     const targetUrl = resolveUrl(nextHref);
 
     if (!accessUrl || !targetUrl) {
-      return `./${STAFF_ACCESS_PAGE}`;
+      return `./${BUSSES_ACCESS_PAGE}`;
     }
 
     accessUrl.searchParams.set("next", relativeHrefFromUrl(targetUrl));
@@ -160,203 +138,16 @@
     });
   }
 
-  function prefersReducedMotion() {
-    return motionPreferenceQuery?.matches === true;
-  }
-
-  function collectMotionTargets(root = document) {
-    const targets = [];
-
-    if (root?.nodeType === Node.ELEMENT_NODE && root.matches?.(motionTargetsSelector)) {
-      targets.push(root);
-    }
-
-    if (typeof root?.querySelectorAll === "function") {
-      targets.push(...root.querySelectorAll(motionTargetsSelector));
-    }
-
-    return [...new Set(targets)];
-  }
-
-  function shouldSkipMotionTarget(element) {
-    return !element || element.hidden || element.closest("[hidden]");
-  }
-
-  function ensureMotionObserver() {
-    if (motionObserver || prefersReducedMotion() || typeof IntersectionObserver !== "function") {
-      return motionObserver;
-    }
-
-    motionObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) {
-            return;
-          }
-
-          entry.target.classList.add("is-visible");
-          motionObserver?.unobserve(entry.target);
-        });
-      },
-      {
-        threshold: 0.12,
-        rootMargin: "0px 0px -10% 0px",
-      }
-    );
-
-    return motionObserver;
-  }
-
-  function refreshMotion(root = document) {
-    const observer = ensureMotionObserver();
-    let staggerIndex = 0;
-
-    collectMotionTargets(root).forEach((element) => {
-      if (shouldSkipMotionTarget(element)) {
-        return;
-      }
-
-      if (!element.classList.contains("motion-reveal")) {
-        element.classList.add("motion-reveal");
-      }
-
-      if (!element.style.getPropertyValue("--motion-delay")) {
-        element.style.setProperty("--motion-delay", `${Math.min(staggerIndex, 6) * 40}ms`);
-        staggerIndex += 1;
-      }
-
-      if (prefersReducedMotion() || !observer) {
-        element.classList.add("is-visible");
-        return;
-      }
-
-      if (element.classList.contains("is-visible")) {
-        return;
-      }
-
-      const rect = element.getBoundingClientRect();
-      if (rect.top <= window.innerHeight * 0.92) {
-        window.requestAnimationFrame(() => element.classList.add("is-visible"));
-        return;
-      }
-
-      observer.observe(element);
-    });
-  }
-
-  function pulseSurface(element, className = "motion-swap") {
-    if (!element || prefersReducedMotion()) {
-      return;
-    }
-
-    element.classList.remove(className);
-    void element.offsetWidth;
-
-    const removeClass = () => {
-      element.classList.remove(className);
-      element.removeEventListener("animationend", removeClass);
-    };
-
-    element.addEventListener("animationend", removeClass);
-    element.classList.add(className);
-  }
-
-  function supportsHaptics() {
-    return typeof navigator !== "undefined" && typeof navigator.vibrate === "function";
-  }
-
-  function triggerHaptic(pattern = 8) {
-    if (prefersReducedMotion() || !supportsHaptics()) {
-      return false;
-    }
-
-    try {
-      return navigator.vibrate(pattern);
-    } catch (error) {
-      return false;
-    }
-  }
-
-  function playFeedback(element, options = {}) {
-    const className = options.className || "ball-tap";
-    pulseSurface(element, className);
-
-    if (options.vibrationPattern != null) {
-      triggerHaptic(options.vibrationPattern);
-    }
-  }
-
-  function animateNumber(element, nextValue, options = {}) {
-    if (!element) {
-      return;
-    }
-
-    const endValue = Number(nextValue);
-    if (!Number.isFinite(endValue)) {
-      element.textContent = String(nextValue);
-      return;
-    }
-
-    const duration = Number.isFinite(options.duration) ? Number(options.duration) : 560;
-    const existingFrame = numberAnimationFrames.get(element);
-    if (existingFrame) {
-      window.cancelAnimationFrame(existingFrame);
-      numberAnimationFrames.delete(element);
-    }
-
-    const previousValue = Number(element.dataset.motionValue ?? element.textContent);
-    const startValue = Number.isFinite(previousValue) ? previousValue : 0;
-    element.dataset.motionValue = String(endValue);
-
-    if (prefersReducedMotion() || duration <= 0 || startValue === endValue) {
-      element.textContent = String(endValue);
-      return;
-    }
-
-    pulseSurface(element, "count-bump");
-
-    let startTime = 0;
-    const tick = (timestamp) => {
-      if (!startTime) {
-        startTime = timestamp;
-      }
-
-      const progress = Math.min((timestamp - startTime) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      const currentValue = startValue + (endValue - startValue) * eased;
-
-      element.textContent = String(Math.round(currentValue));
-
-      if (progress < 1) {
-        numberAnimationFrames.set(element, window.requestAnimationFrame(tick));
-        return;
-      }
-
-      element.textContent = String(endValue);
-      numberAnimationFrames.delete(element);
-    };
-
-    numberAnimationFrames.set(element, window.requestAnimationFrame(tick));
-  }
-
   function setModalOpen(isOpen) {
     const refs = adminAccessModalRefs;
     if (!refs) {
       return;
     }
 
+    refs.root.hidden = !isOpen;
     document.body.classList.toggle("modal-open", isOpen);
 
-    const pendingHide = modalHideTimers.get(refs.root);
-    if (pendingHide) {
-      window.clearTimeout(pendingHide);
-      modalHideTimers.delete(refs.root);
-    }
-
     if (isOpen) {
-      refs.root.hidden = false;
-      refs.root.classList.remove("is-open");
-      window.requestAnimationFrame(() => refs.root.classList.add("is-open"));
       refs.form.reset();
       refs.status.hidden = true;
       refs.status.textContent = "";
@@ -364,16 +155,8 @@
       return;
     }
 
-    refs.root.classList.remove("is-open");
     refs.status.hidden = true;
     refs.status.textContent = "";
-
-    const hideTimer = window.setTimeout(() => {
-      refs.root.hidden = true;
-      modalHideTimers.delete(refs.root);
-    }, 240);
-
-    modalHideTimers.set(refs.root, hideTimer);
   }
 
   function ensureAdminAccessModal() {
@@ -395,20 +178,20 @@
       >
         <div class="site-modal-head">
           <div>
-            <div class="section-label">Staff Access</div>
-            <h2 class="site-modal-title" id="admin-access-title">Enter staff code</h2>
-            <p class="mini-sub">Use the current staff code to open the staff workspace in this browser tab.</p>
+            <div class="section-label">Busses Access</div>
+            <h2 class="site-modal-title" id="admin-access-title">Enter busses code</h2>
+            <p class="mini-sub">Use the current busses code to open the busses workspace in this browser tab.</p>
           </div>
           <button class="ghost-button" type="button" data-admin-modal-close>Cancel</button>
         </div>
         <form class="site-modal-body" id="admin-access-form">
           <div class="field">
-            <label for="admin-access-input">Staff code</label>
+            <label for="admin-access-input">Busses code</label>
             <input id="admin-access-input" name="admin_code" type="password" autocomplete="off" />
           </div>
           <p class="status-line error" id="admin-access-status" hidden></p>
           <div class="actions">
-            <button class="primary-button" type="submit">Open staff workspace</button>
+            <button class="primary-button" type="submit">Open busses workspace</button>
             <button class="secondary-button" type="button" data-admin-modal-close>Stay on current page</button>
           </div>
         </form>
@@ -446,7 +229,7 @@
 
       const entered = String(input.value || "").trim();
       if (entered !== ADMIN_CODE) {
-        status.textContent = "Incorrect staff code.";
+        status.textContent = "Incorrect busses code.";
         status.hidden = false;
         input.focus();
         input.select();
@@ -638,7 +421,6 @@
     window.addEventListener("mcf:urlchange", () => {
       syncSeasonAwareLinks();
       ensureHorizontalScrollHints();
-      refreshMotion(document);
     });
   }
 
@@ -687,7 +469,7 @@
     });
 
     if (isProtectedPage && !hasAdminAccess()) {
-      window.location.replace(staffAccessHref(window.location.href));
+      window.location.replace(bussesAccessHref(window.location.href));
     }
   }
 
@@ -698,7 +480,6 @@
     syncSeasonAwareLinks();
     initAdminAccess();
     ensureHorizontalScrollHints();
-    refreshMotion(document);
     window.requestAnimationFrame(() => {
       ensureActiveNavLinkVisible();
       ensureHorizontalScrollHints();
@@ -710,13 +491,7 @@
     requestAdminAccess,
     currentSeasonIdFromUrl,
     syncSeasonAwareLinks,
-    staffAccessHref,
-    refreshMotion,
-    pulseSurface,
-    playFeedback,
-    triggerHaptic,
-    animateNumber,
-    prefersReducedMotion,
+    bussesAccessHref,
   });
 
   if (document.readyState === "loading") {

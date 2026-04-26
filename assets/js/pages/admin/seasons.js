@@ -43,6 +43,8 @@
       const seasonRosterTierStatusSelect = document.getElementById("season-roster-tier-status");
       const seasonRosterPaymentStatusSelect = document.getElementById("season-roster-payment-status");
       const seasonRosterAddButton = document.getElementById("season-roster-add-button");
+      const seasonRosterRequestSummary = document.getElementById("season-roster-request-summary");
+      const seasonRosterRequestWrap = document.getElementById("season-roster-request-wrap");
       const seasonDirectoryPrepSummary = document.getElementById("season-directory-prep-summary");
       const seasonDirectoryPrepWrap = document.getElementById("season-directory-prep-wrap");
       const rosterSummaryGrid = document.getElementById("roster-summary-grid");
@@ -59,15 +61,18 @@
       const seasonViewPanes = Array.from(document.querySelectorAll("[data-season-view]"));
       const seasonSettingsDisclosure = document.getElementById("season-settings-disclosure");
       const seasonRosterToolsDisclosure = document.getElementById("season-roster-tools-disclosure");
+      const seasonRosterRequestsDisclosure = document.getElementById("season-roster-requests-disclosure");
       const seasonDirectoryPrepDisclosure = document.getElementById("season-directory-prep-disclosure");
       const seasonRosterListDisclosure = document.getElementById("season-roster-list-disclosure");
 
       let seasons = [];
       let clubPlayers = [];
+      let seasonRosterRequests = [];
       let selectedSeasonId = Number(params.get("season_id")) || null;
       let activeSeasonView = "list";
       let seasonScheduleDefaultsSupported = true;
       let seasonRosterMetadataSupported = true;
+      let seasonRosterRequestsSupported = true;
       let savingDirectoryTierPlayerIds = new Set();
       let lastRosterDisclosureSeasonId = null;
       const DEFAULT_KICKOFF_LOCAL_TIME = "21:00";
@@ -107,6 +112,19 @@
         return (
           (message.includes("column") || message.includes("schema cache")) &&
           (message.includes("registration_tier") || message.includes("payment_status"))
+        );
+      }
+
+      function hasMissingSeasonRosterRequestTable(error) {
+        const message = String(error?.message || "").toLowerCase();
+        return (
+          message.includes("season_roster_requests") &&
+          (
+            message.includes("relation") ||
+            message.includes("schema cache") ||
+            message.includes("does not exist") ||
+            message.includes("could not find")
+          )
         );
       }
 
@@ -305,6 +323,22 @@
           .sort((left, right) => comparePlayers(left.player, right.player));
       }
 
+      function seasonRosterRequestsForSeason(selectedSeason) {
+        const playerMap = new Map(clubPlayers.map((player) => [player.id, player]));
+
+        return seasonRosterRequests
+          .filter(
+            (row) =>
+              Number(row.season_id) === Number(selectedSeason?.id) &&
+              normalizeText(row.status || "pending").toLowerCase() === "pending"
+          )
+          .map((row) => ({
+            ...normalizeSeasonRosterRequestRow(row),
+            player: row.player_id ? playerMap.get(row.player_id) || null : null,
+          }))
+          .sort((left, right) => new Date(left.created_at) - new Date(right.created_at));
+      }
+
       function rosterTierSyncRows(rows) {
         return (rows || []).filter((row) => row.player && row.player.status !== row.tier_status);
       }
@@ -412,6 +446,7 @@
         const disclosures = {
           settings: seasonSettingsDisclosure,
           tools: seasonRosterToolsDisclosure,
+          requests: seasonRosterRequestsDisclosure,
           prep: seasonDirectoryPrepDisclosure,
           players: seasonRosterListDisclosure,
         };
@@ -457,6 +492,48 @@
           payment_status: normalizePaymentStatus(row.payment_status),
           is_eligible: row.is_eligible !== false,
         };
+      }
+
+      function normalizeSeasonRosterRequestRow(row) {
+        return {
+          ...row,
+          request_type: normalizeText(row.request_type || "directory").toLowerCase(),
+          requester_name: normalizeText(row.requester_name || ""),
+          requester_contact: normalizeText(row.requester_contact || ""),
+          first_name: normalizeText(row.first_name || ""),
+          last_name: normalizeText(row.last_name || ""),
+          nickname: normalizeText(row.nickname || ""),
+          nationality: normalizeText(row.nationality || ""),
+          preferred_positions:
+            Array.isArray(row.preferred_positions) && row.preferred_positions.length
+              ? row.preferred_positions.map((value) => normalizeText(value).toUpperCase())
+              : ["MID"],
+          requested_tier: normalizeText(row.requested_tier || "rotation").toLowerCase(),
+          status: normalizeText(row.status || "pending").toLowerCase(),
+          note: normalizeText(row.note || ""),
+          review_note: normalizeText(row.review_note || ""),
+        };
+      }
+
+      function seasonRosterRequestDisplayName(request) {
+        if (request?.player) {
+          return displayName(request.player);
+        }
+
+        return normalizeText(`${request?.first_name || ""} ${request?.last_name || ""}`);
+      }
+
+      function findDirectoryPlayerByName(firstName, lastName) {
+        const normalizedFirstName = normalizeText(firstName).toLowerCase();
+        const normalizedLastName = normalizeText(lastName).toLowerCase();
+
+        return (
+          clubPlayers.find(
+            (player) =>
+              normalizeText(player.first_name).toLowerCase() === normalizedFirstName &&
+              normalizeText(player.last_name).toLowerCase() === normalizedLastName
+          ) || null
+        );
       }
 
       function updateHeroStats() {
@@ -753,6 +830,21 @@
           if (rosterBulkNote) {
             rosterBulkNote.textContent = "For now, bulk add uses the current / next-season tier from Squad and only pulls players marked Core or Rotation.";
           }
+          seasonRosterRequestSummary.innerHTML = `
+            <div class="summary-card">
+              <span>Pending requests</span>
+              <strong>0</strong>
+            </div>
+            <div class="summary-card">
+              <span>Directory matches</span>
+              <strong>0</strong>
+            </div>
+            <div class="summary-card">
+              <span>New directory asks</span>
+              <strong>0</strong>
+            </div>
+          `;
+          seasonRosterRequestWrap.innerHTML = `<div class="table-empty">Select a season first.</div>`;
           seasonDirectoryPrepSummary.innerHTML = `
             <div class="summary-card">
               <span>Addable players</span>
@@ -864,9 +956,14 @@
         const pendingCount = rosterRows.filter((row) => row.payment_status === "pending").length;
         const unknownCount = rosterRows.filter((row) => row.payment_status === "unknown").length;
         const tierSyncRows = rosterTierSyncRows(rosterRows);
+        const pendingRosterRequests = seasonRosterRequestsForSeason(selectedSeason);
+        const directoryMatchRequests = pendingRosterRequests.filter((request) => request.player).length;
+        const newDirectoryRequests = pendingRosterRequests.filter((request) => !request.player).length;
 
         if (selectedSeason.id !== lastRosterDisclosureSeasonId) {
-          openRosterDisclosure(rosterRows.length ? "players" : "tools");
+          openRosterDisclosure(
+            pendingRosterRequests.length ? "requests" : rosterRows.length ? "players" : "tools"
+          );
           lastRosterDisclosureSeasonId = selectedSeason.id;
         }
 
@@ -913,6 +1010,93 @@
               : `${selectedSeason.name} already matches the Squad page tier status for every rostered player.`
             : "";
           rosterBulkNote.textContent = syncCopy ? `${bulkCopy} ${syncCopy}` : bulkCopy;
+        }
+        seasonRosterRequestSummary.innerHTML = `
+          <div class="summary-card">
+            <span>Pending requests</span>
+            <strong>${escapeHtml(pendingRosterRequests.length)}</strong>
+          </div>
+          <div class="summary-card">
+            <span>Directory matches</span>
+            <strong>${escapeHtml(directoryMatchRequests)}</strong>
+          </div>
+          <div class="summary-card">
+            <span>New directory asks</span>
+            <strong>${escapeHtml(newDirectoryRequests)}</strong>
+          </div>
+        `;
+        if (!seasonRosterRequestsSupported) {
+          seasonRosterRequestWrap.innerHTML = `
+            <div class="table-empty">
+              Public squad requests are waiting for the latest club update on this build.
+            </div>
+          `;
+        } else if (!pendingRosterRequests.length) {
+          seasonRosterRequestWrap.innerHTML = `
+            <div class="table-empty">
+              No pending public squad requests for ${escapeHtml(selectedSeason.name)} right now.
+            </div>
+          `;
+        } else {
+          seasonRosterRequestWrap.innerHTML = `
+            <div class="compact-list">
+              ${pendingRosterRequests
+                .map((request) => {
+                  const requestName = seasonRosterRequestDisplayName(request);
+                  const requestCopy = request.player
+                    ? `Already in the main directory as ${displayName(request.player)}`
+                    : "Needs a new main directory profile before season approval";
+                  const requestNote = request.note
+                    ? `<p class="compact-row-copy">${escapeHtml(request.note)}</p>`
+                    : "";
+                  return `
+                    <article class="compact-row" data-season-roster-request-row="${request.id}">
+                      <div class="compact-row-main">
+                        <div>
+                          <div class="compact-row-title">${escapeHtml(requestName)}</div>
+                          <p class="compact-row-copy">${escapeHtml(requestCopy)}</p>
+                          <p class="compact-row-copy">${escapeHtml(
+                            [request.requester_contact || "No contact left", request.nationality || "No nationality"]
+                              .filter(Boolean)
+                              .join(" · ")
+                          )}</p>
+                          ${requestNote}
+                        </div>
+                      </div>
+                      <div class="compact-badges">
+                        <span class="tag-pill">${escapeHtml(
+                          request.player ? "Directory match" : "New directory request"
+                        )}</span>
+                        <span class="tag-pill">Requested season tier ${escapeHtml(
+                          formatTierLabel(request.requested_tier)
+                        )}</span>
+                        <span class="tag-pill">${escapeHtml(
+                          (request.preferred_positions || []).join(", ")
+                        )}</span>
+                        <span class="tag-pill">${escapeHtml(formatDateTime(request.created_at))}</span>
+                      </div>
+                      <div class="actions">
+                        <button
+                          class="primary-button"
+                          type="button"
+                          data-approve-season-roster-request="${request.id}"
+                        >
+                          ${request.player ? "Approve into season" : "Approve to directory + season"}
+                        </button>
+                        <button
+                          class="secondary-button"
+                          type="button"
+                          data-deny-season-roster-request="${request.id}"
+                        >
+                          Deny
+                        </button>
+                      </div>
+                    </article>
+                  `;
+                })
+                .join("")}
+            </div>
+          `;
         }
         seasonDirectoryPrepSummary.innerHTML = `
           <div class="summary-card">
@@ -1455,16 +1639,184 @@
         await loadSeasons();
       }
 
+      async function ensureSeasonRosterRequestPlayer(request) {
+        if (request?.player) {
+          return request.player;
+        }
+
+        const existingPlayer = findDirectoryPlayerByName(request.first_name, request.last_name);
+        if (existingPlayer) {
+          return existingPlayer;
+        }
+
+        const playerPayload = {
+          first_name: request.first_name,
+          last_name: request.last_name,
+          nickname: request.nickname || null,
+          nationality: request.nationality,
+          phone: request.requester_contact || null,
+          positions:
+            Array.isArray(request.preferred_positions) && request.preferred_positions.length
+              ? request.preferred_positions
+              : ["MID"],
+          skill_rating: 78,
+          desired_tier: request.requested_tier,
+          status: request.requested_tier,
+          dominant_foot: "right",
+          notes: request.note || "Created from a public season squad request.",
+        };
+
+        const { data, error } = await supabaseClient
+          .from("players")
+          .insert(playerPayload)
+          .select("id, first_name, last_name, nickname, nationality, desired_tier, status")
+          .single();
+
+        if (error?.code === "23505") {
+          const duplicatePlayer = findDirectoryPlayerByName(request.first_name, request.last_name);
+          if (duplicatePlayer) {
+            return duplicatePlayer;
+          }
+        }
+
+        if (error) {
+          throw error;
+        }
+
+        return normalizeDesiredTierPlayer(data);
+      }
+
+      async function ensurePlayerOnSeasonRoster(selectedSeason, player, request) {
+        const existingRosterRow = seasonRosterRowsForSeason(selectedSeason).find(
+          (row) => Number(row.player_id) === Number(player.id)
+        );
+
+        if (existingRosterRow) {
+          return existingRosterRow.id;
+        }
+
+        const { data, error } = await supabaseClient
+          .from("season_players")
+          .insert(
+            buildSeasonPlayerInsertPayload(selectedSeason, player, {
+              registration_tier: request.requested_tier,
+              tier_status: request.requested_tier,
+              payment_status: "unknown",
+              tier_reason: "Approved from a public season squad request.",
+              movement_note: request.note || "Approved into the season squad from the public roster page.",
+              is_eligible: true,
+            })
+          )
+          .select("id")
+          .single();
+
+        if (error?.code === "23505") {
+          const existingResponse = await supabaseClient
+            .from("season_players")
+            .select("id")
+            .eq("season_id", selectedSeason.id)
+            .eq("player_id", player.id)
+            .single();
+
+          if (existingResponse.error) {
+            throw existingResponse.error;
+          }
+
+          return existingResponse.data.id;
+        }
+
+        if (error) {
+          throw error;
+        }
+
+        return data.id;
+      }
+
+      async function approveSeasonRosterRequest(requestId) {
+        const selectedSeason = getSelectedSeason();
+        const request = seasonRosterRequestsForSeason(selectedSeason).find(
+          (entry) => Number(entry.id) === Number(requestId)
+        );
+
+        if (!selectedSeason || !request) {
+          setStatus("Season roster request not found. Refresh and try again.", "error");
+          return;
+        }
+
+        const requestName = seasonRosterRequestDisplayName(request);
+        setStatus(`Approving ${requestName} for ${selectedSeason.name}...`);
+
+        try {
+          const player = await ensureSeasonRosterRequestPlayer(request);
+          const seasonPlayerId = await ensurePlayerOnSeasonRoster(selectedSeason, player, request);
+          const { error } = await supabaseClient
+            .from("season_roster_requests")
+            .update({
+              status: "approved",
+              review_note: "Approved in Season Centre.",
+              approved_player_id: player.id,
+              approved_season_player_id: seasonPlayerId,
+              reviewed_at: new Date().toISOString(),
+            })
+            .eq("id", request.id);
+
+          if (error) {
+            throw error;
+          }
+
+          openRosterDisclosure("players");
+          await loadSeasons();
+          setStatus(`${requestName} approved into ${selectedSeason.name}.`, "success");
+        } catch (error) {
+          setStatus(readableError(error), "error");
+        }
+      }
+
+      async function denySeasonRosterRequest(requestId) {
+        const selectedSeason = getSelectedSeason();
+        const request = seasonRosterRequestsForSeason(selectedSeason).find(
+          (entry) => Number(entry.id) === Number(requestId)
+        );
+
+        if (!selectedSeason || !request) {
+          setStatus("Season roster request not found. Refresh and try again.", "error");
+          return;
+        }
+
+        const requestName = seasonRosterRequestDisplayName(request);
+        setStatus(`Denying ${requestName} for ${selectedSeason.name}...`);
+
+        const { error } = await supabaseClient
+          .from("season_roster_requests")
+          .update({
+            status: "denied",
+            review_note: "Denied in Season Centre.",
+            reviewed_at: new Date().toISOString(),
+          })
+          .eq("id", request.id);
+
+        if (error) {
+          setStatus(readableError(error), "error");
+          return;
+        }
+
+        openRosterDisclosure("requests");
+        await loadSeasons();
+        setStatus(`${requestName} was denied for ${selectedSeason.name}.`, "success");
+      }
+
       async function loadSeasons() {
         setStatus("Loading seasons and schedule...", "loading");
         seasonScheduleDefaultsSupported = true;
         seasonRosterMetadataSupported = true;
+        seasonRosterRequestsSupported = true;
 
         let [
           { data: seasonData, error: seasonError },
           { data: matchdayData, error: matchdayError },
           { data: playerData, error: playerError },
           { data: seasonPlayerData, error: seasonPlayerError },
+          { data: seasonRosterRequestData, error: seasonRosterRequestError },
         ] = await Promise.all([
           supabaseClient
             .from("seasons")
@@ -1484,6 +1836,12 @@
           supabaseClient
             .from("season_players")
             .select("id, season_id, player_id, tier_status, registration_tier, payment_status, is_eligible, created_at")
+            .order("created_at", { ascending: true }),
+          supabaseClient
+            .from("season_roster_requests")
+            .select(
+              "id, season_id, player_id, request_type, requester_name, requester_contact, first_name, last_name, nickname, nationality, preferred_positions, requested_tier, note, status, review_note, approved_player_id, approved_season_player_id, created_at, reviewed_at"
+            )
             .order("created_at", { ascending: true }),
         ]);
 
@@ -1511,15 +1869,31 @@
             .order("created_at", { ascending: true }));
         }
 
-        if (seasonError || matchdayError || playerError || seasonPlayerError) {
+        if (seasonRosterRequestError && hasMissingSeasonRosterRequestTable(seasonRosterRequestError)) {
+          seasonRosterRequestsSupported = false;
+          seasonRosterRequestData = [];
+          seasonRosterRequestError = null;
+        }
+
+        if (seasonError || matchdayError || playerError || seasonPlayerError || seasonRosterRequestError) {
           seasons = [];
           clubPlayers = [];
+          seasonRosterRequests = [];
           selectedSeasonId = null;
           updateHeroStats();
           renderSeasons();
           renderSeasonRoster();
           renderMatchdays();
-          setStatus(readableError(seasonError || matchdayError || playerError || seasonPlayerError), "error");
+          setStatus(
+            readableError(
+              seasonError ||
+                matchdayError ||
+                playerError ||
+                seasonPlayerError ||
+                seasonRosterRequestError
+            ),
+            "error"
+          );
           return;
         }
 
@@ -1539,6 +1913,7 @@
         });
 
         clubPlayers = (playerData || []).map(normalizeDesiredTierPlayer);
+        seasonRosterRequests = (seasonRosterRequestData || []).map(normalizeSeasonRosterRequestRow);
 
         seasons = sortSeasonsChronologically(
           (seasonData || []).map((season) => ({
@@ -1562,8 +1937,15 @@
         renderSeasonRoster();
         renderMatchdays();
 
-        if (!seasonScheduleDefaultsSupported || !seasonRosterMetadataSupported) {
-          setStatus("Connected. Weekly fixture defaults and signup metadata are still in basic mode on this build.", "warning");
+        if (
+          !seasonScheduleDefaultsSupported ||
+          !seasonRosterMetadataSupported ||
+          !seasonRosterRequestsSupported
+        ) {
+          setStatus(
+            "Connected. Weekly fixture defaults, signup metadata, or public squad requests are still in basic mode on this build.",
+            "warning"
+          );
           return;
         }
 
@@ -1861,6 +2243,22 @@
         }
 
         await removeSeasonPlayer(Number(button.dataset.removeSeasonPlayer));
+      });
+
+      seasonRosterRequestWrap.addEventListener("click", async (event) => {
+        const approveButton = event.target.closest("[data-approve-season-roster-request]");
+        const denyButton = event.target.closest("[data-deny-season-roster-request]");
+
+        if (approveButton) {
+          await approveSeasonRosterRequest(Number(approveButton.dataset.approveSeasonRosterRequest));
+          return;
+        }
+
+        if (!denyButton) {
+          return;
+        }
+
+        await denySeasonRosterRequest(Number(denyButton.dataset.denySeasonRosterRequest));
       });
 
       seasonDirectoryPrepWrap.addEventListener("change", async (event) => {

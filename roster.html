@@ -3,13 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="./assets/css/app.css?v=20260425e" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260426e" />
     <title>Club · Squad</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/js/core/club_logic.js"></script>
     <script src="./assets/js/core/supabase_config.js"></script>
     <script src="./assets/js/core/app.js?v=20260425b" defer></script>
-    <script src="./assets/js/ui/shell.js?v=20260425e" defer></script>
+    <script src="./assets/js/ui/shell.js?v=20260426e" defer></script>
   </head>
   <body class="manager-touch">
     <nav class="site-nav">
@@ -19,14 +19,13 @@
           <span>Mandarinas <span class="logo-accent">CF</span></span>
         </a>
         <div class="nav-links">
-          <a class="nav-link" href="./home.html">Club HQ</a>
-          <a class="nav-link" href="./schedule.html">Fixtures</a>
-          <a class="nav-link" href="./public_standings.html">Table</a>
+          <a class="nav-link" href="./home.html">Home</a>
+          <a class="nav-link" href="./schedule.html">Season</a>
           <a class="nav-link active" href="./roster.html">Squad</a>
-          <a class="nav-link" href="./tier_system.html">Pathway</a>
-          <a class="nav-link" href="./tier_watch.html">Tracker</a>
+          <a class="nav-link" href="./videos.html">Match Videos</a>
+          <a class="nav-link" href="./submissions.html?view=suggestions">Suggestions</a>
         </div>
-        <a href="./staff.html" class="nav-mode-badge">Staff</a>
+        <a href="./busses.html" class="nav-mode-badge">Busses</a>
       </div>
     </nav>
 
@@ -43,8 +42,8 @@
         </div>
         <div class="actions">
           <a class="primary-button" href="#player-list-panel">Open squad</a>
-          <a class="secondary-button" href="./tier_system.html">Open pathway</a>
-          <a class="secondary-button" href="./public_standings.html">Open table</a>
+          <a class="secondary-button" href="./tier_system.html">How tiers work</a>
+          <a class="secondary-button" href="./public_standings.html">Open standings</a>
         </div>
       </section>
 
@@ -125,12 +124,132 @@
           </section>
         </div>
       </section>
+
+      <section class="panel">
+        <div class="section-label">Join</div>
+        <h2>Need to join this squad?</h2>
+        <p id="roster-request-copy">
+          If you are already in the main directory, send a season squad request here. If you are
+          not in the main directory yet, send a directory request first. A busses admin must
+          approve either request before you appear on the live squad.
+        </p>
+
+        <div class="status-line" id="roster-request-status" hidden></div>
+
+        <div class="field-grid">
+          <form id="roster-existing-request-form">
+            <fieldset>
+              <legend>Already in the main directory</legend>
+              <div class="field">
+                <label for="roster-request-directory-player">Choose your directory profile</label>
+                <select id="roster-request-directory-player">
+                  <option value="">Select your name from the main directory</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="roster-request-existing-tier">Requested season tier</label>
+                <select id="roster-request-existing-tier">
+                  <option value="core">Core</option>
+                  <option value="rotation" selected>Rotation</option>
+                  <option value="flex_sub">Flex/Sub</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="roster-request-existing-contact">Contact (optional)</label>
+                <input
+                  id="roster-request-existing-contact"
+                  type="text"
+                  maxlength="120"
+                  placeholder="Phone, Instagram, or anything the busses will recognize"
+                />
+              </div>
+              <div class="field">
+                <label for="roster-request-existing-note">Note (optional)</label>
+                <textarea
+                  id="roster-request-existing-note"
+                  maxlength="240"
+                  placeholder="Anything the admin should know before approving you into this season"
+                ></textarea>
+              </div>
+              <div class="actions">
+                <button class="primary-button" type="submit" id="roster-request-existing-button">
+                  Request season squad spot
+                </button>
+              </div>
+            </fieldset>
+          </form>
+
+          <form id="roster-new-request-form">
+            <fieldset>
+              <legend>Not in the main directory yet</legend>
+              <div class="field-grid">
+                <div class="field">
+                  <label for="roster-request-first-name">First name</label>
+                  <input id="roster-request-first-name" type="text" maxlength="40" required />
+                </div>
+                <div class="field">
+                  <label for="roster-request-last-name">Last name</label>
+                  <input id="roster-request-last-name" type="text" maxlength="40" required />
+                </div>
+                <div class="field">
+                  <label for="roster-request-nickname">Nickname (optional)</label>
+                  <input id="roster-request-nickname" type="text" maxlength="50" />
+                </div>
+                <div class="field">
+                  <label for="roster-request-nationality">Nationality</label>
+                  <input id="roster-request-nationality" type="text" maxlength="50" required />
+                </div>
+                <div class="field">
+                  <label for="roster-request-position">Primary position</label>
+                  <select id="roster-request-position">
+                    <option value="GK">GK</option>
+                    <option value="DEF">DEF</option>
+                    <option value="MID" selected>MID</option>
+                    <option value="ATT">ATT</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="roster-request-new-tier">Requested season tier</label>
+                  <select id="roster-request-new-tier">
+                    <option value="core">Core</option>
+                    <option value="rotation" selected>Rotation</option>
+                    <option value="flex_sub">Flex/Sub</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field">
+                <label for="roster-request-contact">Contact</label>
+                <input
+                  id="roster-request-contact"
+                  type="text"
+                  maxlength="120"
+                  placeholder="Phone, Instagram, or anything the busses will recognize"
+                  required
+                />
+              </div>
+              <div class="field">
+                <label for="roster-request-note">Note (optional)</label>
+                <textarea
+                  id="roster-request-note"
+                  maxlength="240"
+                  placeholder="Anything the admin should know before adding you to the directory"
+                ></textarea>
+              </div>
+              <div class="actions">
+                <button class="primary-button" type="submit" id="roster-request-new-button">
+                  Request directory + season review
+                </button>
+              </div>
+            </fieldset>
+          </form>
+        </div>
+      </section>
     </main>
 
     <footer class="club-footer">
       <div class="club-footer-copy">Club · Squad</div>
     </footer>
 
-    <script src="./assets/js/pages/public/roster.js?v=20260426a"></script>
+    <script src="./assets/js/pages/public/roster.js?v=20260426d"></script>
   </body>
 </html>

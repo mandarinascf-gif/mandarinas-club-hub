@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="./assets/css/app.css?v=20260425b" />
-    <title>Staff · Season Centre</title>
+    <title>Busses · Season Centre</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/js/core/club_logic.js"></script>
     <script src="./assets/js/core/supabase_config.js"></script>
@@ -18,11 +18,9 @@
           <span>Mandarinas <span class="logo-accent">CF</span></span>
         </a>
         <div class="nav-links">
-          <a class="nav-link" href="./squad.html">Squad</a>
+          <a class="nav-link" href="./squad.html">Directory</a>
           <a class="nav-link active" href="./seasons.html">Season</a>
-          <a class="nav-link" href="./matchday.html">Match Centre</a>
-          <a class="nav-link" href="./submissions.html?preview=1">Reports</a>
-          <a class="nav-link" href="./standings.html">Table</a>
+          <a class="nav-link" href="./matchday.html">Matchday</a>
           <a class="nav-link" href="./tiers.html">Planner</a>
         </div>
         <a href="./home.html" class="nav-mode-badge">Club</a>
@@ -32,7 +30,7 @@
     <main class="page">
       <section class="panel page-header">
         <div class="page-header-main">
-          <div class="section-label">Staff · Season Centre</div>
+          <div class="section-label">Busses · Season Centre</div>
           <h1>Season Centre</h1>
           <p>
             Start with the season list. Selecting a season opens its live squad and fixture plan.
@@ -42,7 +40,7 @@
         <div class="actions">
           <button class="primary-button" type="button" data-season-view-trigger="list">Season list</button>
           <button class="secondary-button" type="button" data-season-view-trigger="create">Add season</button>
-          <button class="secondary-button" type="button" data-season-view-trigger="roster">Season squad</button>
+          <a class="secondary-button" href="./standings.html">Open standings</a>
         </div>
       </section>
 
@@ -73,7 +71,7 @@
           <div class="workspace-toolbar-copy">
             <div class="section-label">Work Mode</div>
             <h2>Season Desk</h2>
-            <p>Run the campaign in focused steps instead of one long stacked staff page.</p>
+            <p>Run the campaign in focused steps instead of one long stacked busses page.</p>
           </div>
           <div class="workspace-switcher" role="tablist" aria-label="Season workspace">
             <button
@@ -393,6 +391,20 @@
               </div>
             </details>
 
+            <details class="disclosure-card" id="season-roster-requests-disclosure">
+              <summary class="disclosure-summary">
+                <div class="disclosure-copy">
+                  <div class="section-label">Requests</div>
+                  <div class="disclosure-title">Pending squad requests</div>
+                  <div class="micro-note">Review public self-add requests before they reach the live season squad.</div>
+                </div>
+              </summary>
+              <div class="disclosure-body">
+                <div class="summary-grid" id="season-roster-request-summary"></div>
+                <div id="season-roster-request-wrap" class="table-wrap" aria-live="polite"></div>
+              </div>
+            </details>
+
             <details class="disclosure-card" id="season-directory-prep-disclosure">
               <summary class="disclosure-summary">
                 <div class="disclosure-copy">
@@ -440,9 +452,9 @@
     </main>
 
     <footer class="club-footer">
-      <div class="club-footer-copy">Staff · Season Centre</div>
+      <div class="club-footer-copy">Busses · Season Centre</div>
     </footer>
 
-    <script src="./assets/js/pages/admin/seasons.js?v=20260425a"></script>
+    <script src="./assets/js/pages/admin/seasons.js?v=20260426b"></script>
   </body>
 </html>

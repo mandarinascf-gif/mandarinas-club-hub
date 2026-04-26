@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="./assets/css/app.css?v=20260425d" />
-    <title>Staff Access · Mandarinas CF</title>
-    <script src="./assets/js/ui/shell.js?v=20260425a" defer></script>
+    <title>Busses Access · Mandarinas CF</title>
+    <script src="./assets/js/ui/shell.js?v=20260426e" defer></script>
   </head>
   <body class="manager-touch">
     <nav class="site-nav">
@@ -15,119 +15,118 @@
           <span>Mandarinas <span class="logo-accent">CF</span></span>
         </a>
         <div class="nav-links">
-          <a class="nav-link" href="./home.html">Club HQ</a>
-          <a class="nav-link" href="./schedule.html">Fixtures</a>
-          <a class="nav-link" href="./public_standings.html">Table</a>
+          <a class="nav-link" href="./home.html">Home</a>
+          <a class="nav-link" href="./schedule.html">Season</a>
           <a class="nav-link" href="./roster.html">Squad</a>
-          <a class="nav-link" href="./tier_system.html">Pathway</a>
-          <a class="nav-link" href="./tier_watch.html">Tracker</a>
+          <a class="nav-link" href="./videos.html">Match Videos</a>
+          <a class="nav-link" href="./submissions.html?view=suggestions">Suggestions</a>
         </div>
-        <a href="./staff.html" class="nav-mode-badge">Staff</a>
+        <a href="./busses.html" class="nav-mode-badge">Busses</a>
       </div>
     </nav>
 
     <main class="page">
       <section class="panel page-header">
         <div class="page-header-main">
-          <div class="section-label">Staff Workspace</div>
-          <h1>Staff Access</h1>
+          <div class="section-label">Busses Workspace</div>
+          <h1>Busses Access</h1>
           <p>
-            Club pages stay public-facing. Staff tools open separately in this browser tab after
-            you enter the current staff code.
+            Club pages stay public-facing. Busses tools open separately in this browser tab after
+            you enter the current busses code.
           </p>
         </div>
         <div class="actions">
-          <button class="primary-button" id="staff-enter-button" type="button">Enter staff workspace</button>
-          <a class="secondary-button" href="./home.html">Back to Club HQ</a>
-          <a class="secondary-button" href="./schedule.html">Open fixtures</a>
+          <button class="primary-button" id="busses-enter-button" type="button">Enter busses workspace</button>
+          <a class="secondary-button" href="./home.html">Back to home</a>
+          <a class="secondary-button" href="./schedule.html">Open season</a>
         </div>
       </section>
 
       <section class="panel">
         <div class="section-label">How it works</div>
-        <h2>Separate public and staff paths</h2>
+        <h2>Separate public and busses paths</h2>
         <div class="summary-grid">
           <div class="summary-card">
             <span>Public side</span>
             <strong>Club-safe</strong>
-            <span class="summary-copy">Fixtures, table, squad, pathway, and tracker stay public-facing.</span>
+            <span class="summary-copy">Home, season, squad, queue, and guides stay public-facing.</span>
           </div>
           <div class="summary-card">
-            <span>Staff side</span>
+            <span>Busses side</span>
             <strong>Intentional entry</strong>
-            <span class="summary-copy">Staff unlock the workspace only when they mean to leave the public flow.</span>
+            <span class="summary-copy">Busses unlock the workspace only when they mean to leave the public flow.</span>
           </div>
           <div class="summary-card">
             <span>Same browser tab</span>
             <strong>No account switch</strong>
-            <span class="summary-copy">The staff code opens the workspace for this tab only.</span>
+            <span class="summary-copy">The busses code opens the workspace for this tab only.</span>
           </div>
         </div>
       </section>
 
       <section class="panel">
         <div class="section-label">Next step</div>
-        <h2>Open the staff workspace</h2>
-        <p id="staff-access-copy">
-          Use the button above to unlock the staff workspace. If you came here from a protected
-          staff link, you will return to that page after the code is accepted.
+        <h2>Open the busses workspace</h2>
+        <p id="busses-access-copy">
+          Use the button above to unlock the busses workspace. If you came here from a protected
+          busses link, you will return to that page after the code is accepted.
         </p>
-        <p class="status-line" id="staff-access-status">Staff tools stay separate from the public club pages.</p>
+        <p class="status-line" id="busses-access-status">Busses tools stay separate from the public club pages.</p>
       </section>
     </main>
 
     <footer class="club-footer">
-      <div class="club-footer-copy">Staff Access · Mandarinas CF</div>
+      <div class="club-footer-copy">Busses Access · Mandarinas CF</div>
     </footer>
 
     <script>
       document.addEventListener("DOMContentLoaded", () => {
         const shell = window.MandarinasShell;
-        const enterButton = document.getElementById("staff-enter-button");
-        const statusLine = document.getElementById("staff-access-status");
+        const enterButton = document.getElementById("busses-enter-button");
+        const statusLine = document.getElementById("busses-access-status");
 
         function safeNextHref() {
           const params = new URLSearchParams(window.location.search);
-          const rawNext = params.get("next") || "./squad.html";
+          const rawNext = params.get("next") || "./seasons.html";
 
           try {
             const nextUrl = new URL(rawNext, window.location.href);
             if (nextUrl.origin !== window.location.origin) {
-              return "./squad.html";
+              return "./seasons.html";
             }
 
-            const pageName = nextUrl.pathname.split("/").pop() || "squad.html";
-            if (pageName === "staff.html") {
-              return "./squad.html";
+            const pageName = nextUrl.pathname.split("/").pop() || "seasons.html";
+            if (pageName === "busses.html") {
+              return "./seasons.html";
             }
 
             return `./${pageName}${nextUrl.search || ""}${nextUrl.hash || ""}`;
           } catch (error) {
-            return "./squad.html";
+            return "./seasons.html";
           }
         }
 
         if (!shell) {
-          statusLine.textContent = "Staff access is unavailable until the shared shell loads.";
+          statusLine.textContent = "Busses access is unavailable until the shared shell loads.";
           statusLine.className = "status-line error";
           enterButton.disabled = true;
           return;
         }
 
         if (shell.hasAdminAccess()) {
-          statusLine.textContent = "Staff access is already open in this tab.";
+          statusLine.textContent = "Busses access is already open in this tab.";
           statusLine.className = "status-line success";
         }
 
         enterButton.addEventListener("click", () => {
-          statusLine.textContent = "Waiting for the staff code.";
+          statusLine.textContent = "Waiting for the busses code.";
           statusLine.className = "status-line";
           shell.requestAdminAccess(
             () => {
               window.location.href = safeNextHref();
             },
             () => {
-              statusLine.textContent = "Staff access stays separate until you choose to open it.";
+              statusLine.textContent = "Busses access stays separate until you choose to open it.";
               statusLine.className = "status-line";
             }
           );

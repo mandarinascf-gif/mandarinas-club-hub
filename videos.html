@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260426e" />
+    <title>Club · Match Videos</title>
+    <script src="./assets/js/ui/shell.js?v=20260426e" defer></script>
+    <script src="./assets/js/pages/public/videos.js?v=20260426a" defer></script>
+  </head>
+  <body class="manager-touch">
+    <nav class="site-nav">
+      <div class="site-nav-inner">
+        <a href="./home.html" class="site-logo">
+          <span class="logo-dot"></span>
+          <span>Mandarinas <span class="logo-accent">CF</span></span>
+        </a>
+        <div class="nav-links">
+          <a class="nav-link" href="./home.html">Home</a>
+          <a class="nav-link" href="./schedule.html">Season</a>
+          <a class="nav-link" href="./roster.html">Squad</a>
+          <a class="nav-link active" href="./videos.html">Match Videos</a>
+          <a class="nav-link" href="./submissions.html?view=suggestions">Suggestions</a>
+        </div>
+        <a href="./busses.html" class="nav-mode-badge">Busses</a>
+      </div>
+    </nav>
+
+    <main class="page">
+      <section class="panel page-header">
+        <div class="page-header-main">
+          <div class="section-label">Club · Match Videos</div>
+          <h1>Match Videos</h1>
+          <p>
+            Every public upload from the Mandarinas CF YouTube channel, with the player set to the
+            channel uploads playlist so the newest match videos stay at the front.
+          </p>
+        </div>
+        <div class="actions">
+          <a
+            class="primary-button"
+            id="videos-open-channel"
+            href="https://www.youtube.com/@MandarinasCF/videos"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Open on YouTube
+          </a>
+          <a class="secondary-button" href="./schedule.html">Open season</a>
+          <a class="secondary-button" href="./submissions.html?view=suggestions">Open suggestions</a>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-label">Overview</div>
+        <h2>Uploads Feed</h2>
+        <div class="summary-grid">
+          <div class="summary-card">
+            <span>Channel</span>
+            <strong>Mandarinas CF</strong>
+            <span class="summary-copy">@MandarinasCF</span>
+          </div>
+          <div class="summary-card">
+            <span>Order</span>
+            <strong>Newest first</strong>
+            <span class="summary-copy">The page lists the latest public uploads from newest to oldest.</span>
+          </div>
+          <div class="summary-card">
+            <span>Content</span>
+            <strong id="videos-count">30 uploads</strong>
+            <span class="summary-copy">Current public video cards pulled from the club channel.</span>
+          </div>
+          <div class="summary-card">
+            <span>Fallback</span>
+            <strong>Direct channel</strong>
+            <span class="summary-copy">Every card opens its video directly on YouTube.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="video-page-grid">
+        <section class="panel">
+          <div class="section-label">Latest</div>
+          <h2>Latest Uploads</h2>
+          <div id="videos-list" class="video-card-list">
+            <div class="empty-state">Loading the club videos...</div>
+          </div>
+        </section>
+
+        <section class="detail-stack">
+          <section class="panel detail-panel">
+            <div class="section-label">Notes</div>
+            <h2>How It Works</h2>
+            <div class="detail-card">
+              <ul class="video-note-list">
+                <li>The page shows the club uploads in newest-to-oldest order.</li>
+                <li>Each card opens the exact video directly on YouTube.</li>
+                <li>Use the channel button for the full archive and any uploads not shown on this page.</li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="panel detail-panel">
+            <div class="section-label">Links</div>
+            <h2>Club Video Destinations</h2>
+            <div class="compact-list">
+              <a
+                class="list-item"
+                href="https://www.youtube.com/@MandarinasCF/videos"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <div class="list-item-main">
+                  <div class="list-item-title">Latest uploads on YouTube</div>
+                  <div class="compact-row-copy">Open the full channel videos tab.</div>
+                </div>
+                <strong>Watch</strong>
+              </a>
+              <a
+                class="list-item"
+                href="https://www.youtube.com/@MandarinasCF"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <div class="list-item-main">
+                  <div class="list-item-title">Main channel page</div>
+                  <div class="compact-row-copy">Go to the club home page on YouTube.</div>
+                </div>
+                <strong>Open</strong>
+              </a>
+            </div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <footer class="club-footer">
+      <div class="club-footer-copy">Club · Match Videos</div>
+    </footer>
+  </body>
+</html>

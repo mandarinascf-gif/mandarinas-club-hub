@@ -1,10 +1,17 @@
 document.addEventListener("DOMContentLoaded", () => {
   if (!window.MandarinasPublic) {
     const statusLine = document.getElementById("submission-status-line");
+    const suggestionStatusLine = document.getElementById("submission-suggestion-status-line");
     if (statusLine) {
       statusLine.textContent =
         "MandarinasPublic failed to load. Check browser console for connection or script errors.";
       statusLine.className = "status-line error";
+    }
+    if (suggestionStatusLine) {
+      suggestionStatusLine.hidden = false;
+      suggestionStatusLine.textContent =
+        "MandarinasPublic failed to load. Check browser console for connection or script errors.";
+      suggestionStatusLine.className = "status-line error";
     }
     console.error("[MandarinasPublic] Fatal: MandarinasPublic is undefined");
     return;
@@ -41,13 +48,22 @@ document.addEventListener("DOMContentLoaded", () => {
   const requestedSeasonId = querySeasonIdFromUrl();
   const requestedMatchdayId = Number(params.get("matchday_id"));
   const requestedPlayerId = Number(params.get("player_id"));
+  const requestedView = String(params.get("view") || "").trim().toLowerCase();
   const hasExplicitSeasonQuery = Number.isInteger(requestedSeasonId) && requestedSeasonId > 0;
   const hasExplicitMatchdayQuery = Number.isInteger(requestedMatchdayId) && requestedMatchdayId > 0;
 
   const heroCopy = document.getElementById("submission-hero-copy");
+  const pageLabel = document.getElementById("submission-page-label");
+  const pageTitle = document.getElementById("submission-page-title");
+  const submissionWorkspace = document.getElementById("submission-workspace");
+  const submissionWorkspaceFrame = document.getElementById("submission-workspace-frame");
+  const submissionViewTriggers = Array.from(document.querySelectorAll("[data-submission-view-trigger]"));
+  const submissionViewPanes = Array.from(document.querySelectorAll("[data-submission-view]"));
+  const submissionNavLinks = Array.from(document.querySelectorAll("[data-submission-nav]"));
   const reportTitle = document.getElementById("submission-report-title");
   const scheduleLink = document.getElementById("submission-schedule-link");
   const statusLine = document.getElementById("submission-status-line");
+  const suggestionStatusLine = document.getElementById("submission-suggestion-status-line");
   const windowNote = document.getElementById("submission-window-note");
   const seasonField = document.getElementById("submission-season-field");
   const seasonSelect = document.getElementById("submission-season-select");
@@ -83,9 +99,22 @@ document.addEventListener("DOMContentLoaded", () => {
   const saveRatingButton = document.getElementById("submission-save-rating-button");
   const nextRatingButton = document.getElementById("submission-next-rating-button");
   const ratingNote = document.getElementById("submission-rating-note");
+  const suggestionsCopy = document.getElementById("submission-suggestions-copy");
+  const suggestionCount = document.getElementById("submission-suggestion-count");
+  const replyCount = document.getElementById("submission-reply-count");
+  const likeCount = document.getElementById("submission-like-count");
+  const suggestionForm = document.getElementById("submission-suggestion-form");
+  const suggestionTitleInput = document.getElementById("submission-suggestion-title");
+  const suggestionBodyInput = document.getElementById("submission-suggestion-body");
+  const saveSuggestionButton = document.getElementById("submission-save-suggestion-button");
+  const suggestionNote = document.getElementById("submission-suggestion-note");
+  const suggestionBoardCopy = document.getElementById("submission-suggestion-board-copy");
+  const refreshSuggestionsButton = document.getElementById("submission-refresh-suggestions-button");
+  const suggestionThreadList = document.getElementById("submission-suggestion-thread-list");
 
   let seasons = [];
   let activeSeasonId = requestedSeasonId;
+  let activeSubmissionView = requestedView === "suggestions" ? "suggestions" : "report";
   let selectedMatchdayId =
     Number.isInteger(requestedMatchdayId) && requestedMatchdayId > 0 ? requestedMatchdayId : null;
   let selectedPlayerId =
@@ -94,10 +123,20 @@ document.addEventListener("DOMContentLoaded", () => {
   let activeBundle = null;
   let statSubmissions = [];
   let ratingSubmissions = [];
+  let suggestionThreads = [];
+  let suggestionReplies = [];
+  let suggestionLikes = [];
   let ratingDrafts = new Map();
+  let replyDrafts = new Map();
   let matchdayWindowMap = new Map();
+  let discussionMatchdayId = null;
+  let activeReplySuggestionId = null;
+  let savingSuggestion = false;
+  let savingReplySuggestionId = null;
+  let pendingLikeTargetKey = "";
   let statTablesReady = true;
   let ratingTablesReady = true;
+  let discussionTablesReady = true;
   let previewFallbackApplied = false;
 
   function normalizeText(value) {
@@ -131,9 +170,19 @@ document.addEventListener("DOMContentLoaded", () => {
     return normalizeText(value).toLowerCase() === "teammate";
   }
 
+  function syncStatusNode(node, message, tone = "") {
+    if (!node) {
+      return;
+    }
+
+    node.hidden = !message;
+    node.textContent = message;
+    node.className = tone ? `status-line ${tone}` : "status-line";
+  }
+
   function setStatus(message, tone = "") {
-    statusLine.textContent = message;
-    statusLine.className = tone ? `status-line ${tone}` : "status-line";
+    syncStatusNode(statusLine, message, tone);
+    syncStatusNode(suggestionStatusLine, message, tone);
   }
 
   function updateUrl() {
@@ -161,6 +210,12 @@ document.addEventListener("DOMContentLoaded", () => {
       url.searchParams.set("preview", "1");
     } else {
       url.searchParams.delete("preview");
+    }
+
+    if (activeSubmissionView === "suggestions") {
+      url.searchParams.set("view", "suggestions");
+    } else {
+      url.searchParams.delete("view");
     }
 
     window.history.replaceState({}, "", url);
@@ -217,9 +272,33 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
+  function hasMissingSuggestionTable(error) {
+    const message = String(error?.message || "").toLowerCase();
+    if (
+      !(
+        message.includes("matchday_suggestions") ||
+        message.includes("matchday_suggestion_replies") ||
+        message.includes("matchday_suggestion_likes")
+      )
+    ) {
+      return false;
+    }
+
+    return (
+      message.includes("relation") ||
+      message.includes("schema cache") ||
+      message.includes("does not exist") ||
+      message.includes("could not find")
+    );
+  }
+
   function readableSubmissionError(error) {
     if (hasMissingStatTable(error) || hasMissingRatingTable(error)) {
       return "Player reports are still in view mode while live saving is being switched on.";
+    }
+
+    if (hasMissingSuggestionTable(error)) {
+      return "Suggestions stay in view mode until the discussion migration is applied.";
     }
 
     if (hasMissingWindowColumns(error)) {
@@ -422,6 +501,75 @@ document.addEventListener("DOMContentLoaded", () => {
     ratingSubmissions = ratingRows || [];
   }
 
+  async function loadDiscussionForMatchday() {
+    suggestionThreads = [];
+    suggestionReplies = [];
+    suggestionLikes = [];
+    savingReplySuggestionId = null;
+    pendingLikeTargetKey = "";
+    discussionTablesReady = true;
+
+    if (!selectedMatchdayId) {
+      discussionMatchdayId = null;
+      replyDrafts = new Map();
+      activeReplySuggestionId = null;
+      return;
+    }
+
+    if (Number(discussionMatchdayId) !== Number(selectedMatchdayId)) {
+      replyDrafts = new Map();
+      activeReplySuggestionId = null;
+    }
+    discussionMatchdayId = selectedMatchdayId;
+
+    const [
+      { data: threadRows, error: threadError },
+      { data: replyRows, error: replyError },
+      { data: likeRows, error: likeError },
+    ] = await Promise.all([
+      supabaseClient
+        .from("matchday_suggestions")
+        .select("*")
+        .eq("matchday_id", selectedMatchdayId)
+        .limit(5000),
+      supabaseClient
+        .from("matchday_suggestion_replies")
+        .select("*")
+        .limit(10000),
+      supabaseClient
+        .from("matchday_suggestion_likes")
+        .select("*")
+        .limit(20000),
+    ]);
+
+    const errors = [threadError, replyError, likeError].filter(Boolean);
+    const fatalError = errors.find((error) => !hasMissingSuggestionTable(error));
+    if (fatalError) {
+      throw fatalError;
+    }
+
+    if (errors.length) {
+      discussionTablesReady = false;
+      return;
+    }
+
+    suggestionThreads = (threadRows || []).slice();
+    const threadIdSet = new Set(suggestionThreads.map((row) => Number(row.id)));
+    suggestionReplies = (replyRows || []).filter((row) => threadIdSet.has(Number(row.suggestion_id)));
+    const replyIdSet = new Set(suggestionReplies.map((row) => Number(row.id)));
+    suggestionLikes = (likeRows || []).filter((row) => {
+      if (row.suggestion_id !== null && row.suggestion_id !== undefined) {
+        return threadIdSet.has(Number(row.suggestion_id));
+      }
+
+      if (row.suggestion_reply_id !== null && row.suggestion_reply_id !== undefined) {
+        return replyIdSet.has(Number(row.suggestion_reply_id));
+      }
+
+      return false;
+    });
+  }
+
   function statSubmissionForPlayer(playerId) {
     return (
       statSubmissions.find(
@@ -460,6 +608,47 @@ document.addEventListener("DOMContentLoaded", () => {
           Number(row.ratee_player_id) === Number(rateeId)
       ) || null
     );
+  }
+
+  function suggestionThreadRows() {
+    return [...suggestionThreads].sort((left, right) => {
+      const leftTime = new Date(left.created_at || left.updated_at || 0).getTime();
+      const rightTime = new Date(right.created_at || right.updated_at || 0).getTime();
+      return rightTime - leftTime;
+    });
+  }
+
+  function suggestionReplyRows(suggestionId) {
+    return suggestionReplies
+      .filter((row) => Number(row.suggestion_id) === Number(suggestionId))
+      .sort((left, right) => {
+        const leftTime = new Date(left.created_at || left.updated_at || 0).getTime();
+        const rightTime = new Date(right.created_at || right.updated_at || 0).getTime();
+        return leftTime - rightTime;
+      });
+  }
+
+  function suggestionLikeRows(target) {
+    if (target.type === "reply") {
+      return suggestionLikes.filter((row) => Number(row.suggestion_reply_id) === Number(target.id));
+    }
+
+    return suggestionLikes.filter((row) => Number(row.suggestion_id) === Number(target.id));
+  }
+
+  function suggestionLikeRowForPlayer(target, playerId) {
+    if (!playerId) {
+      return null;
+    }
+
+    return (
+      suggestionLikeRows(target).find((row) => Number(row.liked_by_player_id) === Number(playerId)) || null
+    );
+  }
+
+  function discussionAuthorLabel(playerId) {
+    const player = playerMap().get(Number(playerId));
+    return player ? playerDisplayName(player) : `Player ${playerId}`;
   }
 
   function eligiblePlayers() {
@@ -736,6 +925,326 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
+  function loadedStatusState() {
+    const reportReady = statTablesReady && ratingTablesReady;
+
+    if (reportReady && discussionTablesReady) {
+      return {
+        message: "Player report loaded.",
+        tone: "success",
+      };
+    }
+
+    if (!reportReady && !discussionTablesReady) {
+      return {
+        message: "Player report loaded in view mode. Suggestions stay in view mode too.",
+        tone: "warning",
+      };
+    }
+
+    if (!reportReady) {
+      return {
+        message: "Player report loaded in view mode.",
+        tone: "warning",
+      };
+    }
+
+    return {
+      message: "Player report loaded. Suggestions stay in view mode.",
+      tone: "warning",
+    };
+  }
+
+  function setSubmissionView(view, options = {}) {
+    const nextView = view === "suggestions" ? "suggestions" : "report";
+    const {
+      focus = false,
+      scroll = false,
+      updateHistory = true,
+    } = options;
+
+    activeSubmissionView = nextView;
+
+    if (submissionWorkspaceFrame) {
+      submissionWorkspaceFrame.dataset.submissionViewMode = nextView;
+    }
+
+    submissionViewPanes.forEach((pane) => {
+      const isActive = pane.dataset.submissionView === nextView;
+      pane.hidden = !isActive;
+    });
+
+    submissionViewTriggers.forEach((button) => {
+      const isActive = button.dataset.submissionViewTrigger === nextView;
+      button.classList.toggle("active", isActive);
+      button.setAttribute("aria-selected", String(isActive));
+    });
+
+    submissionNavLinks.forEach((link) => {
+      const isActive =
+        (nextView === "suggestions" && link.dataset.submissionNav === "suggestions") ||
+        (nextView !== "suggestions" && link.dataset.submissionNav === "season");
+      link.classList.toggle("active", isActive);
+    });
+
+    updateHeaderCopy();
+
+    if (updateHistory) {
+      updateUrl();
+    }
+
+    if (scroll && submissionWorkspace) {
+      submissionWorkspace.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    if (focus) {
+      if (nextView === "suggestions") {
+        if (selectedPlayer() && selectedMatchday() && discussionTablesReady) {
+          suggestionTitleInput.focus();
+        } else {
+          playerSelect.focus();
+        }
+      } else {
+        playerSelect.focus();
+      }
+    }
+  }
+
+  function renderSuggestionSummary() {
+    const matchday = selectedMatchday();
+    const threadTotal = suggestionThreads.length;
+    const replyTotal = suggestionReplies.length;
+    const likeTotal = suggestionLikes.length;
+
+    refreshSuggestionsButton.disabled = !matchday;
+
+    suggestionCount.textContent = String(threadTotal);
+    replyCount.textContent = String(replyTotal);
+    likeCount.textContent = String(likeTotal);
+
+    if (!matchday) {
+      suggestionsCopy.textContent = "Open a matchday first, then use the board to collect ideas and replies.";
+      suggestionBoardCopy.textContent = "Suggestions attach to one matchday at a time.";
+      return;
+    }
+
+    if (!discussionTablesReady) {
+      suggestionsCopy.textContent = "Suggestions stay in view mode until the discussion migration is applied.";
+      suggestionBoardCopy.textContent = `Matchday ${matchday.matchday_number} is ready for discussion once the board tables exist.`;
+      return;
+    }
+
+    suggestionsCopy.textContent = previewMode
+      ? "Test suggestion posting, replies, and likes on the saved matchday board."
+      : `Share one clear idea for Matchday ${matchday.matchday_number}, then reply or like the threads that matter most.`;
+
+    suggestionBoardCopy.textContent = threadTotal
+      ? `Matchday ${matchday.matchday_number} currently has ${countLabel(threadTotal, "suggestion")}, ${countLabel(replyTotal, "reply")}, and ${countLabel(likeTotal, "like")}.`
+      : `Matchday ${matchday.matchday_number} does not have any suggestions yet.`;
+  }
+
+  function renderSuggestionComposer() {
+    const matchday = selectedMatchday();
+    const player = selectedPlayer();
+    const canWrite = Boolean(matchday && player && discussionTablesReady && !savingSuggestion);
+
+    suggestionTitleInput.disabled = !canWrite;
+    suggestionBodyInput.disabled = !canWrite;
+    saveSuggestionButton.disabled = !canWrite;
+    saveSuggestionButton.textContent = savingSuggestion ? "Posting..." : "Post suggestion";
+
+    if (!matchday) {
+      suggestionNote.textContent = "Choose a matchday first.";
+      return;
+    }
+
+    if (!discussionTablesReady) {
+      suggestionNote.textContent = "Discussion saving is not switched on yet.";
+      return;
+    }
+
+    if (!player) {
+      suggestionNote.textContent = "Choose your name first to post, reply, or like suggestions.";
+      return;
+    }
+
+    suggestionNote.textContent = previewMode
+      ? `Posting as ${playerDisplayName(player)} while preview access is open.`
+      : `Posting as ${playerDisplayName(player)} on Matchday ${matchday.matchday_number}.`;
+  }
+
+  function renderSuggestionThreads() {
+    const matchday = selectedMatchday();
+    const player = selectedPlayer();
+    const canInteract = Boolean(matchday && player && discussionTablesReady);
+    const threads = suggestionThreadRows();
+
+    if (!matchday) {
+      suggestionThreadList.innerHTML = '<div class="empty-state">Choose a matchday first.</div>';
+      return;
+    }
+
+    if (!discussionTablesReady) {
+      suggestionThreadList.innerHTML =
+        '<div class="empty-state">Suggestions stay in view mode until the discussion migration is applied.</div>';
+      return;
+    }
+
+    if (!threads.length) {
+      suggestionThreadList.innerHTML = `
+        <div class="empty-state">
+          No suggestions have been posted for Matchday ${escapeHtml(matchday.matchday_number)} yet.
+        </div>
+      `;
+      return;
+    }
+
+    suggestionThreadList.innerHTML = threads
+      .map((thread) => {
+        const threadReplies = suggestionReplyRows(thread.id);
+        const threadLikeList = suggestionLikeRows({ type: "thread", id: thread.id });
+        const threadLikeMatch = suggestionLikeRowForPlayer({ type: "thread", id: thread.id }, selectedPlayerId);
+        const threadLiked = Boolean(threadLikeMatch);
+        const threadLikeBusy = pendingLikeTargetKey === `thread:${thread.id}`;
+        const replyBusy = Number(savingReplySuggestionId) === Number(thread.id);
+        const isReplying = Number(activeReplySuggestionId) === Number(thread.id);
+        const replyDraft = replyDrafts.get(Number(thread.id)) || "";
+
+        return `
+          <article class="suggestion-thread-card">
+            <div class="suggestion-thread-head">
+              <div class="suggestion-thread-title-wrap">
+                <div class="section-label">Suggestion</div>
+                <h3>${escapeHtml(thread.title || "Untitled suggestion")}</h3>
+                <p class="mini-sub">
+                  ${escapeHtml(discussionAuthorLabel(thread.author_player_id))} ·
+                  ${escapeHtml(formatDateTime(thread.created_at))}
+                </p>
+              </div>
+              <div class="compact-badges">
+                <span class="tag-pill">${escapeHtml(countLabel(threadReplies.length, "reply"))}</span>
+                <span class="tag-pill">${escapeHtml(countLabel(threadLikeList.length, "like"))}</span>
+              </div>
+            </div>
+
+            <p class="suggestion-thread-body">${escapeHtml(thread.body || "")}</p>
+
+            <div class="suggestion-thread-actions">
+              <button
+                class="ghost-button suggestion-like-button ${threadLiked ? "active" : ""}"
+                type="button"
+                data-suggestion-like-id="${thread.id}"
+                aria-pressed="${threadLiked ? "true" : "false"}"
+                ${!canInteract || threadLikeBusy ? "disabled" : ""}
+              >
+                ${threadLikeBusy ? "Saving..." : threadLiked ? "Liked" : "Like"} · ${escapeHtml(threadLikeList.length)}
+              </button>
+              <button
+                class="secondary-button"
+                type="button"
+                data-toggle-reply-id="${thread.id}"
+                ${!canInteract || replyBusy ? "disabled" : ""}
+              >
+                ${isReplying ? "Close reply" : "Reply"}
+              </button>
+            </div>
+
+            ${
+              isReplying
+                ? `
+                  <div class="suggestion-reply-form">
+                    <div class="field">
+                      <label for="submission-reply-${thread.id}">Reply</label>
+                      <textarea
+                        id="submission-reply-${thread.id}"
+                        rows="3"
+                        maxlength="600"
+                        placeholder="Add a reply to this suggestion."
+                        data-reply-draft-id="${thread.id}"
+                      >${escapeHtml(replyDraft)}</textarea>
+                    </div>
+                    <div class="actions">
+                      <button
+                        class="primary-button"
+                        type="button"
+                        data-save-reply-id="${thread.id}"
+                        ${!canInteract || replyBusy ? "disabled" : ""}
+                      >
+                        ${replyBusy ? "Saving..." : "Send reply"}
+                      </button>
+                      <button
+                        class="ghost-button"
+                        type="button"
+                        data-cancel-reply-id="${thread.id}"
+                        ${replyBusy ? "disabled" : ""}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                `
+                : ""
+            }
+
+            ${
+              threadReplies.length
+                ? `
+                  <div class="suggestion-reply-list">
+                    ${threadReplies
+                      .map((reply) => {
+                        const replyLikeList = suggestionLikeRows({ type: "reply", id: reply.id });
+                        const replyLikeMatch = suggestionLikeRowForPlayer(
+                          { type: "reply", id: reply.id },
+                          selectedPlayerId
+                        );
+                        const replyLiked = Boolean(replyLikeMatch);
+                        const replyLikeBusy = pendingLikeTargetKey === `reply:${reply.id}`;
+
+                        return `
+                          <article class="suggestion-reply-card">
+                            <div class="suggestion-reply-head">
+                              <div class="suggestion-reply-meta">
+                                <strong>${escapeHtml(discussionAuthorLabel(reply.author_player_id))}</strong>
+                                <span class="mini-sub">${escapeHtml(formatDateTime(reply.created_at))}</span>
+                              </div>
+                              <span class="tag-pill">${escapeHtml(countLabel(replyLikeList.length, "like"))}</span>
+                            </div>
+
+                            <p class="suggestion-reply-body">${escapeHtml(reply.body || "")}</p>
+
+                            <div class="suggestion-reply-actions">
+                              <button
+                                class="ghost-button suggestion-like-button ${replyLiked ? "active" : ""}"
+                                type="button"
+                                data-reply-like-id="${reply.id}"
+                                aria-pressed="${replyLiked ? "true" : "false"}"
+                                ${!canInteract || replyLikeBusy ? "disabled" : ""}
+                              >
+                                ${replyLikeBusy ? "Saving..." : replyLiked ? "Liked" : "Like"} · ${escapeHtml(
+                                  replyLikeList.length
+                                )}
+                              </button>
+                            </div>
+                          </article>
+                        `;
+                      })
+                      .join("")}
+                  </div>
+                `
+                : ""
+            }
+          </article>
+        `;
+      })
+      .join("");
+  }
+
+  function renderSuggestions() {
+    renderSuggestionSummary();
+    renderSuggestionComposer();
+    renderSuggestionThreads();
+  }
+
   function renderSeasonOptions() {
     seasonSelect.innerHTML = seasons
       .map(
@@ -988,8 +1497,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (previewMode) {
       statsNote.textContent = statSubmission
-        ? "Stats saved. Staff can keep testing ratings separately below."
-        : "Open access is on right now so staff can test stat saving at any time.";
+        ? "Stats saved. Busses can keep testing ratings separately below."
+        : "Open access is on right now so busses can test stat saving at any time.";
       return;
     }
 
@@ -1139,7 +1648,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ratingNote.textContent = !ratingTablesReady
       ? "Live rating saving is not switched on yet."
       : previewMode
-        ? "Open access is on right now so staff can test the full report flow."
+        ? "Open access is on right now so busses can test the full report flow."
         : submissionState.ratingsOpen
           ? `Ratings stay open until ${formatLongDate(submissionState.ratingsCloseAt)}.`
           : "Ratings are not open for this matchday right now.";
@@ -1151,7 +1660,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const matchday = selectedMatchday();
 
     if (!matchday) {
-      reportTitle.textContent = previewMode ? "Staff Report Preview" : "Matchday Report";
+      reportTitle.textContent = previewMode ? "Busses Report Preview" : "Matchday Report";
       windowNote.textContent = previewMode
         ? "Choose a completed night to inspect the report flow."
         : "Open a matchday from Fixtures to enter a player report.";
@@ -1159,11 +1668,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const state = matchdayWindowState(matchday);
-    reportTitle.textContent = previewMode ? "Staff Report Preview" : "Matchday Report";
+    reportTitle.textContent = previewMode ? "Busses Report Preview" : "Matchday Report";
     windowNote.textContent = (!statTablesReady || !ratingTablesReady)
       ? "Player reports are open in view mode while live saving is being switched on."
       : previewMode
-        ? "Open access is on right now so staff can test the full player report flow."
+        ? "Open access is on right now so busses can test the full player report flow."
         : state.statsOpen && state.ratingsOpen
           ? `Stats and ratings are open right now. Stats close ${formatLongDate(state.statsCloseAt)} and ratings close ${formatLongDate(state.ratingsCloseAt)}.`
         : state.ratingsOpen
@@ -1173,12 +1682,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateHeaderCopy() {
     const matchday = selectedMatchday();
+    const viewingSuggestions = activeSubmissionView === "suggestions";
+
+    if (pageLabel) {
+      pageLabel.textContent = viewingSuggestions
+        ? "Club · Suggestions"
+        : "Fixtures · Matchday report";
+    }
+
+    if (pageTitle) {
+      pageTitle.textContent = viewingSuggestions ? "Suggestions" : "Player Report";
+    }
+
+    document.title = viewingSuggestions
+      ? "Club · Suggestions"
+      : "Match Centre · Report";
 
     heroCopy.textContent = previewMode
-      ? "Choose a completed night, pick your name first, then test stats and ratings independently."
+      ? viewingSuggestions
+        ? "Choose a completed night, pick your name first, then test suggestion posts, replies, and likes."
+        : "Choose a completed night, pick your name first, then test stats and ratings independently."
       : matchday
-        ? "Choose your name first. Your team and scores load automatically, then save stats or rate players in whichever order you need."
-        : "Open a matchday from Fixtures, then choose your name to submit stats or ratings.";
+        ? viewingSuggestions
+          ? "Choose your name first, then use the suggestion board to raise ideas, reply to threads, or like the notes that matter."
+          : "Choose your name first. Your team and scores load automatically, then save stats or rate players in whichever order you need."
+        : viewingSuggestions
+          ? "Open a matchday from Fixtures, then choose your name to post or reply on the suggestion board."
+          : "Open a matchday from Fixtures, then choose your name to submit stats or ratings.";
 
     playerCopy.textContent = previewMode
       ? "Open the report by choosing your name from the players who appeared on this saved matchday."
@@ -1198,8 +1728,10 @@ document.addEventListener("DOMContentLoaded", () => {
     renderMatchScoresCard();
     renderStatsForm();
     renderRatings();
+    renderSuggestions();
     renderWindowState();
     updateHeaderCopy();
+    setSubmissionView(activeSubmissionView, { updateHistory: false });
 
     const scheduleHref = activeSeasonId ? `./schedule.html?season_id=${activeSeasonId}` : "./schedule.html";
     scheduleLink.href = scheduleHref;
@@ -1218,7 +1750,7 @@ document.addEventListener("DOMContentLoaded", () => {
         selectedMatchdayId = activeMatchday?.id || defaultMatchdayId(activeBundle);
       }
 
-      await loadSubmissionsForMatchday();
+      await Promise.all([loadSubmissionsForMatchday(), loadDiscussionForMatchday()]);
 
       if (previewMode && !previewFallbackApplied && !eligiblePlayers().length) {
         previewFallbackApplied = true;
@@ -1239,12 +1771,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       selectedRateeId = null;
       renderAll();
-      setStatus(
-        statTablesReady && ratingTablesReady
-          ? "Player report loaded."
-          : "Player report loaded in view mode.",
-        statTablesReady && ratingTablesReady ? "success" : "warning"
-      );
+      {
+        const statusState = loadedStatusState();
+        setStatus(statusState.message, statusState.tone);
+      }
     } catch (error) {
       const message = readableSubmissionError(error);
       setStatus(message, "error");
@@ -1254,6 +1784,7 @@ document.addEventListener("DOMContentLoaded", () => {
       playerSelect.innerHTML = `<option value="">${escapeHtml(message)}</option>`;
       playerSelect.disabled = true;
       ratingTargets.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
+      suggestionThreadList.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
       ratingsEmpty.hidden = false;
       ratingsEmpty.textContent = message;
       statsForm.hidden = true;
@@ -1418,6 +1949,182 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  async function saveSuggestionThread(event) {
+    event.preventDefault();
+
+    const player = selectedPlayer();
+    const matchday = selectedMatchday();
+    const title = normalizeText(suggestionTitleInput.value || "");
+    const body = normalizeText(suggestionBodyInput.value || "");
+
+    if (!matchday) {
+      setStatus("Choose a matchday first.", "warning");
+      return;
+    }
+
+    if (!discussionTablesReady) {
+      setStatus("Discussion saving is not switched on yet.", "warning");
+      return;
+    }
+
+    if (!player) {
+      setStatus("Choose your name first to post a suggestion.", "warning");
+      return;
+    }
+
+    if (title.length < 3) {
+      setStatus("Add a short title for the suggestion before posting.", "warning");
+      suggestionTitleInput.focus();
+      return;
+    }
+
+    if (!body.length) {
+      setStatus("Write the suggestion details before posting.", "warning");
+      suggestionBodyInput.focus();
+      return;
+    }
+
+    try {
+      savingSuggestion = true;
+      renderSuggestionComposer();
+
+      const { error } = await supabaseClient.from("matchday_suggestions").insert({
+        matchday_id: matchday.id,
+        author_player_id: player.id,
+        title,
+        body,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      suggestionTitleInput.value = "";
+      suggestionBodyInput.value = "";
+      await loadDiscussionForMatchday();
+      renderSuggestions();
+      setStatus("Suggestion posted to the matchday board.", "success");
+    } catch (error) {
+      setStatus(readableSubmissionError(error), "error");
+    } finally {
+      savingSuggestion = false;
+      renderSuggestionComposer();
+    }
+  }
+
+  async function saveSuggestionReply(suggestionId) {
+    const player = selectedPlayer();
+    const matchday = selectedMatchday();
+    const body = normalizeText(replyDrafts.get(Number(suggestionId)) || "");
+
+    if (!matchday) {
+      setStatus("Choose a matchday first.", "warning");
+      return;
+    }
+
+    if (!discussionTablesReady) {
+      setStatus("Discussion saving is not switched on yet.", "warning");
+      return;
+    }
+
+    if (!player) {
+      setStatus("Choose your name first to reply.", "warning");
+      return;
+    }
+
+    if (!body.length) {
+      setStatus("Write the reply before saving it.", "warning");
+      return;
+    }
+
+    try {
+      savingReplySuggestionId = Number(suggestionId);
+      renderSuggestionThreads();
+
+      const { error } = await supabaseClient.from("matchday_suggestion_replies").insert({
+        suggestion_id: suggestionId,
+        author_player_id: player.id,
+        body,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      replyDrafts.delete(Number(suggestionId));
+      activeReplySuggestionId = null;
+      await loadDiscussionForMatchday();
+      renderSuggestions();
+      setStatus("Reply posted to the suggestion thread.", "success");
+    } catch (error) {
+      setStatus(readableSubmissionError(error), "error");
+    } finally {
+      savingReplySuggestionId = null;
+      renderSuggestionThreads();
+    }
+  }
+
+  async function toggleSuggestionLike(target) {
+    const player = selectedPlayer();
+    const matchday = selectedMatchday();
+    const targetKey = `${target.type}:${target.id}`;
+
+    if (!matchday) {
+      setStatus("Choose a matchday first.", "warning");
+      return;
+    }
+
+    if (!discussionTablesReady) {
+      setStatus("Discussion saving is not switched on yet.", "warning");
+      return;
+    }
+
+    if (!player) {
+      setStatus("Choose your name first to like suggestions or replies.", "warning");
+      return;
+    }
+
+    try {
+      pendingLikeTargetKey = targetKey;
+      renderSuggestionThreads();
+
+      const existingLike = suggestionLikeRowForPlayer(target, player.id);
+
+      if (existingLike) {
+        const { error } = await supabaseClient
+          .from("matchday_suggestion_likes")
+          .delete()
+          .eq("id", existingLike.id);
+
+        if (error) {
+          throw error;
+        }
+
+        setStatus("Like removed from the suggestion board.", "success");
+      } else {
+        const payload =
+          target.type === "reply"
+            ? { suggestion_reply_id: target.id, liked_by_player_id: player.id }
+            : { suggestion_id: target.id, liked_by_player_id: player.id };
+        const { error } = await supabaseClient.from("matchday_suggestion_likes").insert(payload);
+
+        if (error) {
+          throw error;
+        }
+
+        setStatus("Like saved to the suggestion board.", "success");
+      }
+
+      await loadDiscussionForMatchday();
+      renderSuggestions();
+    } catch (error) {
+      setStatus(readableSubmissionError(error), "error");
+    } finally {
+      pendingLikeTargetKey = "";
+      renderSuggestionThreads();
+    }
+  }
+
   seasonSelect.addEventListener("change", async () => {
     activeSeasonId = Number(seasonSelect.value);
     selectedMatchdayId = null;
@@ -1430,7 +2137,7 @@ document.addEventListener("DOMContentLoaded", () => {
     selectedMatchdayId = Number(matchdaySelect.value) || null;
     selectedPlayerId = null;
     selectedRateeId = null;
-    await loadSubmissionsForMatchday();
+    await Promise.all([loadSubmissionsForMatchday(), loadDiscussionForMatchday()]);
     renderAll();
   });
 
@@ -1438,6 +2145,15 @@ document.addEventListener("DOMContentLoaded", () => {
     selectedPlayerId = Number(playerSelect.value) || null;
     selectedRateeId = null;
     renderAll();
+  });
+
+  submissionViewTriggers.forEach((button) => {
+    button.addEventListener("click", () => {
+      setSubmissionView(button.dataset.submissionViewTrigger, {
+        focus: true,
+        scroll: true,
+      });
+    });
   });
 
   statsForm.addEventListener("submit", saveStatSubmission);
@@ -1485,6 +2201,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   ratingForm.addEventListener("submit", saveRatingSubmission);
+  suggestionForm.addEventListener("submit", saveSuggestionThread);
 
   nextRatingButton.addEventListener("click", () => {
     const nextId = nextTargetId();
@@ -1496,8 +2213,74 @@ document.addEventListener("DOMContentLoaded", () => {
     renderAll();
   });
 
+  refreshSuggestionsButton.addEventListener("click", async () => {
+    try {
+      await loadDiscussionForMatchday();
+      renderSuggestions();
+      setStatus(
+        discussionTablesReady
+          ? "Suggestion board refreshed."
+          : "Suggestion board is still waiting on the discussion migration.",
+        discussionTablesReady ? "success" : "warning"
+      );
+    } catch (error) {
+      setStatus(readableSubmissionError(error), "error");
+    }
+  });
+
+  suggestionThreadList.addEventListener("click", async (event) => {
+    const likeThreadButton = event.target.closest("[data-suggestion-like-id]");
+    if (likeThreadButton) {
+      await toggleSuggestionLike({
+        type: "thread",
+        id: Number(likeThreadButton.dataset.suggestionLikeId),
+      });
+      return;
+    }
+
+    const likeReplyButton = event.target.closest("[data-reply-like-id]");
+    if (likeReplyButton) {
+      await toggleSuggestionLike({
+        type: "reply",
+        id: Number(likeReplyButton.dataset.replyLikeId),
+      });
+      return;
+    }
+
+    const toggleReplyButton = event.target.closest("[data-toggle-reply-id]");
+    if (toggleReplyButton) {
+      const suggestionId = Number(toggleReplyButton.dataset.toggleReplyId);
+      activeReplySuggestionId =
+        Number(activeReplySuggestionId) === suggestionId ? null : suggestionId;
+      renderSuggestionThreads();
+      return;
+    }
+
+    const cancelReplyButton = event.target.closest("[data-cancel-reply-id]");
+    if (cancelReplyButton) {
+      activeReplySuggestionId = null;
+      renderSuggestionThreads();
+      return;
+    }
+
+    const saveReplyButton = event.target.closest("[data-save-reply-id]");
+    if (saveReplyButton) {
+      await saveSuggestionReply(Number(saveReplyButton.dataset.saveReplyId));
+    }
+  });
+
+  suggestionThreadList.addEventListener("input", (event) => {
+    const textarea = event.target.closest("[data-reply-draft-id]");
+    if (!textarea) {
+      return;
+    }
+
+    replyDrafts.set(Number(textarea.dataset.replyDraftId), textarea.value);
+  });
+
   async function init() {
     try {
+      setSubmissionView(activeSubmissionView, { updateHistory: false });
       seasons = await fetchSeasons();
 
       if (previewMode && !hasExplicitSeasonQuery && !hasExplicitMatchdayQuery) {

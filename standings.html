@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="./assets/css/app.css?v=20260425b" />
-    <title>Staff · League Table</title>
+    <title>Busses · Standings</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/js/core/club_logic.js"></script>
     <script src="./assets/js/core/supabase_config.js"></script>
@@ -15,11 +15,9 @@
       <div class="site-nav-inner">
         <a href="./squad.html" class="site-logo"><span class="logo-dot"></span><span>Mandarinas <span class="logo-accent">CF</span></span></a>
         <div class="nav-links">
-          <a class="nav-link" href="./squad.html">Squad</a>
-          <a class="nav-link" href="./seasons.html">Season</a>
-          <a class="nav-link" href="./matchday.html">Match Centre</a>
-          <a class="nav-link" href="./submissions.html?preview=1">Reports</a>
-          <a class="nav-link active" href="./standings.html">Table</a>
+          <a class="nav-link" href="./squad.html">Directory</a>
+          <a class="nav-link active" href="./seasons.html">Season</a>
+          <a class="nav-link" href="./matchday.html">Matchday</a>
           <a class="nav-link" href="./tiers.html">Planner</a>
         </div>
         <a href="./home.html" class="nav-mode-badge">Club</a>
@@ -29,8 +27,8 @@
     <main class="page">
       <section class="panel page-header">
         <div class="page-header-main">
-          <div class="section-label">Staff · League Table</div>
-          <h1>League Table</h1>
+          <div class="section-label">Busses · Standings</div>
+          <h1>Season Standings</h1>
           <p id="hero-copy">
             Season rankings use only the active roster. The table only counts fully scored matchdays.
           </p>
@@ -42,15 +40,15 @@
           </div>
         </div>
         <div class="actions">
-          <a class="primary-button" href="#standings-table-wrap">Open table</a>
-          <a class="secondary-button" href="./matchday.html">Open match centre</a>
+          <a class="primary-button" href="#standings-table-wrap">Open standings</a>
+          <a class="secondary-button" href="./matchday.html">Open matchday</a>
           <a class="secondary-button" href="./tiers.html">Open planner</a>
         </div>
       </section>
 
       <section class="panel">
         <div class="section-label">Overview</div>
-        <h2>Table Snapshot</h2>
+        <h2>Standings Snapshot</h2>
         <div class="summary-grid">
           <div class="summary-card">
             <span>Completed matchdays</span>
@@ -86,8 +84,8 @@
       <p class="status-line warning" id="standings-data-note" hidden></p>
 
       <section class="panel">
-        <div class="section-label">Table</div>
-        <h2>Season Table</h2>
+      <div class="section-label">Standings</div>
+      <h2>Season Standings</h2>
         <p id="table-note">Full season rankings</p>
         <div class="field">
           <label for="standings-search">Search the table</label>
@@ -116,14 +114,14 @@
         <div class="section-label">Continue</div>
         <h2>Next admin action</h2>
         <div class="actions">
-          <a class="secondary-button" href="./matchday.html" id="open-matchday-link">Open match center</a>
+          <a class="secondary-button" href="./matchday.html" id="open-matchday-link">Open matchday</a>
           <a class="secondary-button" href="./tiers.html">Open tier planner</a>
         </div>
       </section>
     </main>
 
     <footer class="club-footer">
-      <div class="club-footer-copy">Staff · League Table</div>
+      <div class="club-footer-copy">Busses · Standings</div>
     </footer>
 
     <script src="./assets/js/core/app.js" defer></script>

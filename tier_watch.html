@@ -3,13 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="./assets/css/app.css?v=20260425b" />
-    <title>Club · Tracker</title>
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260426a" />
+    <title>Club · Rotation Tier Queue</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/js/core/club_logic.js"></script>
     <script src="./assets/js/core/supabase_config.js"></script>
     <script src="./assets/js/core/app.js?v=20260425b" defer></script>
-    <script src="./assets/js/ui/shell.js?v=20260425a" defer></script>
+    <script src="./assets/js/ui/shell.js?v=20260426e" defer></script>
   </head>
   <body class="manager-touch">
     <nav class="site-nav">
@@ -19,24 +19,23 @@
           <span>Mandarinas <span class="logo-accent">CF</span></span>
         </a>
         <div class="nav-links">
-          <a class="nav-link" href="./home.html">Club HQ</a>
-          <a class="nav-link" href="./schedule.html">Fixtures</a>
-          <a class="nav-link" href="./public_standings.html">Table</a>
+          <a class="nav-link" href="./home.html">Home</a>
+          <a class="nav-link active" href="./schedule.html">Season</a>
           <a class="nav-link" href="./roster.html">Squad</a>
-          <a class="nav-link" href="./tier_system.html">Pathway</a>
-          <a class="nav-link active" href="./tier_watch.html">Tracker</a>
+          <a class="nav-link" href="./videos.html">Match Videos</a>
+          <a class="nav-link" href="./submissions.html?view=suggestions">Suggestions</a>
         </div>
-        <a href="./staff.html" class="nav-mode-badge">Staff</a>
+        <a href="./busses.html" class="nav-mode-badge">Busses</a>
       </div>
     </nav>
 
     <main class="page">
       <section class="panel page-header">
         <div class="page-header-main">
-          <div class="section-label">Club · Tracker</div>
-          <h1>Pathway Tracker</h1>
+          <div class="section-label">Club · Rotation Tier Queue</div>
+          <h1>Rotation Tier Queue</h1>
           <p id="hero-copy">
-            Keep the live rotation queue visible first, and open recommendation details only when you need them.
+            This is the live line for rotation-tier players. If you remember the old buddy system, this is the updated version of that line.
           </p>
           <div class="field">
             <label for="season-select">Season</label>
@@ -44,15 +43,15 @@
           </div>
         </div>
         <div class="actions">
-          <a class="primary-button" href="#queue-table-wrap">Open live queue</a>
-          <a class="secondary-button" href="#suggestion-summary-panel">Open recommendation plan</a>
+          <a class="primary-button" href="#queue-table-wrap">Who is next</a>
+          <a class="secondary-button" href="./public_standings.html">Open standings</a>
           <a class="secondary-button" href="./tier_system.html">How tiers work</a>
         </div>
       </section>
 
       <section class="panel" id="summary-bar">
         <div class="section-label">Snapshot</div>
-        <h2>Tracker Snapshot</h2>
+        <h2>Rotation Tier Snapshot</h2>
         <div class="summary-grid">
           <div class="summary-card">
             <span>Weighted spot plan</span>
@@ -84,8 +83,8 @@
 
       <section class="panel">
         <div class="section-label">Live</div>
-        <h2>Live queue</h2>
-        <div class="status-line" id="tier-status-line">Loading the tier tracker...</div>
+        <h2>Who is next</h2>
+        <div class="status-line" id="tier-status-line">Loading the rotation queue...</div>
         <div class="table-shell tw-table-wrap" id="queue-table-wrap"></div>
       </section>
 
@@ -102,10 +101,10 @@
     </main>
 
     <footer class="club-footer">
-      <div class="club-footer-copy">Club · Tracker</div>
+      <div class="club-footer-copy">Club · Rotation Tier Queue</div>
     </footer>
 
-    <script src="./assets/js/pages/public/tier-watch.js?v=20260424"></script>
+    <script src="./assets/js/pages/public/tier-watch.js?v=20260426b"></script>
     <div class="site-modal" id="tier-suggestion-modal" hidden>
       <div class="site-modal-backdrop" data-modal-close></div>
       <div

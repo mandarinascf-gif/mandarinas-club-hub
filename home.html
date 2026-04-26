@@ -3,14 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="./assets/css/app.css?v=20260425e" />
-    <title>Club HQ · Dashboard</title>
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260426e" />
+    <title>Club · Home</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/js/core/club_logic.js"></script>
     <script src="./assets/js/core/supabase_config.js"></script>
     <script src="./assets/js/core/weather.js"></script>
     <script src="./assets/js/core/app.js?v=20260425b" defer></script>
-    <script src="./assets/js/ui/shell.js?v=20260425e" defer></script>
+    <script src="./assets/js/ui/shell.js?v=20260426e" defer></script>
   </head>
   <body class="manager-touch">
     <nav class="site-nav">
@@ -20,14 +20,13 @@
           <span>Mandarinas <span class="logo-accent">CF</span></span>
         </a>
         <div class="nav-links">
-          <a class="nav-link active" href="./home.html">Club HQ</a>
-          <a class="nav-link" href="./schedule.html">Fixtures</a>
-          <a class="nav-link" href="./public_standings.html">Table</a>
+          <a class="nav-link active" href="./home.html">Home</a>
+          <a class="nav-link" href="./schedule.html">Season</a>
           <a class="nav-link" href="./roster.html">Squad</a>
-          <a class="nav-link" href="./tier_system.html">Pathway</a>
-          <a class="nav-link" href="./tier_watch.html">Tracker</a>
+          <a class="nav-link" href="./videos.html">Match Videos</a>
+          <a class="nav-link" href="./submissions.html?view=suggestions">Suggestions</a>
         </div>
-        <a href="./staff.html" class="nav-mode-badge">Staff</a>
+        <a href="./busses.html" class="nav-mode-badge">Busses</a>
       </div>
     </nav>
 
@@ -35,15 +34,15 @@
       <section class="panel page-header home-hero">
         <div class="home-hero-copy">
           <div class="page-header-main">
-            <div class="section-label">Club HQ · Dashboard</div>
-            <h1>Club HQ</h1>
+            <div class="section-label">Club · Home</div>
+            <h1>Home</h1>
             <p id="hero-copy">
               Loading the current season, next kickoff, latest results, and standings leaders.
             </p>
           </div>
           <div class="actions home-hero-actions">
-            <a class="primary-button" href="./schedule.html">Open fixtures</a>
-            <a class="secondary-button" href="./public_standings.html">Open table</a>
+            <a class="primary-button" href="./schedule.html">Open season</a>
+            <a class="secondary-button" href="./public_standings.html">Open standings</a>
             <a class="secondary-button" href="./roster.html">Open squad</a>
           </div>
         </div>
@@ -86,10 +85,12 @@
           <div class="detail-card">
             <div class="section-label">Shortcuts</div>
             <ul>
-              <li><a href="./schedule.html">Fixtures</a></li>
-              <li><a href="./public_standings.html">Table</a></li>
+              <li><a href="./schedule.html">Season</a></li>
               <li><a href="./roster.html">Squad</a></li>
-              <li><a href="./tier_watch.html">Tracker</a></li>
+              <li><a href="./videos.html">Match Videos</a></li>
+              <li><a href="./submissions.html?view=suggestions">Suggestions</a></li>
+              <li><a href="./public_standings.html">Standings</a></li>
+              <li><a href="./tier_watch.html">Queue</a></li>
             </ul>
           </div>
         </section>
@@ -131,9 +132,9 @@
     </main>
 
     <footer class="club-footer">
-      <div class="club-footer-copy">Club HQ · Dashboard</div>
+      <div class="club-footer-copy">Club · Home</div>
     </footer>
 
-    <script src="./assets/js/pages/public/home.js?v=20260425e"></script>
+    <script src="./assets/js/pages/public/home.js?v=20260426c"></script>
   </body>
 </html>

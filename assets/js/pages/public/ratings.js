@@ -680,7 +680,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function windowNoteMarkup(matchday) {
     if (!matchday) {
       return previewMode
-        ? "Open a matchday first. Staff can test the ratings flow while official records stay locked."
+        ? "Open a matchday first. Busses can test the ratings flow while official records stay locked."
         : "No live player ratings window is open right now.";
     }
 
@@ -691,7 +691,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const state = matchdayWindowState(matchday);
 
     if (previewMode) {
-      return "Open access is on right now so staff can test the ratings flow.";
+      return "Open access is on right now so busses can test the ratings flow.";
     }
 
     if (!matchday.kickoff_at) {
@@ -957,7 +957,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ratingNote.textContent = !submissionTablesReady
       ? "Saving is disabled until live rating saving is switched on."
       : previewMode
-        ? "Open access is on right now so staff can test the ratings flow."
+        ? "Open access is on right now so busses can test the ratings flow."
         : submissionState.ratingsOpen
           ? `Ratings stay open until ${formatLongDate(submissionState.ratingsCloseAt)}.`
           : "Ratings are not open for this matchday right now.";
@@ -1023,7 +1023,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       heroCopy.textContent = previewMode
-        ? `${activeBundle.season.name} ratings desk is open for staff testing. Open any matchday, pick a player, and inspect the rating queue.`
+        ? `${activeBundle.season.name} ratings desk is open for busses testing. Open any matchday, pick a player, and inspect the rating queue.`
         : selectedMatchdayId
           ? `${activeBundle.season.name} player ratings are live for the current matchday. Pick yourself and work through the queue whenever ratings are open.`
           : `${activeBundle.season.name} player ratings are waiting for the next live window.`;

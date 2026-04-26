@@ -1,13 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const shell = window.MandarinasShell || {};
-  const refreshMotion = shell.refreshMotion || (() => {});
-  const pulseSurface = shell.pulseSurface || (() => {});
-  const animateNumber = shell.animateNumber || ((element, value) => {
-    if (element) {
-      element.textContent = String(value);
-    }
-  });
-
   if (!window.MandarinasPublic) {
     const msg =
       "MandarinasPublic failed to load. Check browser console for connection or script errors.";
@@ -125,14 +116,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!rows.length) {
       container.innerHTML = '<div class="empty-state">No season stats yet.</div>';
-      refreshMotion(container);
       return;
     }
 
     container.innerHTML = rows
       .map((entry, index) => renderLeaderRow(index + 1, entry.player, `${valueGetter(entry)} ${valueLabel}`))
       .join("");
-    refreshMotion(container);
   }
 
   function renderSeasonLeader(standing) {
@@ -155,8 +144,6 @@ document.addEventListener("DOMContentLoaded", () => {
         </ul>
       </div>
     `;
-    refreshMotion(mvpCard);
-    pulseSurface(mvpCard, "goal-flash");
   }
 
   function resultMatchMarkup(match) {
@@ -316,7 +303,6 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
       })
       .join("");
-    refreshMotion(pastWinnersCard);
   }
 
   async function init() {
@@ -362,8 +348,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       seasonName.textContent = season.name;
       seasonSub.textContent = `${season.total_matchdays} matchdays scheduled`;
-      animateNumber(completedDays, completedMatchdays.length);
-      animateNumber(rankedPlayers, standings.length);
+      completedDays.textContent = String(completedMatchdays.length);
+      rankedPlayers.textContent = String(standings.length);
       heroCopy.textContent = `${season.name} is live. Review the next kickoff, latest results, and current standings here.`;
 
       if (upcoming) {
@@ -430,8 +416,6 @@ document.addEventListener("DOMContentLoaded", () => {
             ${renderGoalkeepingBlock(goalkeepingByTeam)}
           </div>
         `;
-        refreshMotion(latestResultsCard);
-        pulseSurface(latestResultsCard, "goal-flash");
       } else {
         latestResultsCard.hidden = true;
       }

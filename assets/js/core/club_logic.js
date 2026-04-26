@@ -1112,10 +1112,83 @@
     return playerDisplayName(left).localeCompare(playerDisplayName(right));
   }
 
-  function compareRotationQueuePriority(left, right) {
-    const gamesDiff = Number(left.games_attended || 0) - Number(right.games_attended || 0);
-    if (gamesDiff) {
-      return gamesDiff;
+  function compareSeasonPerformancePriority(left, right) {
+    const leftPoints = Number(left.total_points || 0);
+    const rightPoints = Number(right.total_points || 0);
+
+    if (rightPoints !== leftPoints) {
+      return rightPoints - leftPoints;
+    }
+
+    const leftPpg = Number(
+      left.points_per_game ?? (left.games_played ? left.total_points / left.games_played : 0)
+    );
+    const rightPpg = Number(
+      right.points_per_game ?? (right.games_played ? right.total_points / right.games_played : 0)
+    );
+
+    if (rightPpg !== leftPpg) {
+      return rightPpg - leftPpg;
+    }
+
+    if (Number(right.wins || 0) !== Number(left.wins || 0)) {
+      return Number(right.wins || 0) - Number(left.wins || 0);
+    }
+
+    if (Number(right.draws || 0) !== Number(left.draws || 0)) {
+      return Number(right.draws || 0) - Number(left.draws || 0);
+    }
+
+    if (Number(left.losses || 0) !== Number(right.losses || 0)) {
+      return Number(left.losses || 0) - Number(right.losses || 0);
+    }
+
+    if (Number(right.goals || 0) !== Number(left.goals || 0)) {
+      return Number(right.goals || 0) - Number(left.goals || 0);
+    }
+
+    const leftGoalkeeping = Number(
+      left.goal_keep_points_earned ?? left.goal_keeps ?? left.goalie_points ?? 0
+    );
+    const rightGoalkeeping = Number(
+      right.goal_keep_points_earned ?? right.goal_keeps ?? right.goalie_points ?? 0
+    );
+
+    if (rightGoalkeeping !== leftGoalkeeping) {
+      return rightGoalkeeping - leftGoalkeeping;
+    }
+
+    if (Number(right.clean_sheets || 0) !== Number(left.clean_sheets || 0)) {
+      return Number(right.clean_sheets || 0) - Number(left.clean_sheets || 0);
+    }
+
+    if (Number(right.attendance_points || 0) !== Number(left.attendance_points || 0)) {
+      return Number(right.attendance_points || 0) - Number(left.attendance_points || 0);
+    }
+
+    return playerDisplayName(left.player || left).localeCompare(playerDisplayName(right.player || right));
+  }
+
+  function compareRotationQueuePriority(left, right, options = {}) {
+    const finalMatchday = options.finalMatchday === true;
+
+    if (!finalMatchday) {
+      const gamesDiff = Number(left.games_attended || 0) - Number(right.games_attended || 0);
+      if (gamesDiff) {
+        return gamesDiff;
+      }
+    }
+
+    const standingsDiff = compareSeasonPerformancePriority(left, right);
+    if (standingsDiff) {
+      return standingsDiff;
+    }
+
+    if (finalMatchday) {
+      const gamesDiff = Number(left.games_attended || 0) - Number(right.games_attended || 0);
+      if (gamesDiff) {
+        return gamesDiff;
+      }
     }
 
     const scoreDiff = Number(right.attendance_score || 0) - Number(left.attendance_score || 0);
@@ -1136,14 +1209,99 @@
     return playerDisplayName(left).localeCompare(playerDisplayName(right));
   }
 
-  function buildRotationQueueRows(rows) {
+  function buildStandingsByPlayerId(
+    players,
+    assignments,
+    playerStats,
+    matchdays,
+    matches,
+    scoringSource
+  ) {
+    const standings = buildStandings(
+      players,
+      assignments,
+      playerStats,
+      buildCompletedMatchdays(matchdays, matches),
+      scoringSource
+    );
+
+    return new Map(
+      standings
+        .map((entry) => [Number(entry.player_id || entry.player?.id), entry])
+        .filter(([playerId]) => Number.isFinite(playerId))
+    );
+  }
+
+  function finalMatchdayNumber(season, matchdays) {
+    const seasonTotal = Number(season?.total_matchdays || 0);
+    if (seasonTotal > 0) {
+      return seasonTotal;
+    }
+
+    return Math.max(
+      0,
+      ...(matchdays || []).map((matchday) => Number(matchday?.matchday_number || 0)).filter(Number.isFinite)
+    );
+  }
+
+  function isFinalMatchday(matchday, season, matchdays) {
+    const matchdayNumber = Number(matchday?.matchday_number || 0);
+    const lastMatchdayNumber = finalMatchdayNumber(season, matchdays);
+    return matchdayNumber > 0 && lastMatchdayNumber > 0 && matchdayNumber >= lastMatchdayNumber;
+  }
+
+  function findNextOpenMatchday(matchdays, matches) {
+    const completedMatchdayIds = new Set(
+      buildCompletedMatchdays(matchdays, matches).map((matchday) => Number(matchday.id))
+    );
+
+    return [...(matchdays || [])]
+      .sort((left, right) => Number(left.matchday_number || 0) - Number(right.matchday_number || 0))
+      .find((matchday) => !completedMatchdayIds.has(Number(matchday.id))) || null;
+  }
+
+  function rotationQueueMode(season, matchdays, matches, matchday = null) {
+    const targetMatchday = matchday || findNextOpenMatchday(matchdays, matches);
+    return isFinalMatchday(targetMatchday, season, matchdays) ? "final" : "regular";
+  }
+
+  function buildRotationQueueRows(rows, options = {}) {
+    const standingsByPlayerId = options.standingsByPlayerId instanceof Map ? options.standingsByPlayerId : null;
+    const finalMatchday = options.finalMatchday === true;
+
     return [...(rows || [])]
       .filter(
         (row) =>
           normalizeTierValue(row.tier_status || row.default_status, "flex_sub") === "rotation" &&
           row.is_eligible !== false
       )
-      .sort(compareRotationQueuePriority);
+      .map((row) => {
+        const standings = standingsByPlayerId?.get(Number(row.player_id));
+
+        if (!standings) {
+          return {
+            ...row,
+            rotation_queue_mode: finalMatchday ? "final" : "regular",
+          };
+        }
+
+        return {
+          ...row,
+          total_points: Number(standings.total_points || 0),
+          points_per_game: Number(standings.points_per_game || 0),
+          wins: Number(standings.wins || 0),
+          draws: Number(standings.draws || 0),
+          losses: Number(standings.losses || 0),
+          goals: Number(standings.goals || 0),
+          goal_keep_points_earned: Number(
+            standings.goal_keep_points_earned ?? standings.goal_keeps ?? standings.goalie_points ?? 0
+          ),
+          clean_sheets: Number(standings.clean_sheets || 0),
+          attendance_points: Number(standings.attendance_points || 0),
+          rotation_queue_mode: finalMatchday ? "final" : "regular",
+        };
+      })
+      .sort((left, right) => compareRotationQueuePriority(left, right, { finalMatchday }));
   }
 
   function historicalSeasonIds(seasons, selectedSeasonId) {
@@ -1623,53 +1781,7 @@
   }
 
   function compareStandingsPriority(left, right) {
-    if (right.total_points !== left.total_points) {
-      return right.total_points - left.total_points;
-    }
-
-    const leftPpg = Number(
-      left.points_per_game ?? (left.games_played ? left.total_points / left.games_played : 0)
-    );
-    const rightPpg = Number(
-      right.points_per_game ?? (right.games_played ? right.total_points / right.games_played : 0)
-    );
-
-    if (rightPpg !== leftPpg) {
-      return rightPpg - leftPpg;
-    }
-
-    if (right.wins !== left.wins) {
-      return right.wins - left.wins;
-    }
-
-    if (right.draws !== left.draws) {
-      return right.draws - left.draws;
-    }
-
-    if (left.losses !== right.losses) {
-      return left.losses - right.losses;
-    }
-
-    if (right.goals !== left.goals) {
-      return right.goals - left.goals;
-    }
-
-    const leftGoalkeeping = Number(left.goal_keep_points_earned ?? left.goal_keeps ?? left.goalie_points ?? 0);
-    const rightGoalkeeping = Number(right.goal_keep_points_earned ?? right.goal_keeps ?? right.goalie_points ?? 0);
-
-    if (rightGoalkeeping !== leftGoalkeeping) {
-      return rightGoalkeeping - leftGoalkeeping;
-    }
-
-    if (right.clean_sheets !== left.clean_sheets) {
-      return right.clean_sheets - left.clean_sheets;
-    }
-
-    if (right.attendance_points !== left.attendance_points) {
-      return right.attendance_points - left.attendance_points;
-    }
-
-    return playerDisplayName(left.player).localeCompare(playerDisplayName(right.player));
+    return compareSeasonPerformancePriority(left, right);
   }
 
   function compareStandingsByKey(left, right, sortKey, sortDir) {
@@ -1932,7 +2044,11 @@
     buildBalancedTeams,
     summarizeBalancedAssignments: summarizeTeamBalanceAssignments,
     TIER_SUGGESTION_SLOT_LIMIT,
+    compareRotationQueuePriority,
     buildRotationQueueRows,
+    buildStandingsByPlayerId,
+    isFinalMatchday,
+    rotationQueueMode,
     historicalSeasonIds,
     summarizeHistoricalAttendance,
     applyTierSuggestionSlots,

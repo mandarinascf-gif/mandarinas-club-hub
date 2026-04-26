@@ -1,16 +1,4 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  const shell = window.MandarinasShell || {};
-  const refreshMotion = shell.refreshMotion || (() => {});
-  const pulseSurface = shell.pulseSurface || (() => {});
-  const playFeedback = shell.playFeedback || ((element, options = {}) => {
-    pulseSurface(element, options.className || "ball-tap");
-  });
-  const animateNumber = shell.animateNumber || ((element, value) => {
-    if (element) {
-      element.textContent = String(value);
-    }
-  });
-
   if (!window.MandarinasPublic) {
     const msg = "MandarinasPublic failed to load. Check browser console for script errors.";
     document.getElementById("status-text").textContent = msg;
@@ -18,6 +6,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+  const supabaseClient = window.MandarinasSupabaseConfig.createClient();
   const {
     fetchSeasons,
     pickSeason,
@@ -45,15 +34,97 @@ document.addEventListener("DOMContentLoaded", async () => {
   const rotationPlayersEl = document.getElementById("rotation-players");
   const corePlayersEl = document.getElementById("core-players");
   const seasonNameEl = document.getElementById("season-name");
+  const rosterRequestCopy = document.getElementById("roster-request-copy");
+  const rosterRequestStatus = document.getElementById("roster-request-status");
+  const existingRequestForm = document.getElementById("roster-existing-request-form");
+  const existingDirectoryPlayerSelect = document.getElementById("roster-request-directory-player");
+  const existingTierSelect = document.getElementById("roster-request-existing-tier");
+  const existingContactInput = document.getElementById("roster-request-existing-contact");
+  const existingNoteInput = document.getElementById("roster-request-existing-note");
+  const existingRequestButton = document.getElementById("roster-request-existing-button");
+  const newRequestForm = document.getElementById("roster-new-request-form");
+  const newFirstNameInput = document.getElementById("roster-request-first-name");
+  const newLastNameInput = document.getElementById("roster-request-last-name");
+  const newNicknameInput = document.getElementById("roster-request-nickname");
+  const newNationalityInput = document.getElementById("roster-request-nationality");
+  const newPositionSelect = document.getElementById("roster-request-position");
+  const newTierSelect = document.getElementById("roster-request-new-tier");
+  const newContactInput = document.getElementById("roster-request-contact");
+  const newNoteInput = document.getElementById("roster-request-note");
+  const newRequestButton = document.getElementById("roster-request-new-button");
 
   let seasons = [];
   let activeSeasonId = querySeasonIdFromUrl();
   let allPlayers = [];
   let allStandings = [];
   let playerDetailsMap = new Map();
+  let directoryPlayers = [];
+  let seasonRosterRequests = [];
+  let rosterRequestsSupported = true;
   let positionFilter = "all";
   let tierFilter = "all";
   let selectedPlayerId = null;
+
+  function hasMissingDesiredTierColumn(error) {
+    const message = String(error?.message || "").toLowerCase();
+    return (
+      (message.includes("column") || message.includes("schema cache")) &&
+      message.includes("desired_tier")
+    );
+  }
+
+  function hasMissingRosterRequestTable(error) {
+    const message = String(error?.message || "").toLowerCase();
+    return (
+      message.includes("season_roster_requests") &&
+      (
+        message.includes("relation") ||
+        message.includes("schema cache") ||
+        message.includes("does not exist") ||
+        message.includes("could not find")
+      )
+    );
+  }
+
+  function normalizeDirectoryPlayer(player) {
+    const desiredTier = normalizeText(player?.desired_tier || player?.status || "rotation").toLowerCase();
+    return {
+      ...player,
+      desired_tier: desiredTier,
+      status: desiredTier,
+      positions: Array.isArray(player?.positions) && player.positions.length ? player.positions : ["MID"],
+    };
+  }
+
+  function normalizeRosterRequestRow(row) {
+    return {
+      ...row,
+      request_type: normalizeText(row?.request_type || "directory").toLowerCase(),
+      requester_name: normalizeText(row?.requester_name || ""),
+      requester_contact: normalizeText(row?.requester_contact || ""),
+      first_name: normalizeText(row?.first_name || ""),
+      last_name: normalizeText(row?.last_name || ""),
+      nickname: normalizeText(row?.nickname || ""),
+      nationality: normalizeText(row?.nationality || ""),
+      preferred_positions:
+        Array.isArray(row?.preferred_positions) && row.preferred_positions.length
+          ? row.preferred_positions.map((value) => normalizeText(value).toUpperCase())
+          : ["MID"],
+      requested_tier: normalizeText(row?.requested_tier || "rotation").toLowerCase(),
+      status: normalizeText(row?.status || "pending").toLowerCase(),
+      note: normalizeText(row?.note || ""),
+    };
+  }
+
+  function setRosterRequestStatus(message, tone = "") {
+    if (!rosterRequestStatus) {
+      return;
+    }
+
+    rosterRequestStatus.hidden = !message;
+    rosterRequestStatus.textContent = message || "";
+    rosterRequestStatus.className = tone ? `status-line ${tone}` : "status-line";
+  }
 
   function updateSeasonUrl() {
     const url = new URL(window.location.href);
@@ -120,6 +191,35 @@ document.addEventListener("DOMContentLoaded", async () => {
     return "ATT";
   }
 
+  function tierSortRank(status) {
+    if (status === "core") {
+      return 0;
+    }
+    if (status === "rotation") {
+      return 1;
+    }
+    if (status === "flex_sub") {
+      return 2;
+    }
+    return 3;
+  }
+
+  function comparePlayersForRoster(left, right) {
+    const tierDifference = tierSortRank(left?.status) - tierSortRank(right?.status);
+    if (tierDifference !== 0) {
+      return tierDifference;
+    }
+
+    const displayDifference = playerDisplayName(left).localeCompare(playerDisplayName(right));
+    if (displayDifference !== 0) {
+      return displayDifference;
+    }
+
+    const leftFullName = `${left?.first_name || ""} ${left?.last_name || ""}`.trim();
+    const rightFullName = `${right?.first_name || ""} ${right?.last_name || ""}`.trim();
+    return leftFullName.localeCompare(rightFullName);
+  }
+
   function visiblePlayers() {
     const query = normalizeText(rosterSearch.value).toLowerCase();
 
@@ -150,7 +250,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         return haystack.includes(query);
       })
-      .sort((left, right) => playerDisplayName(left).localeCompare(playerDisplayName(right)));
+      .sort(comparePlayersForRoster);
   }
 
   function ensureSelectedPlayerStillVisible() {
@@ -289,16 +389,194 @@ document.addEventListener("DOMContentLoaded", async () => {
     `;
   }
 
-  function updateSummaryStats(animate = false) {
-    const updateCount = animate
-      ? animateNumber
-      : (element, value) => {
-          element.textContent = String(value);
-        };
+  function updateSummaryStats() {
+    totalPlayersEl.textContent = String(allPlayers.length);
+    corePlayersEl.textContent = String(allPlayers.filter((player) => player.status === "core").length);
+    rotationPlayersEl.textContent = String(
+      allPlayers.filter((player) => player.status === "rotation").length
+    );
+  }
 
-    updateCount(totalPlayersEl, allPlayers.length);
-    updateCount(corePlayersEl, allPlayers.filter((player) => player.status === "core").length);
-    updateCount(rotationPlayersEl, allPlayers.filter((player) => player.status === "rotation").length);
+  function requestableDirectoryPlayers() {
+    const rosterPlayerIds = new Set(allPlayers.map((player) => Number(player.id)));
+    return directoryPlayers
+      .filter((player) => !rosterPlayerIds.has(Number(player.id)))
+      .sort(comparePlayersForRoster);
+  }
+
+  function pendingRequestsForSeason() {
+    return seasonRosterRequests.filter(
+      (row) => Number(row.season_id) === Number(activeSeasonId) && row.status === "pending"
+    );
+  }
+
+  function findDirectoryPlayerByName(firstName, lastName) {
+    const normalizedFirst = normalizeText(firstName).toLowerCase();
+    const normalizedLast = normalizeText(lastName).toLowerCase();
+
+    return (
+      directoryPlayers.find(
+        (player) =>
+          normalizeText(player.first_name).toLowerCase() === normalizedFirst &&
+          normalizeText(player.last_name).toLowerCase() === normalizedLast
+      ) || null
+    );
+  }
+
+  function setRequestInputsDisabled(disabled) {
+    [
+      existingDirectoryPlayerSelect,
+      existingTierSelect,
+      existingContactInput,
+      existingNoteInput,
+      existingRequestButton,
+      newFirstNameInput,
+      newLastNameInput,
+      newNicknameInput,
+      newNationalityInput,
+      newPositionSelect,
+      newTierSelect,
+      newContactInput,
+      newNoteInput,
+      newRequestButton,
+    ].forEach((element) => {
+      if (element) {
+        element.disabled = disabled;
+      }
+    });
+  }
+
+  function syncExistingRequestTierFromSelection() {
+    const selectedPlayerIdValue = Number(existingDirectoryPlayerSelect.value);
+    const player = requestableDirectoryPlayers().find((entry) => entry.id === selectedPlayerIdValue);
+    const fallbackTier = player?.desired_tier || player?.status || "rotation";
+    existingTierSelect.value = fallbackTier;
+  }
+
+  function resetNewRequestForm() {
+    newRequestForm.reset();
+    newPositionSelect.value = "MID";
+    newTierSelect.value = "rotation";
+  }
+
+  function renderRosterRequestTools() {
+    const selectedSeason = pickSeason(seasons, activeSeasonId);
+
+    if (!selectedSeason) {
+      directoryPlayers = [];
+      seasonRosterRequests = [];
+      existingDirectoryPlayerSelect.innerHTML =
+        '<option value="">Select your name from the main directory</option>';
+      rosterRequestCopy.textContent =
+        "Launch a season first. Squad requests only open after a live season is available.";
+      setRequestInputsDisabled(true);
+      return;
+    }
+
+    if (!rosterRequestsSupported) {
+      existingDirectoryPlayerSelect.innerHTML =
+        '<option value="">Self-request tools are waiting for the latest club update</option>';
+      rosterRequestCopy.textContent =
+        "Self-request tools will open after the latest live club update adds squad request tracking.";
+      setRequestInputsDisabled(true);
+      return;
+    }
+
+    const addablePlayers = requestableDirectoryPlayers();
+    const pendingRequests = pendingRequestsForSeason();
+    const pendingPlayerIds = new Set(
+      pendingRequests.filter((row) => row.player_id).map((row) => Number(row.player_id))
+    );
+    const availableDirectoryRequests = addablePlayers.filter(
+      (player) => !pendingPlayerIds.has(Number(player.id))
+    );
+
+    rosterRequestCopy.textContent = `${selectedSeason.name} is using ${allPlayers.length} live squad players. If you are missing from this season but already live in the main directory, request your spot here. If you are new to the club, send a directory request first. Admin approval is required before your name reaches the live squad.`;
+
+    if (!addablePlayers.length) {
+      existingDirectoryPlayerSelect.innerHTML =
+        '<option value="">Everyone in the main directory is already on this squad</option>';
+    } else {
+      existingDirectoryPlayerSelect.innerHTML = `
+        <option value="">Select your name from the main directory</option>
+        ${addablePlayers
+          .map((player) => {
+            const pending = pendingPlayerIds.has(Number(player.id));
+            const pendingLabel = pending ? " · pending request" : "";
+            return `<option value="${player.id}" ${pending ? "disabled" : ""}>${escapeHtml(
+              playerDisplayName(player)
+            )} · current/next-season ${escapeHtml(formatStatusLabel(player.status))}${escapeHtml(
+              pendingLabel
+            )}</option>`;
+          })
+          .join("")}
+      `;
+    }
+
+    if (!availableDirectoryRequests.length) {
+      existingDirectoryPlayerSelect.value = "";
+    } else if (
+      !availableDirectoryRequests.some(
+        (player) => Number(player.id) === Number(existingDirectoryPlayerSelect.value)
+      )
+    ) {
+      existingDirectoryPlayerSelect.value = String(availableDirectoryRequests[0].id);
+    }
+
+    syncExistingRequestTierFromSelection();
+    setRequestInputsDisabled(false);
+    existingDirectoryPlayerSelect.disabled = !addablePlayers.length;
+    existingRequestButton.disabled = !availableDirectoryRequests.length;
+  }
+
+  async function loadDirectoryPlayers() {
+    let { data, error } = await supabaseClient
+      .from("players")
+      .select("id, first_name, last_name, nickname, nationality, phone, positions, desired_tier, status")
+      .order("last_name", { ascending: true })
+      .order("first_name", { ascending: true });
+
+    if (error && hasMissingDesiredTierColumn(error)) {
+      ({ data, error } = await supabaseClient
+        .from("players")
+        .select("id, first_name, last_name, nickname, nationality, phone, positions, status")
+        .order("last_name", { ascending: true })
+        .order("first_name", { ascending: true }));
+    }
+
+    if (error) {
+      throw error;
+    }
+
+    directoryPlayers = (data || []).map(normalizeDirectoryPlayer);
+  }
+
+  async function loadSeasonRosterRequests() {
+    if (!activeSeasonId || !rosterRequestsSupported) {
+      seasonRosterRequests = [];
+      return;
+    }
+
+    const { data, error } = await supabaseClient
+      .from("season_roster_requests")
+      .select(
+        "id, season_id, player_id, request_type, requester_name, requester_contact, first_name, last_name, nickname, nationality, preferred_positions, requested_tier, note, status, created_at"
+      )
+      .eq("season_id", activeSeasonId)
+      .eq("status", "pending")
+      .order("created_at", { ascending: true });
+
+    if (error && hasMissingRosterRequestTable(error)) {
+      rosterRequestsSupported = false;
+      seasonRosterRequests = [];
+      return;
+    }
+
+    if (error) {
+      throw error;
+    }
+
+    seasonRosterRequests = (data || []).map(normalizeRosterRequestRow);
   }
 
   async function loadSeason() {
@@ -308,11 +586,17 @@ document.addEventListener("DOMContentLoaded", async () => {
       seasonSelect.innerHTML = '<option value="">No seasons available</option>';
       seasonSelect.disabled = true;
       seasonNameEl.textContent = "-";
+      allPlayers = [];
+      allStandings = [];
+      playerDetailsMap = new Map();
+      selectedPlayerId = null;
       statusLine.classList.remove("loading", "success", "error");
       statusLine.classList.add("warning");
       statusText.textContent = "No seasons found.";
       playerList.innerHTML = '<div class="empty-state">No seasons are available yet.</div>';
       playerDetail.innerHTML = '<div class="empty-state">Launch a season to view the squad.</div>';
+      updateSummaryStats();
+      renderRosterRequestTools();
       return;
     }
 
@@ -349,34 +633,38 @@ document.addEventListener("DOMContentLoaded", async () => {
         selectedPlayerId = allPlayers[0]?.id || null;
       }
 
-      updateSummaryStats(true);
+      updateSummaryStats();
       renderRoster();
       renderDetail();
-      refreshMotion(playerList);
-      refreshMotion(playerDetail);
-      pulseSurface(playerList, "goal-flash");
+
+      try {
+        await Promise.all([loadDirectoryPlayers(), loadSeasonRosterRequests()]);
+      } catch (requestSupportError) {
+        directoryPlayers = [];
+        seasonRosterRequests = [];
+        setRosterRequestStatus(readableError(requestSupportError), "warning");
+      }
+
+      renderRosterRequestTools();
 
       statusLine.classList.remove("loading", "error", "warning");
       statusLine.classList.add("success");
       statusText.textContent = `${selectedSeason.name} · ${allPlayers.length} players loaded`;
-      pulseSurface(statusLine);
     } catch (error) {
       const message = readableError(error);
+      directoryPlayers = [];
+      seasonRosterRequests = [];
       statusLine.classList.remove("loading", "success", "warning");
       statusLine.classList.add("error");
       statusText.textContent = message;
       playerList.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
       playerDetail.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
+      renderRosterRequestTools();
     }
   }
 
   document.querySelectorAll(".filter-chip").forEach((button) => {
     button.addEventListener("click", (event) => {
-      playFeedback(event.currentTarget, {
-        className: "ball-tap",
-        vibrationPattern: 8,
-      });
-
       const filterType = event.currentTarget.dataset.filter;
       const filterValue = event.currentTarget.dataset.value;
 
@@ -393,8 +681,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       ensureSelectedPlayerStillVisible();
       renderRoster();
       renderDetail();
-      refreshMotion(playerList);
-      refreshMotion(playerDetail);
     });
   });
 
@@ -410,26 +696,177 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    playFeedback(item, {
-      className: "ball-tap",
-      vibrationPattern: [10, 22, 12],
-    });
-
     selectedPlayerId = Number(item.dataset.playerId);
     renderRoster();
     renderDetail();
-    refreshMotion(playerDetail);
-    pulseSurface(playerDetail, "lineup-lock");
   });
 
   seasonSelect.addEventListener("change", async () => {
-    playFeedback(seasonSelect, {
-      className: "ball-tap",
-      vibrationPattern: 10,
+    activeSeasonId = Number(seasonSelect.value) || null;
+    setRosterRequestStatus("");
+    await loadSeason();
+  });
+
+  existingDirectoryPlayerSelect.addEventListener("change", () => {
+    syncExistingRequestTierFromSelection();
+  });
+
+  existingRequestForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    if (!activeSeasonId) {
+      setRosterRequestStatus("Choose a live season first.", "warning");
+      return;
+    }
+
+    if (!rosterRequestsSupported) {
+      setRosterRequestStatus(
+        "Season squad requests are waiting for the latest club update.",
+        "warning"
+      );
+      return;
+    }
+
+    const playerId = Number(existingDirectoryPlayerSelect.value);
+    const player = directoryPlayers.find((entry) => Number(entry.id) === playerId);
+
+    if (!playerId || !player) {
+      setRosterRequestStatus("Choose your directory profile first.", "warning");
+      return;
+    }
+
+    if (
+      pendingRequestsForSeason().some((row) => Number(row.player_id) === Number(playerId) && row.status === "pending")
+    ) {
+      setRosterRequestStatus("A pending season request already exists for that directory player.", "warning");
+      return;
+    }
+
+    existingRequestButton.disabled = true;
+    existingRequestButton.textContent = "Sending...";
+    setRosterRequestStatus(`Sending a season squad request for ${playerDisplayName(player)}...`);
+
+    const { error } = await supabaseClient.from("season_roster_requests").insert({
+      season_id: activeSeasonId,
+      player_id: player.id,
+      request_type: "directory",
+      requester_name: playerDisplayName(player),
+      requester_contact: normalizeText(existingContactInput.value || player.phone || "") || null,
+      first_name: player.first_name,
+      last_name: player.last_name,
+      nickname: normalizeText(player.nickname || "") || null,
+      nationality: player.nationality,
+      preferred_positions: Array.isArray(player.positions) && player.positions.length ? player.positions : ["MID"],
+      requested_tier: normalizeText(existingTierSelect.value || player.status || "rotation").toLowerCase(),
+      note: normalizeText(existingNoteInput.value) || null,
+      status: "pending",
     });
 
-    activeSeasonId = Number(seasonSelect.value) || null;
-    await loadSeason();
+    existingRequestButton.disabled = false;
+    existingRequestButton.textContent = "Request season squad spot";
+
+    if (error) {
+      setRosterRequestStatus(readableError(error), "error");
+      return;
+    }
+
+    existingContactInput.value = "";
+    existingNoteInput.value = "";
+    await loadSeasonRosterRequests();
+    renderRosterRequestTools();
+    setRosterRequestStatus(
+      `${playerDisplayName(player)} was sent to the busses for season squad approval.`,
+      "success"
+    );
+  });
+
+  newRequestForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    if (!activeSeasonId) {
+      setRosterRequestStatus("Choose a live season first.", "warning");
+      return;
+    }
+
+    if (!rosterRequestsSupported) {
+      setRosterRequestStatus(
+        "Season squad requests are waiting for the latest club update.",
+        "warning"
+      );
+      return;
+    }
+
+    const firstName = normalizeText(newFirstNameInput.value);
+    const lastName = normalizeText(newLastNameInput.value);
+    const nickname = normalizeText(newNicknameInput.value);
+    const nationality = normalizeText(newNationalityInput.value);
+    const contact = normalizeText(newContactInput.value);
+    const requestedTier = normalizeText(newTierSelect.value || "rotation").toLowerCase();
+    const position = normalizeText(newPositionSelect.value || "MID").toUpperCase();
+    const note = normalizeText(newNoteInput.value);
+    const requesterName = normalizeText(`${firstName} ${lastName}`);
+
+    if (!firstName || !lastName || !nationality || !contact) {
+      setRosterRequestStatus("Add your name, nationality, and contact before requesting directory review.", "warning");
+      return;
+    }
+
+    const existingDirectoryPlayer = findDirectoryPlayerByName(firstName, lastName);
+    if (existingDirectoryPlayer) {
+      setRosterRequestStatus(
+        `${playerDisplayName(existingDirectoryPlayer)} is already in the main directory. Use the directory profile request above instead.`,
+        "warning"
+      );
+      return;
+    }
+
+    if (
+      pendingRequestsForSeason().some(
+        (row) =>
+          row.player_id == null &&
+          normalizeText(row.first_name).toLowerCase() === firstName.toLowerCase() &&
+          normalizeText(row.last_name).toLowerCase() === lastName.toLowerCase()
+      )
+    ) {
+      setRosterRequestStatus("A pending directory request already exists for that name.", "warning");
+      return;
+    }
+
+    newRequestButton.disabled = true;
+    newRequestButton.textContent = "Sending...";
+    setRosterRequestStatus(`Sending a directory review for ${requesterName}...`);
+
+    const { error } = await supabaseClient.from("season_roster_requests").insert({
+      season_id: activeSeasonId,
+      player_id: null,
+      request_type: "new_directory",
+      requester_name: requesterName,
+      requester_contact: contact,
+      first_name: firstName,
+      last_name: lastName,
+      nickname: nickname || null,
+      nationality,
+      preferred_positions: [position],
+      requested_tier: requestedTier,
+      note: note || null,
+      status: "pending",
+    });
+
+    newRequestButton.disabled = false;
+    newRequestButton.textContent = "Request directory + season review";
+
+    if (error) {
+      setRosterRequestStatus(readableError(error), "error");
+      return;
+    }
+
+    resetNewRequestForm();
+    await loadSeasonRosterRequests();
+    renderRosterRequestTools();
+    setRosterRequestStatus(
+      `${requesterName} was sent to the busses for directory and season review.`,
+      "success"
+    );
   });
 
   try {
@@ -444,5 +881,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     statusText.textContent = message;
     playerList.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
     playerDetail.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
+    renderRosterRequestTools();
   }
 });

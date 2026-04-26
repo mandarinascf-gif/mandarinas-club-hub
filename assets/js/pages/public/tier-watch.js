@@ -22,6 +22,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const suggestionSlotLimit = logic.TIER_SUGGESTION_SLOT_LIMIT || 36;
   const summarizeHistoricalAttendance =
     logic.summarizeHistoricalAttendance || ((rows) => [...(rows || [])]);
+  const buildStandingsByPlayerId =
+    logic.buildStandingsByPlayerId || (() => new Map());
+  const rotationQueueMode = logic.rotationQueueMode || (() => "regular");
   const buildRotationQueueRows =
     logic.buildRotationQueueRows ||
     ((rows) => [...(rows || [])].filter((row) => row.tier_status === "rotation" && row.is_eligible));
@@ -65,6 +68,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let activeFilter = "all";
   let sortCol = "suggested";
   let sortDir = DEFAULT_SORT_DIRECTIONS.suggested;
+  let standingsByPlayerId = new Map();
+  let activeQueueMode = "regular";
 
   function setTierStatus(message = "", tone = "") {
     tierStatusLine.classList.remove("loading", "warning", "error", "success");
@@ -128,6 +133,130 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function suggestionEvidenceText(row) {
     return row?.suggestion_evidence || tierSuggestionEvidence(row) || "Attendance evidence unavailable.";
+  }
+
+  function queueVisibleLimit() {
+    return window.matchMedia("(max-width: 719px)").matches ? 5 : 7;
+  }
+
+  function formatQueueReason(row, queueRows) {
+    const attended = Number(row?.games_attended || 0);
+    const totalPoints = Number(row?.total_points || 0);
+    const ppg = Number(row?.points_per_game || 0).toFixed(2);
+    const noShows = Number(row?.no_shows || 0);
+    const lateCancels = Number(row?.late_cancels || 0);
+    const queueMode = row?.rotation_queue_mode || activeQueueMode;
+
+    if (queueMode === "final") {
+      const samePoints = (queueRows || []).filter(
+        (entry) => Number(entry?.total_points || 0) === totalPoints
+      );
+
+      if (samePoints.length === 1) {
+        return `${totalPoints} point${totalPoints === 1 ? "" : "s"} puts them here.`;
+      }
+
+      const samePointsPpg = samePoints.filter(
+        (entry) => Number(entry?.points_per_game || 0).toFixed(2) === ppg
+      );
+
+      if (samePointsPpg.length === 1) {
+        return "Tied on points, ahead on PPG.";
+      }
+
+      return "Tied on points; later tiebreaks decide order.";
+    }
+
+    const sameAttendance = (queueRows || []).filter(
+      (entry) => Number(entry?.games_attended || 0) === attended
+    );
+
+    if (sameAttendance.length === 1) {
+      return attended === 0
+        ? "Fewest appearances so far."
+        : `${attended} appearance${attended === 1 ? "" : "s"} so far.`;
+    }
+
+    const sameAttendancePoints = sameAttendance.filter(
+      (entry) => Number(entry?.total_points || 0) === totalPoints
+    );
+
+    if (sameAttendancePoints.length === 1) {
+      return "Tied on appearances, ahead on points.";
+    }
+
+    const sameAttendancePointsPpg = sameAttendancePoints.filter(
+      (entry) => Number(entry?.points_per_game || 0).toFixed(2) === ppg
+    );
+
+    if (sameAttendancePointsPpg.length === 1) {
+      return "Tied on appearances and points, ahead on PPG.";
+    }
+
+    const sameNoShows = sameAttendancePointsPpg.filter(
+      (entry) => Number(entry?.no_shows || 0) === noShows
+    );
+
+    if (sameNoShows.length === 1) {
+      return "Tied on results, fewer no-shows.";
+    }
+
+    const sameLateCancels = sameNoShows.filter(
+      (entry) => Number(entry?.late_cancels || 0) === lateCancels
+    );
+
+    if (sameLateCancels.length === 1) {
+      return "Tied on results, fewer late cancels.";
+    }
+
+    return attended === 0
+      ? "Tied on appearances; later tiebreaks decide order."
+      : `Tied on ${attended} appearances; later tiebreaks decide order.`;
+  }
+
+  function formatQueueMeta(row) {
+    const attended = Number(row?.games_attended || 0);
+    const totalPoints = Number(row?.total_points || 0);
+    const ppg = Number(row?.points_per_game || 0).toFixed(2);
+
+    if ((row?.rotation_queue_mode || activeQueueMode) === "final") {
+      return `${totalPoints} pts · ${ppg} PPG`;
+    }
+
+    return `${attended} attended${totalPoints > 0 ? ` · ${totalPoints} pts` : ""}`;
+  }
+
+  function renderQueueRows(rows, queueRows, queueMap, labelPrefix = "Q") {
+    return rows
+      .map((row) => {
+        const queuePosition = queueMap.get(row.player_id);
+
+        return `
+          <article class="queue-compact-row ${queuePosition === 1 ? "queue-compact-row-top" : ""}">
+            <div class="queue-compact-rank">
+              <span class="queue-pill">${escapeHtml(`${labelPrefix}${queuePosition}`)}</span>
+            </div>
+            <div class="queue-compact-main">
+              <div class="queue-compact-line">
+                <h3 class="queue-compact-name">${escapeHtml(displayName(row))}</h3>
+                <span class="queue-compact-meta">${escapeHtml(formatQueueMeta(row))}</span>
+              </div>
+              ${
+                queuePosition === 1
+                  ? '<div class="queue-compact-eyebrow">Next spot</div>'
+                  : ""
+              }
+              ${
+                row.nickname && fullName(row) !== stripSubPrefix(row.nickname)
+                  ? `<div class="table-player-sub">${escapeHtml(fullName(row))}</div>`
+                  : ""
+              }
+              <p class="queue-compact-reason">${escapeHtml(formatQueueReason(row, queueRows))}</p>
+            </div>
+          </article>
+        `;
+      })
+      .join("");
   }
 
   function suggestionComparator(left, right) {
@@ -298,54 +427,27 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderQueue() {
-    const queueRows = buildRotationQueueRows(tierRows);
+    const queueRows = buildRotationQueueRows(tierRows, {
+      standingsByPlayerId,
+      finalMatchday: activeQueueMode === "final",
+    });
     const queueMap = new Map(queueRows.map((row, index) => [row.player_id, index + 1]));
+    const visibleRows = queueRows.slice(0, queueVisibleLimit());
+    const hiddenRows = queueRows.slice(visibleRows.length);
+    const queueIntroCopy =
+      activeQueueMode === "final"
+        ? "Rotation tier only. On the final matchday, points go first, then PPG."
+        : "Rotation tier only. Think of this as the updated buddy-system line: fewer appearances go first.";
 
     if (!queueRows.length) {
       queueTableWrap.innerHTML = `
         <div class="subtable-head">
           <div>
-            <h3>Current Rotation Queue</h3>
-            <p>This stays season-to-date and separate from the suggestion model.</p>
+            <h3>Live rotation order</h3>
+            <p>This list only shows rotation-tier players, in the same live order used for the next open spot.</p>
           </div>
         </div>
-        <div class="empty-state">No live Rotation queue yet.</div>
-      `;
-      return;
-    }
-
-    if (window.matchMedia("(max-width: 719px)").matches) {
-      queueTableWrap.innerHTML = `
-        <div class="subtable-head">
-          <div>
-            <h3>Current Rotation Queue</h3>
-            <p>Lower season-to-date attendance stays first, so Q1 is next up when a rotation slot opens.</p>
-          </div>
-        </div>
-        <div class="standings-card-list">
-          ${queueRows
-            .map((row) => `
-              <article class="standings-card">
-                <header class="standings-card-head">
-                  <div class="standings-rank-badge">Q${escapeHtml(queueMap.get(row.player_id))}</div>
-                  <div class="standings-card-title">
-                    <div class="player-main">${escapeHtml(displayName(row))}</div>
-                    ${
-                      row.nickname && fullName(row) !== stripSubPrefix(row.nickname)
-                        ? `<div class="table-player-sub">${escapeHtml(fullName(row))}</div>`
-                        : ""
-                    }
-                  </div>
-                </header>
-                <div class="standings-metrics">
-                  <div class="metric-pill"><span>Att</span><strong>${escapeHtml(row.games_attended)}</strong></div>
-                  <div class="metric-pill"><span>Score</span><strong>${escapeHtml(row.attendance_score)}</strong></div>
-                </div>
-                <div class="manual-note">${escapeHtml(row.transparency_note || "Current rotation queue")}</div>
-              </article>
-            `)
-            .join("")}
-        </div>
+        <div class="empty-state">No live rotation queue yet.</div>
       `;
       return;
     }
@@ -353,45 +455,34 @@ document.addEventListener("DOMContentLoaded", () => {
     queueTableWrap.innerHTML = `
       <div class="subtable-head">
         <div>
-          <h3>Current Rotation Queue</h3>
-          <p>Lower season-to-date attendance stays first, so Q1 is next up when a rotation slot opens.</p>
+          <h3>Live rotation order</h3>
+          <p>${escapeHtml(queueIntroCopy)}</p>
         </div>
       </div>
-      <table class="standings-table">
-        <thead>
-          <tr>
-            <th class="num">Q</th>
-            <th>Player</th>
-            <th class="num">Att</th>
-            <th class="num">Score</th>
-            <th class="hide-mobile">Note</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${queueRows
-            .map(
-              (row) => `
-                <tr>
-                  <td class="num"><span class="queue-pill">${escapeHtml(queueMap.get(row.player_id))}</span></td>
-                  <td>
-                    <div class="player-cell">
-                      <span class="name">${escapeHtml(displayName(row))}</span>
-                      ${
-                        row.nickname && fullName(row) !== stripSubPrefix(row.nickname)
-                          ? `<span class="sub">${escapeHtml(fullName(row))}</span>`
-                          : ""
-                      }
-                    </div>
-                  </td>
-                  <td class="num">${escapeHtml(row.games_attended)}</td>
-                  <td class="num">${escapeHtml(row.attendance_score)}</td>
-                  <td class="hide-mobile">${escapeHtml(row.transparency_note || "Current rotation queue")}</td>
-                </tr>
-              `
-            )
-            .join("")}
-        </tbody>
-      </table>
+      <div class="queue-compact-table">
+        ${renderQueueRows(visibleRows, queueRows, queueMap)}
+      </div>
+      ${
+        hiddenRows.length
+          ? `
+            <details class="disclosure-card queue-disclosure">
+              <summary class="disclosure-summary">
+                <div class="disclosure-copy">
+                  <div class="disclosure-title">Full queue</div>
+                  <div class="manual-note">Show the remaining ${hiddenRows.length} rotation player${
+                    hiddenRows.length === 1 ? "" : "s"
+                  } only if you need the rest of the line.</div>
+                </div>
+              </summary>
+              <div class="disclosure-body">
+                <div class="queue-compact-table">
+                  ${renderQueueRows(hiddenRows, queueRows, queueMap)}
+                </div>
+              </div>
+            </details>
+          `
+          : ""
+      }
     `;
   }
 
@@ -658,7 +749,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function loadSeason() {
-    setTierStatus("Loading the tier tracker...", "loading");
+    setTierStatus("Loading the rotation queue...", "loading");
     queueTableWrap.innerHTML = "";
     suggestionTableWrap.innerHTML = "";
 
@@ -678,11 +769,26 @@ document.addEventListener("DOMContentLoaded", () => {
         historicalContext.playerStats
       );
 
+      standingsByPlayerId = buildStandingsByPlayerId(
+        bundle.players || [],
+        bundle.assignments || [],
+        bundle.playerStats || [],
+        bundle.matchdays || [],
+        bundle.matches || [],
+        bundle.season || null
+      );
+      activeQueueMode = rotationQueueMode(
+        bundle.season || null,
+        bundle.matchdays || [],
+        bundle.matches || []
+      );
       tierRows = applyTierSuggestionSlots(rowsWithHistory, suggestionSlotLimit);
       renderTierBoards();
-      heroCopy.textContent = `${bundle.season.name} keeps the live rotation queue visible. Tier recommendations open separately, and each explanation shows recent score, season score, historical score, and the logic behind the call.`;
+      heroCopy.textContent = `${bundle.season.name} shows the live line for rotation-tier players first. If you remember the old buddy system, this is the updated version with a short note on why each player is next.`;
       setTierStatus();
     } catch (error) {
+      standingsByPlayerId = new Map();
+      activeQueueMode = "regular";
       const message = readableError(error);
       setTierStatus(message, "error");
       queueTableWrap.innerHTML = "";

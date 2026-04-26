@@ -13,6 +13,9 @@
         TEAM_ORDER,
         buildScoringSettings,
         buildBalancedTeams,
+        buildStandingsByPlayerId,
+        compareRotationQueuePriority,
+        isFinalMatchday,
         normalizeTeamDisplayConfig,
         teamDisplayLabel,
         applyTeamDisplayConfig,
@@ -103,6 +106,8 @@
       let assignments = [];
       let matches = [];
       let tierMetricsByPlayerId = new Map();
+      let rotationStandingsByPlayerId = new Map();
+      let activeRotationQueueMode = "regular";
       let rosterPlan = null;
       let draggedPlayerId = null;
       let draggedCard = null;
@@ -795,6 +800,24 @@
         };
       }
 
+      function rotationStandingsMetrics(playerId) {
+        const row = rotationStandingsByPlayerId.get(playerId);
+
+        return {
+          total_points: Number(row?.total_points || 0),
+          points_per_game: Number(row?.points_per_game || 0),
+          wins: Number(row?.wins || 0),
+          draws: Number(row?.draws || 0),
+          losses: Number(row?.losses || 0),
+          goals: Number(row?.goals || 0),
+          goal_keep_points_earned: Number(
+            row?.goal_keep_points_earned ?? row?.goalie_points ?? row?.goal_keeps ?? 0
+          ),
+          clean_sheets: Number(row?.clean_sheets || 0),
+          attendance_points: Number(row?.attendance_points || 0),
+        };
+      }
+
       function candidateForRoster(playerId) {
         if (!statsByPlayerId.has(playerId)) {
           return true;
@@ -849,24 +872,21 @@
       }
 
       function sortRotationCandidates(list) {
-        return [...list].sort((left, right) => {
-          const leftMetrics = priorityMetrics(left.id);
-          const rightMetrics = priorityMetrics(right.id);
-
-          if (leftMetrics.games_attended !== rightMetrics.games_attended) {
-            return leftMetrics.games_attended - rightMetrics.games_attended;
-          }
-
-          if (rightMetrics.attendance_score !== leftMetrics.attendance_score) {
-            return rightMetrics.attendance_score - leftMetrics.attendance_score;
-          }
-
-          if (leftMetrics.no_shows !== rightMetrics.no_shows) {
-            return leftMetrics.no_shows - rightMetrics.no_shows;
-          }
-
-          return compareNames(left, right);
-        });
+        return [...list]
+          .map((player) => ({
+            player,
+            queueRow: {
+              ...player,
+              ...priorityMetrics(player.id),
+              ...rotationStandingsMetrics(player.id),
+            },
+          }))
+          .sort((left, right) =>
+            compareRotationQueuePriority(left.queueRow, right.queueRow, {
+              finalMatchday: activeRotationQueueMode === "final",
+            })
+          )
+          .map((entry) => entry.player);
       }
 
       function sortDepthCandidates(list) {
@@ -1466,7 +1486,7 @@
 
           let { data: seasonRow, error: seasonError } = await supabaseClient
             .from("seasons")
-            .select("id, name, core_spots, rotation_spots, attendance_points, win_points, draw_points, loss_points, goal_keep_points, team_goal_points, team_display_config")
+            .select("id, name, total_matchdays, core_spots, rotation_spots, attendance_points, win_points, draw_points, loss_points, goal_keep_points, team_goal_points, team_display_config")
             .eq("id", matchday.season_id)
             .single();
 
@@ -1474,7 +1494,7 @@
             teamDisplaySupported = false;
             ({ data: seasonRow, error: seasonError } = await supabaseClient
               .from("seasons")
-              .select("id, name, core_spots, rotation_spots, attendance_points, win_points, draw_points, loss_points, goal_keep_points, team_goal_points")
+              .select("id, name, total_matchdays, core_spots, rotation_spots, attendance_points, win_points, draw_points, loss_points, goal_keep_points, team_goal_points")
               .eq("id", matchday.season_id)
               .single());
           }
@@ -1632,7 +1652,7 @@
 
           const { data: priorMatchdayRows, error: priorMatchdayError } = await supabaseClient
             .from("matchdays")
-            .select("id")
+            .select("id, season_id, matchday_number, kickoff_at, goals_count_as_points")
             .eq("season_id", season.id)
             .lt("matchday_number", matchday.matchday_number);
 
@@ -1643,20 +1663,56 @@
           const priorMatchdayIds = (priorMatchdayRows || []).map((row) => row.id);
 
           if (priorMatchdayIds.length) {
-            const { data: historicalAssignmentRows, error: historicalAssignmentsError } =
-              await supabaseClient
-                .from("matchday_assignments")
-                .select("matchday_id, player_id, team_code")
-                .in("matchday_id", priorMatchdayIds);
+            const [{ data: historicalAssignmentRows, error: historicalAssignmentsError }, { data: historicalMatchRows, error: historicalMatchesError }, { data: historicalPlayerStatRows, error: historicalPlayerStatsError }] =
+              await Promise.all([
+                supabaseClient
+                  .from("matchday_assignments")
+                  .select("matchday_id, player_id, team_code")
+                  .in("matchday_id", priorMatchdayIds),
+                supabaseClient
+                  .from("matchday_matches")
+                  .select("*")
+                  .in("matchday_id", priorMatchdayIds)
+                  .order("matchday_id", { ascending: true })
+                  .order("round_number", { ascending: true })
+                  .order("match_order", { ascending: true })
+                  .limit(5000),
+                supabaseClient
+                  .from("matchday_player_stats")
+                  .select("*")
+                  .in("matchday_id", priorMatchdayIds)
+                  .limit(10000),
+              ]);
 
             if (historicalAssignmentsError) {
               throw historicalAssignmentsError;
             }
 
+            if (historicalMatchesError) {
+              throw historicalMatchesError;
+            }
+
+            if (historicalPlayerStatsError) {
+              throw historicalPlayerStatsError;
+            }
+
             historicalAssignments = historicalAssignmentRows || [];
+            rotationStandingsByPlayerId = buildStandingsByPlayerId(
+              players,
+              historicalAssignments,
+              historicalPlayerStatRows || [],
+              priorMatchdayRows || [],
+              historicalMatchRows || [],
+              season
+            );
           } else {
             historicalAssignments = [];
+            rotationStandingsByPlayerId = new Map();
           }
+
+          activeRotationQueueMode = isFinalMatchday(matchday, season, [...(priorMatchdayRows || []), matchday])
+            ? "final"
+            : "regular";
 
           const { data: matchRows, error: matchError } = await supabaseClient
             .from("matchday_matches")
@@ -1733,6 +1789,8 @@
           seasonRosterPlayerIds = new Set();
           clubPlayers = [];
           historicalAssignments = [];
+          rotationStandingsByPlayerId = new Map();
+          activeRotationQueueMode = "regular";
           priorityFillButton.disabled = true;
           renderReplacementTools();
           setMatchdayUiLocked(true);
@@ -2137,13 +2195,22 @@
             ${rosterPlan.planRows
               .map((row) => {
                 const metrics = priorityMetrics(row.player.id);
+                const standingMetrics = rotationStandingsMetrics(row.player.id);
                 const currentStatus = getAttendanceStatus(row.player.id);
                 const queueCopy =
                   row.bucket === "core"
                     ? `Core priority #${row.queuePosition} · ${row.selected ? "In now" : "Waiting"}`
                     : row.bucket === "rotation"
-                      ? `Rotation queue #${row.queuePosition} · ${row.selected ? "In now" : "Next up"}`
+                      ? `${
+                          activeRotationQueueMode === "final" ? "Final-day queue" : "Rotation queue"
+                        } #${row.queuePosition} · ${row.selected ? "In now" : "Next up"}`
                       : `${formatStatusLabel(row.player.status)} depth · ${row.selected ? "In now" : "Waiting"}`;
+                const priorityStatLabel =
+                  row.bucket === "rotation" && activeRotationQueueMode === "final" ? "Pts" : "Score";
+                const priorityStatValue =
+                  row.bucket === "rotation" && activeRotationQueueMode === "final"
+                    ? Number(standingMetrics.total_points || 0)
+                    : metrics.attendance_score;
 
                 return `
                   <article class="compact-row">
@@ -2155,8 +2222,8 @@
                         )}</p>
                       </div>
                       <div class="score-badge compact-score">
-                        <strong>${escapeHtml(metrics.attendance_score)}</strong>
-                        <span>Score</span>
+                        <strong>${escapeHtml(priorityStatValue)}</strong>
+                        <span>${escapeHtml(priorityStatLabel)}</span>
                       </div>
                     </div>
                     <div class="compact-badges">

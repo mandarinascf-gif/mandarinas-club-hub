@@ -25,6 +25,9 @@
       const historicalSeasonIds = logic.historicalSeasonIds || (() => []);
       const summarizeHistoricalAttendance =
         logic.summarizeHistoricalAttendance || ((rows) => [...(rows || [])]);
+      const buildStandingsByPlayerId =
+        logic.buildStandingsByPlayerId || (() => new Map());
+      const rotationQueueMode = logic.rotationQueueMode || (() => "regular");
       const buildRotationQueueRows =
         logic.buildRotationQueueRows ||
         ((rows) =>
@@ -37,6 +40,8 @@
       let selectedSeasonId = Number(params.get("season_id")) || null;
       let tierRows = [];
       let activeFilter = "all";
+      let standingsByPlayerId = new Map();
+      let activeQueueMode = "regular";
 
       function hasMissingDesiredTierColumn(error) {
         const message = String(error?.message || "").toLowerCase();
@@ -172,7 +177,25 @@
         return window.matchMedia("(max-width: 719px)").matches;
       }
 
+      function queueReasonText(row) {
+        const attended = Number(row?.games_attended || 0);
+        const totalPoints = Number(row?.total_points || 0);
+        const ppg = Number(row?.points_per_game || 0).toFixed(2);
+
+        if ((row?.rotation_queue_mode || activeQueueMode) === "final") {
+          return `Final matchday queue uses season points first. This player is on ${totalPoints} point${
+            totalPoints === 1 ? "" : "s"
+          } and ${ppg} PPG.`;
+        }
+
+        return `Regular matchdays keep lower attendance first. This player has attended ${attended} matchday${
+          attended === 1 ? "" : "s"
+        }; tied attendance falls back to points, PPG, wins, draws, losses, goals, goalkeeping, then clean sheets.`;
+      }
+
       function renderQueueCards(rows, queueMap) {
+        const metricLabel = activeQueueMode === "final" ? "Pts" : "Score";
+
         return `
           <div class="standings-card-list">
             ${rows
@@ -192,9 +215,11 @@
                     </header>
                     <div class="standings-metrics">
                       <div class="metric-pill"><span>Att</span><strong>${escapeHtml(row.games_attended)}</strong></div>
-                      <div class="metric-pill"><span>Score</span><strong>${escapeHtml(row.attendance_score)}</strong></div>
+                      <div class="metric-pill"><span>${escapeHtml(metricLabel)}</span><strong>${escapeHtml(
+                        activeQueueMode === "final" ? Number(row.total_points || 0) : row.attendance_score
+                      )}</strong></div>
                     </div>
-                    <div class="manual-note">${escapeHtml(row.transparency_note || "Current rotation queue")}</div>
+                    <div class="manual-note">${escapeHtml(queueReasonText(row))}</div>
                   </article>
                 `
               )
@@ -359,9 +384,13 @@
 
       function renderBoard() {
         const selectedSeason = seasons.find((season) => season.id === selectedSeasonId) || null;
-        const rotationQueueRows = buildRotationQueueRows(tierRows);
+        const rotationQueueRows = buildRotationQueueRows(tierRows, {
+          standingsByPlayerId,
+          finalMatchday: activeQueueMode === "final",
+        });
         const rotationQueueMap = new Map(rotationQueueRows.map((row, index) => [row.player_id, index + 1]));
         const queuePreviewRows = rotationQueueRows.slice(0, 10);
+        const queueMetricLabel = activeQueueMode === "final" ? "Pts" : "Score";
         const filteredRows = tierRows
           .filter((row) => activeFilter === "all" || row.recommended_tier_status === activeFilter)
           .sort((left, right) => {
@@ -421,14 +450,18 @@
                 <p>Current rotation players only. This list stays season-to-date and does not depend on the suggestion mix.</p>
               </div>
             </div>
-            <div class="empty-state">No live Rotation queue yet. Once the season has eligible Rotation players, this will show who is next up based on the lowest season-to-date attendance total.</div>
+            <div class="empty-state">No live Rotation queue yet. Once the season has eligible Rotation players, this will show who is next up using the current queue rules for the next open spot.</div>
           `;
         } else {
           priorityStrip.innerHTML = `
             <div class="subtable-head">
               <div>
                 <h3>Current Rotation Queue</h3>
-                <p>Current rotation players only. Fewer season-to-date attended games always come first, so #1 is next up when a rotation slot opens.</p>
+                <p>${escapeHtml(
+                  activeQueueMode === "final"
+                    ? "Current rotation players only. The next open spot is on the final matchday, so #1 follows season points first, then PPG, wins, draws, losses, goals, goalkeeping, and clean sheets."
+                    : "Current rotation players only. Fewer season-to-date attended games come first, and tied attendance falls back to points, PPG, wins, draws, losses, goals, goalkeeping, then clean sheets."
+                )}</p>
               </div>
             </div>
             ${
@@ -441,7 +474,7 @@
                           <th class="num">Q</th>
                           <th>Player</th>
                           <th class="num">Att</th>
-                          <th class="num">Score</th>
+                          <th class="num">${escapeHtml(queueMetricLabel)}</th>
                           <th class="hide-mobile">Note</th>
                         </tr>
                       </thead>
@@ -462,8 +495,10 @@
                                   </div>
                                 </td>
                                 <td class="num">${escapeHtml(row.games_attended)}</td>
-                                <td class="num">${escapeHtml(row.attendance_score)}</td>
-                                <td class="hide-mobile">${escapeHtml(row.transparency_note || "Current rotation queue")}</td>
+                                <td class="num">${escapeHtml(
+                                  activeQueueMode === "final" ? Number(row.total_points || 0) : row.attendance_score
+                                )}</td>
+                                <td class="hide-mobile">${escapeHtml(queueReasonText(row))}</td>
                               </tr>
                             `
                           )
@@ -593,7 +628,7 @@
         try {
           const { data: seasonRows, error: seasonError } = await supabaseClient
             .from("seasons")
-            .select("id, name, core_spots, rotation_spots, created_at")
+            .select("id, name, total_matchdays, core_spots, rotation_spots, attendance_points, win_points, draw_points, loss_points, goal_keep_points, team_goal_points, created_at")
             .order("created_at", { ascending: false });
 
           if (seasonError) {
@@ -628,6 +663,61 @@
             throw boardError;
           }
 
+          const selectedSeason = seasons.find((season) => Number(season.id) === Number(selectedSeasonId)) || null;
+          const { data: seasonMatchdays, error: matchdaysError } = await supabaseClient
+            .from("matchdays")
+            .select("id, season_id, matchday_number, kickoff_at, goals_count_as_points")
+            .eq("season_id", selectedSeasonId)
+            .order("matchday_number", { ascending: true });
+
+          if (matchdaysError) {
+            throw matchdaysError;
+          }
+
+          const matchdayIds = (seasonMatchdays || []).map((matchday) => matchday.id);
+          let seasonMatches = [];
+          let seasonAssignments = [];
+          let seasonPlayerStats = [];
+
+          if (matchdayIds.length) {
+            const [{ data: matchRows, error: matchError }, { data: assignmentRows, error: assignmentError }, { data: playerStatRows, error: playerStatsError }] =
+              await Promise.all([
+                supabaseClient
+                  .from("matchday_matches")
+                  .select("*")
+                  .in("matchday_id", matchdayIds)
+                  .order("round_number", { ascending: true })
+                  .order("match_order", { ascending: true })
+                  .limit(5000),
+                supabaseClient
+                  .from("matchday_assignments")
+                  .select("*")
+                  .in("matchday_id", matchdayIds)
+                  .limit(10000),
+                supabaseClient
+                  .from("matchday_player_stats")
+                  .select("*")
+                  .in("matchday_id", matchdayIds)
+                  .limit(10000),
+              ]);
+
+            if (matchError) {
+              throw matchError;
+            }
+
+            if (assignmentError) {
+              throw assignmentError;
+            }
+
+            if (playerStatsError) {
+              throw playerStatsError;
+            }
+
+            seasonMatches = matchRows || [];
+            seasonAssignments = assignmentRows || [];
+            seasonPlayerStats = playerStatRows || [];
+          }
+
           const historicalContext = await fetchHistoricalTierContext(
             (boardRows || []).map((row) => row.player_id)
           );
@@ -640,10 +730,28 @@
             historicalContext.playerStats
           );
 
+          standingsByPlayerId = buildStandingsByPlayerId(
+            (boardRows || []).map((row) => ({
+              id: row.player_id,
+              first_name: row.first_name,
+              last_name: row.last_name,
+              nickname: row.nickname,
+              nationality: row.nationality,
+              status: row.tier_status,
+            })),
+            seasonAssignments,
+            seasonPlayerStats,
+            seasonMatchdays || [],
+            seasonMatches,
+            selectedSeason
+          );
+          activeQueueMode = rotationQueueMode(selectedSeason, seasonMatchdays || [], seasonMatches);
           tierRows = applyTierSuggestionSlots(rowsWithHistory, suggestionSlotLimit);
           renderBoard();
           setStatus();
         } catch (error) {
+          standingsByPlayerId = new Map();
+          activeQueueMode = "regular";
           tierRows = [];
           renderBoard();
           setStatus(readableError(error), "error");
