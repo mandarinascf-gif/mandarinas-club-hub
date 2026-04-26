@@ -1346,6 +1346,7 @@ summary {
 }
 
 .submission-star-step {
+  display: block;
   min-width: 0;
   min-height: 3rem;
   margin: 0;
@@ -1353,6 +1354,11 @@ summary {
   border: 0;
   border-radius: 0;
   background: transparent;
+  color: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  box-shadow: none;
+  transform: none;
   cursor: pointer;
 }
 
@@ -1368,6 +1374,8 @@ summary {
 
 .submission-star-step.active {
   background: transparent;
+  box-shadow: none;
+  transform: none;
 }
 
 .submission-star-caption {
