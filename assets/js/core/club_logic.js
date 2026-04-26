@@ -1014,10 +1014,12 @@
             continue;
           }
 
-          bestSwap = {
-            assignments: candidateAssignments,
-            summary: candidateSummary,
-          };
+          if (!bestSwap || candidateSummary.score < bestSwap.summary.score) {
+            bestSwap = {
+              assignments: candidateAssignments,
+              summary: candidateSummary,
+            };
+          }
         }
       }
 
