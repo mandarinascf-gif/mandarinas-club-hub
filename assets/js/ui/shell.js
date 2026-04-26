@@ -261,6 +261,38 @@
     document.head.appendChild(iconLink);
   }
 
+  function ensureMetaTag(name, content) {
+    if (!document.head || document.head.querySelector(`meta[name="${name}"]`)) {
+      return;
+    }
+
+    const metaTag = document.createElement("meta");
+    metaTag.name = name;
+    metaTag.content = content;
+    document.head.appendChild(metaTag);
+  }
+
+  function ensureLinkTag(rel, href) {
+    if (!document.head || document.head.querySelector(`link[rel="${rel}"]`)) {
+      return;
+    }
+
+    const linkTag = document.createElement("link");
+    linkTag.rel = rel;
+    linkTag.href = href;
+    document.head.appendChild(linkTag);
+  }
+
+  function ensureInstallMetadata() {
+    ensureMetaTag("theme-color", "#8bd4a1");
+    ensureMetaTag("mobile-web-app-capable", "yes");
+    ensureMetaTag("apple-mobile-web-app-capable", "yes");
+    ensureMetaTag("apple-mobile-web-app-title", "Mandarinas CF");
+    ensureMetaTag("apple-mobile-web-app-status-bar-style", "black-translucent");
+    ensureLinkTag("manifest", "./site.webmanifest");
+    ensureLinkTag("apple-touch-icon", "./assets/icons/apple-touch-icon.png");
+  }
+
   function ensureActiveNavLinkVisible() {
     const activeLink = document.querySelector(".nav-links .nav-link.active");
     const navLinks = activeLink?.closest(".nav-links");
@@ -493,6 +525,8 @@
     syncSeasonAwareLinks,
     bussesAccessHref,
   });
+
+  ensureInstallMetadata();
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
