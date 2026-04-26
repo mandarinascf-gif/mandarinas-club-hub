@@ -133,6 +133,14 @@
     green: Object.freeze({ label: "Green", color: "#4ade80" }),
     orange: Object.freeze({ label: "Orange", color: "#fb923c" }),
   });
+  const TEAM_BALANCE_POSITION_ORDER = Object.freeze(["GK", "DEF", "MID", "ATT"]);
+  const TEAM_BALANCE_WEIGHTS = Object.freeze({
+    size: 1000,
+    strength: 1,
+    age: 6,
+    position: 14,
+    teammate: 8,
+  });
 
   function normalizeText(value) {
     return String(value || "").trim().replace(/\s+/g, " ");
@@ -393,6 +401,642 @@
       // paths that still read `status`.
       desired_tier: desiredTier,
       status: desiredTier,
+    };
+  }
+
+  function normalizePositionCode(value, fallback = "ATT") {
+    const normalized = normalizeText(value).toUpperCase();
+
+    if (normalized.startsWith("GK")) {
+      return "GK";
+    }
+
+    if (normalized.startsWith("D")) {
+      return "DEF";
+    }
+
+    if (normalized.startsWith("M")) {
+      return "MID";
+    }
+
+    if (normalized.startsWith("A")) {
+      return "ATT";
+    }
+
+    return fallback;
+  }
+
+  function playerPrimaryPosition(player) {
+    const positions = Array.isArray(player?.positions) ? player.positions : [];
+    return normalizePositionCode(positions[0] || "ATT");
+  }
+
+  function createTeammatePairKey(leftPlayerId, rightPlayerId) {
+    const leftId = Number(leftPlayerId);
+    const rightId = Number(rightPlayerId);
+
+    if (!Number.isFinite(leftId) || !Number.isFinite(rightId) || leftId === rightId) {
+      return "";
+    }
+
+    return leftId < rightId ? `${leftId}:${rightId}` : `${rightId}:${leftId}`;
+  }
+
+  function teammateRepeatCount(historyMap, leftPlayerId, rightPlayerId) {
+    const key = createTeammatePairKey(leftPlayerId, rightPlayerId);
+    if (!key) {
+      return 0;
+    }
+
+    return Number(historyMap?.get(key) || 0);
+  }
+
+  function buildTeammateHistoryMap(assignments) {
+    const byMatchday = new Map();
+
+    (assignments || []).forEach((assignment) => {
+      const matchdayId = Number(assignment?.matchday_id);
+      const playerId = Number(assignment?.player_id);
+      const teamCode = normalizeText(assignment?.team_code).toLowerCase();
+
+      if (!Number.isFinite(matchdayId) || !Number.isFinite(playerId) || !teamCode) {
+        return;
+      }
+
+      const matchdayRows = byMatchday.get(matchdayId) || [];
+      matchdayRows.push({
+        player_id: playerId,
+        team_code: teamCode,
+      });
+      byMatchday.set(matchdayId, matchdayRows);
+    });
+
+    const historyMap = new Map();
+
+    byMatchday.forEach((rows) => {
+      const byTeam = new Map();
+
+      rows.forEach((row) => {
+        const teamRows = byTeam.get(row.team_code) || [];
+        teamRows.push(row.player_id);
+        byTeam.set(row.team_code, teamRows);
+      });
+
+      byTeam.forEach((playerIds) => {
+        const uniqueIds = [...new Set(playerIds)].sort((left, right) => left - right);
+
+        for (let index = 0; index < uniqueIds.length; index += 1) {
+          for (let offset = index + 1; offset < uniqueIds.length; offset += 1) {
+            const key = createTeammatePairKey(uniqueIds[index], uniqueIds[offset]);
+            historyMap.set(key, Number(historyMap.get(key) || 0) + 1);
+          }
+        }
+      });
+    });
+
+    return historyMap;
+  }
+
+  function buildTeamTargetSizes(totalPlayers, teamCodes, maxPlayersByTeam = {}, seed = 0) {
+    const normalizedTeamCodes = Array.isArray(teamCodes) && teamCodes.length ? teamCodes : TEAM_ORDER;
+    const targets = Object.fromEntries(normalizedTeamCodes.map((teamCode) => [teamCode, 0]));
+    const totalCapacity = normalizedTeamCodes.reduce(
+      (sum, teamCode) => sum + Math.max(0, Number(maxPlayersByTeam?.[teamCode] ?? totalPlayers)),
+      0
+    );
+
+    if (Number(totalPlayers) > totalCapacity) {
+      return null;
+    }
+
+    const teamCount = normalizedTeamCodes.length;
+    const normalizedSeed =
+      teamCount > 0 ? ((Number(seed) % teamCount) + teamCount) % teamCount : 0;
+
+    for (let slot = 0; slot < Number(totalPlayers || 0); slot += 1) {
+      let assigned = false;
+
+      for (let offset = 0; offset < teamCount; offset += 1) {
+        const teamCode = normalizedTeamCodes[(normalizedSeed + slot + offset) % teamCount];
+        const maxPlayers = Math.max(0, Number(maxPlayersByTeam?.[teamCode] ?? totalPlayers));
+
+        if (targets[teamCode] >= maxPlayers) {
+          continue;
+        }
+
+        targets[teamCode] += 1;
+        assigned = true;
+        break;
+      }
+
+      if (!assigned) {
+        return null;
+      }
+    }
+
+    return targets;
+  }
+
+  function buildTeamBalanceProfile(player) {
+    const age = calculateAge(player?.birth_date);
+    const strength = Number.isFinite(Number(player?.skill_rating))
+      ? Number(player.skill_rating)
+      : 78;
+
+    return {
+      id: Number(player?.id),
+      player,
+      name: playerDisplayName(player),
+      strength,
+      age,
+      positions: Array.isArray(player?.positions) && player.positions.length
+        ? player.positions.map((position) => normalizePositionCode(position))
+        : ["ATT"],
+      primaryPosition: playerPrimaryPosition(player),
+    };
+  }
+
+  function compareTeamBalanceProfiles(left, right, averageStrength, averageAge) {
+    const leftIsGoalkeeper = left.primaryPosition === "GK";
+    const rightIsGoalkeeper = right.primaryPosition === "GK";
+
+    if (leftIsGoalkeeper !== rightIsGoalkeeper) {
+      return leftIsGoalkeeper ? -1 : 1;
+    }
+
+    if (left.positions.length !== right.positions.length) {
+      return left.positions.length - right.positions.length;
+    }
+
+    const leftStrengthGap = Math.abs(left.strength - averageStrength);
+    const rightStrengthGap = Math.abs(right.strength - averageStrength);
+
+    if (rightStrengthGap !== leftStrengthGap) {
+      return rightStrengthGap - leftStrengthGap;
+    }
+
+    if (averageAge !== null) {
+      const leftAgeGap = left.age === null ? -1 : Math.abs(left.age - averageAge);
+      const rightAgeGap = right.age === null ? -1 : Math.abs(right.age - averageAge);
+
+      if (rightAgeGap !== leftAgeGap) {
+        return rightAgeGap - leftAgeGap;
+      }
+    }
+
+    if (right.strength !== left.strength) {
+      return right.strength - left.strength;
+    }
+
+    return left.name.localeCompare(right.name);
+  }
+
+  function createEmptyTeamBalanceState(teamCode, targetSize) {
+    return {
+      teamCode,
+      targetSize: Number(targetSize || 0),
+      playerIds: [],
+      strengthSum: 0,
+      ageSum: 0,
+      ageCount: 0,
+      primaryCounts: {
+        GK: 0,
+        DEF: 0,
+        MID: 0,
+        ATT: 0,
+      },
+    };
+  }
+
+  function addProfileToTeamState(teamState, profile) {
+    teamState.playerIds.push(profile.id);
+    teamState.strengthSum += profile.strength;
+
+    if (profile.age !== null) {
+      teamState.ageSum += profile.age;
+      teamState.ageCount += 1;
+    }
+
+    teamState.primaryCounts[profile.primaryPosition] += 1;
+  }
+
+  function summarizeTeamBalanceAssignments(players, assignments, options = {}) {
+    const teamCodes = Array.isArray(options.teamCodes) && options.teamCodes.length
+      ? options.teamCodes
+      : TEAM_ORDER;
+    const maxPlayersByTeam = options.maxPlayersByTeam || {};
+    const profiles = (players || [])
+      .map(buildTeamBalanceProfile)
+      .filter((profile) => Number.isFinite(profile.id));
+    const profileByPlayerId = new Map(profiles.map((profile) => [profile.id, profile]));
+    const targetSizes =
+      options.targetSizes ||
+      buildTeamTargetSizes(profiles.length, teamCodes, maxPlayersByTeam, options.sizeSeed || 0) ||
+      Object.fromEntries(teamCodes.map((teamCode) => [teamCode, 0]));
+    const teammateHistory =
+      options.teammateHistory || buildTeammateHistoryMap(options.historicalAssignments || []);
+    const teamStates = new Map(
+      teamCodes.map((teamCode) => [
+        teamCode,
+        createEmptyTeamBalanceState(teamCode, targetSizes[teamCode] || 0),
+      ])
+    );
+    const assignedPlayerIds = new Set();
+    const totalStrength = profiles.reduce((sum, profile) => sum + profile.strength, 0);
+    const knownAgeProfiles = profiles.filter((profile) => profile.age !== null);
+    const averageStrength = profiles.length ? totalStrength / profiles.length : 0;
+    const averageAge = knownAgeProfiles.length
+      ? knownAgeProfiles.reduce((sum, profile) => sum + profile.age, 0) / knownAgeProfiles.length
+      : null;
+    const primaryTotals = {
+      GK: 0,
+      DEF: 0,
+      MID: 0,
+      ATT: 0,
+    };
+
+    profiles.forEach((profile) => {
+      primaryTotals[profile.primaryPosition] += 1;
+    });
+
+    const primaryTargets = Object.fromEntries(
+      TEAM_BALANCE_POSITION_ORDER.map((position) => [
+        position,
+        teamCodes.length ? primaryTotals[position] / teamCodes.length : 0,
+      ])
+    );
+
+    (assignments || []).forEach((assignment) => {
+      const playerId = Number(assignment?.player_id);
+      const teamCode = normalizeText(assignment?.team_code).toLowerCase();
+      const profile = profileByPlayerId.get(playerId);
+      const teamState = teamStates.get(teamCode);
+
+      if (!profile || !teamState || assignedPlayerIds.has(playerId)) {
+        return;
+      }
+
+      addProfileToTeamState(teamState, profile);
+      assignedPlayerIds.add(playerId);
+    });
+
+    const activeTeamStates = [...teamStates.values()].filter(
+      (teamState) => teamState.targetSize > 0 || teamState.playerIds.length > 0
+    );
+    const perTeam = activeTeamStates.map((teamState) => {
+      const averageSkill = teamState.playerIds.length
+        ? teamState.strengthSum / teamState.playerIds.length
+        : null;
+      const averageTeamAge = teamState.ageCount
+        ? teamState.ageSum / teamState.ageCount
+        : null;
+      const targetStrength = averageStrength * teamState.targetSize;
+      const strengthPenalty =
+        teamState.targetSize > 0
+          ? ((teamState.strengthSum - targetStrength) ** 2) / teamState.targetSize
+          : 0;
+      const agePenalty =
+        averageAge !== null && averageTeamAge !== null
+          ? (averageTeamAge - averageAge) ** 2
+          : 0;
+      const positionPenalty = TEAM_BALANCE_POSITION_ORDER.reduce(
+        (sum, position) =>
+          sum +
+          Math.abs(
+            Number(teamState.primaryCounts[position] || 0) -
+            Number(primaryTargets[position] || 0)
+          ),
+        0
+      );
+
+      let teammateRepeatLoad = 0;
+
+      for (let index = 0; index < teamState.playerIds.length; index += 1) {
+        for (let offset = index + 1; offset < teamState.playerIds.length; offset += 1) {
+          teammateRepeatLoad += teammateRepeatCount(
+            teammateHistory,
+            teamState.playerIds[index],
+            teamState.playerIds[offset]
+          );
+        }
+      }
+
+      return {
+        teamCode: teamState.teamCode,
+        playerCount: teamState.playerIds.length,
+        targetSize: teamState.targetSize,
+        playerIds: [...teamState.playerIds],
+        strengthSum: teamState.strengthSum,
+        ageSum: teamState.ageSum,
+        averageSkill,
+        averageAge: averageTeamAge,
+        ageCount: teamState.ageCount,
+        primaryCounts: { ...teamState.primaryCounts },
+        strengthPenalty,
+        agePenalty,
+        positionPenalty,
+        teammateRepeatLoad,
+      };
+    });
+
+    const populatedTeams = perTeam.filter((team) => team.playerCount > 0);
+    const skillValues = populatedTeams
+      .map((team) => team.averageSkill)
+      .filter((value) => Number.isFinite(value));
+    const ageValues = populatedTeams
+      .map((team) => team.averageAge)
+      .filter((value) => Number.isFinite(value));
+    const assignedPlayerCount = assignedPlayerIds.size;
+    const unassignedPlayerCount = Math.max(profiles.length - assignedPlayerCount, 0);
+    const sizePenalty = perTeam.reduce(
+      (sum, team) => sum + Math.abs(team.playerCount - team.targetSize),
+      0
+    );
+    const strengthPenalty = perTeam.reduce((sum, team) => sum + team.strengthPenalty, 0);
+    const agePenalty = perTeam.reduce((sum, team) => sum + team.agePenalty, 0);
+    const positionPenalty = perTeam.reduce((sum, team) => sum + team.positionPenalty, 0);
+    const teammatePenalty = perTeam.reduce(
+      (sum, team) => sum + team.teammateRepeatLoad,
+      0
+    );
+    const score =
+      TEAM_BALANCE_WEIGHTS.size * sizePenalty +
+      TEAM_BALANCE_WEIGHTS.strength * strengthPenalty +
+      TEAM_BALANCE_WEIGHTS.age * agePenalty +
+      TEAM_BALANCE_WEIGHTS.position * positionPenalty +
+      TEAM_BALANCE_WEIGHTS.teammate * teammatePenalty;
+
+    return {
+      teamCodes,
+      targetSizes,
+      averageStrength,
+      averageAge,
+      primaryTargets,
+      assignedPlayerCount,
+      unassignedPlayerCount,
+      skillSpread:
+        skillValues.length > 1
+          ? Math.max(...skillValues) - Math.min(...skillValues)
+          : 0,
+      ageSpread:
+        ageValues.length > 1
+          ? Math.max(...ageValues) - Math.min(...ageValues)
+          : ageValues.length
+            ? 0
+            : null,
+      positionMismatch: positionPenalty,
+      teammateRepeatLoad: teammatePenalty,
+      score,
+      perTeam,
+      byTeamCode: new Map(perTeam.map((team) => [team.teamCode, team])),
+    };
+  }
+
+  function teamPlacementScore(teamSummary, profile, balanceContext) {
+    const fillRatio =
+      teamSummary.targetSize > 0
+        ? (teamSummary.playerCount + 1) / teamSummary.targetSize
+        : 1;
+    const expectedStrength =
+      balanceContext.averageStrength * Math.max(teamSummary.playerCount + 1, 1);
+    const strengthPenalty = Math.abs(
+      teamSummary.strengthSum + profile.strength - expectedStrength
+    );
+    const agePenalty =
+      balanceContext.averageAge !== null && profile.age !== null
+        ? Math.abs(
+            (teamSummary.ageCount
+              ? (teamSummary.ageSum + profile.age) / (teamSummary.ageCount + 1)
+              : profile.age) - balanceContext.averageAge
+          )
+        : 0;
+    const positionPenalty = Math.abs(
+      Number(teamSummary.primaryCounts[profile.primaryPosition] || 0) + 1 -
+      Number(balanceContext.primaryTargets[profile.primaryPosition] || 0) * fillRatio
+    );
+    const teammatePenalty = teamSummary.playerIds.reduce(
+      (sum, teammateId) =>
+        sum + teammateRepeatCount(balanceContext.teammateHistory, profile.id, teammateId),
+      0
+    );
+
+    return (
+      strengthPenalty +
+      TEAM_BALANCE_WEIGHTS.age * agePenalty +
+      TEAM_BALANCE_WEIGHTS.position * positionPenalty +
+      TEAM_BALANCE_WEIGHTS.teammate * teammatePenalty +
+      fillRatio
+    );
+  }
+
+  function buildBalancedTeams(players, options = {}) {
+    const teamCodes = Array.isArray(options.teamCodes) && options.teamCodes.length
+      ? options.teamCodes
+      : TEAM_ORDER;
+    const maxPlayersByTeam = options.maxPlayersByTeam || {};
+    const profiles = (players || [])
+      .map(buildTeamBalanceProfile)
+      .filter((profile) => Number.isFinite(profile.id));
+    const targetSizes = buildTeamTargetSizes(
+      profiles.length,
+      teamCodes,
+      maxPlayersByTeam,
+      options.sizeSeed || 0
+    );
+
+    if (!targetSizes) {
+      return {
+        ok: false,
+        reason: "The current IN pool is larger than the configured team capacity.",
+      };
+    }
+
+    if (!profiles.length) {
+      return {
+        ok: true,
+        assignments: [],
+        summary: summarizeTeamBalanceAssignments([], [], {
+          teamCodes,
+          maxPlayersByTeam,
+          targetSizes,
+          sizeSeed: options.sizeSeed || 0,
+          historicalAssignments: options.historicalAssignments || [],
+        }),
+      };
+    }
+
+    const totalStrength = profiles.reduce((sum, profile) => sum + profile.strength, 0);
+    const knownAgeProfiles = profiles.filter((profile) => profile.age !== null);
+    const averageStrength = profiles.length ? totalStrength / profiles.length : 0;
+    const averageAge = knownAgeProfiles.length
+      ? knownAgeProfiles.reduce((sum, profile) => sum + profile.age, 0) / knownAgeProfiles.length
+      : null;
+    const primaryTotals = {
+      GK: 0,
+      DEF: 0,
+      MID: 0,
+      ATT: 0,
+    };
+
+    profiles.forEach((profile) => {
+      primaryTotals[profile.primaryPosition] += 1;
+    });
+
+    const primaryTargets = Object.fromEntries(
+      TEAM_BALANCE_POSITION_ORDER.map((position) => [
+        position,
+        teamCodes.length ? primaryTotals[position] / teamCodes.length : 0,
+      ])
+    );
+    const teammateHistory = buildTeammateHistoryMap(options.historicalAssignments || []);
+    const balanceContext = {
+      averageStrength,
+      averageAge,
+      primaryTargets,
+      teammateHistory,
+    };
+    const sortedProfiles = [...profiles].sort((left, right) =>
+      compareTeamBalanceProfiles(left, right, averageStrength, averageAge)
+    );
+    const seededAssignments = new Map();
+
+    sortedProfiles.forEach((profile) => {
+      const partialSummary = summarizeTeamBalanceAssignments(
+        profiles.map((entry) => entry.player),
+        [...seededAssignments.entries()].map(([playerId, teamCode]) => ({
+          player_id: playerId,
+          team_code: teamCode,
+        })),
+        {
+          teamCodes,
+          maxPlayersByTeam,
+          targetSizes,
+          sizeSeed: options.sizeSeed || 0,
+          historicalAssignments: options.historicalAssignments || [],
+          teammateHistory,
+        }
+      );
+      let bestTeamCode = null;
+      let bestScore = Number.POSITIVE_INFINITY;
+
+      partialSummary.perTeam.forEach((teamSummary) => {
+        if (teamSummary.playerCount >= teamSummary.targetSize) {
+          return;
+        }
+
+        const score = teamPlacementScore(teamSummary, profile, balanceContext);
+
+        if (score < bestScore - 0.001) {
+          bestScore = score;
+          bestTeamCode = teamSummary.teamCode;
+          return;
+        }
+
+        if (Math.abs(score - bestScore) > 0.001 || !bestTeamCode) {
+          return;
+        }
+
+        const bestSummary = partialSummary.byTeamCode.get(bestTeamCode);
+
+        if ((teamSummary.playerCount || 0) < (bestSummary?.playerCount || 0)) {
+          bestTeamCode = teamSummary.teamCode;
+          return;
+        }
+
+        if ((teamSummary.strengthSum || 0) < (bestSummary?.strengthSum || 0)) {
+          bestTeamCode = teamSummary.teamCode;
+        }
+      });
+
+      if (!bestTeamCode) {
+        bestTeamCode =
+          teamCodes.find((teamCode) => {
+            const teamSummary = partialSummary.byTeamCode.get(teamCode);
+            return teamSummary && teamSummary.playerCount < teamSummary.targetSize;
+          }) || teamCodes[0];
+      }
+
+      seededAssignments.set(profile.id, bestTeamCode);
+    });
+
+    let bestAssignments = new Map(seededAssignments);
+    let bestSummary = summarizeTeamBalanceAssignments(
+      profiles.map((profile) => profile.player),
+      [...bestAssignments.entries()].map(([playerId, teamCode]) => ({
+        player_id: playerId,
+        team_code: teamCode,
+      })),
+      {
+        teamCodes,
+        maxPlayersByTeam,
+        targetSizes,
+        sizeSeed: options.sizeSeed || 0,
+        historicalAssignments: options.historicalAssignments || [],
+        teammateHistory,
+      }
+    );
+
+    for (let pass = 0; pass < 12; pass += 1) {
+      let bestSwap = null;
+
+      for (let index = 0; index < profiles.length; index += 1) {
+        for (let offset = index + 1; offset < profiles.length; offset += 1) {
+          const leftProfile = profiles[index];
+          const rightProfile = profiles[offset];
+          const leftTeamCode = bestAssignments.get(leftProfile.id);
+          const rightTeamCode = bestAssignments.get(rightProfile.id);
+
+          if (!leftTeamCode || !rightTeamCode || leftTeamCode === rightTeamCode) {
+            continue;
+          }
+
+          const candidateAssignments = new Map(bestAssignments);
+          candidateAssignments.set(leftProfile.id, rightTeamCode);
+          candidateAssignments.set(rightProfile.id, leftTeamCode);
+
+          const candidateSummary = summarizeTeamBalanceAssignments(
+            profiles.map((profile) => profile.player),
+            [...candidateAssignments.entries()].map(([playerId, teamCode]) => ({
+              player_id: playerId,
+              team_code: teamCode,
+            })),
+            {
+              teamCodes,
+              maxPlayersByTeam,
+              targetSizes,
+              sizeSeed: options.sizeSeed || 0,
+              historicalAssignments: options.historicalAssignments || [],
+              teammateHistory,
+            }
+          );
+
+          if (candidateSummary.score + 0.001 >= bestSummary.score) {
+            continue;
+          }
+
+          bestSwap = {
+            assignments: candidateAssignments,
+            summary: candidateSummary,
+          };
+        }
+      }
+
+      if (!bestSwap) {
+        break;
+      }
+
+      bestAssignments = bestSwap.assignments;
+      bestSummary = bestSwap.summary;
+    }
+
+    return {
+      ok: true,
+      assignments: [...bestAssignments.entries()].map(([playerId, teamCode]) => ({
+        player_id: playerId,
+        team_code: teamCode,
+      })),
+      summary: bestSummary,
+      targetSizes,
     };
   }
 
@@ -1281,6 +1925,10 @@
     normalizeTierValue,
     playerDesiredTier,
     normalizePlayerDesiredTier,
+    normalizePositionCode,
+    playerPrimaryPosition,
+    buildBalancedTeams,
+    summarizeBalancedAssignments: summarizeTeamBalanceAssignments,
     TIER_SUGGESTION_SLOT_LIMIT,
     buildRotationQueueRows,
     historicalSeasonIds,
