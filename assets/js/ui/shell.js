@@ -40,7 +40,9 @@
   let adminAccessModalRefs = null;
   let pendingAdminAccess = null;
   const scrollHintRefs = new WeakMap();
+  const mobileNavPortalRefs = new WeakMap();
   let historyListenersInstalled = false;
+  let mobileNavListenersInstalled = false;
 
   function currentPageName() {
     const path = window.location.pathname || "";
@@ -379,7 +381,67 @@
         scrollHintRefs.set(target, { hint });
       }
 
+      const refs = scrollHintRefs.get(target);
+      if (refs?.hint && refs.hint.previousElementSibling !== target) {
+        target.insertAdjacentElement("afterend", refs.hint);
+      }
+
       updateHorizontalScrollHint(target);
+    });
+  }
+
+  function shouldUseBottomTabbar() {
+    return window.matchMedia("(max-width: 959px)").matches;
+  }
+
+  function ensureMobileNavPortal(navLinks) {
+    let state = mobileNavPortalRefs.get(navLinks);
+    if (state) {
+      return state;
+    }
+
+    const anchor = document.createComment("mcf-nav-links-anchor");
+    navLinks.parentNode?.insertBefore(anchor, navLinks);
+    state = { anchor };
+    mobileNavPortalRefs.set(navLinks, state);
+    return state;
+  }
+
+  function syncMobileTabBarPlacement() {
+    const useBottomTabbar = shouldUseBottomTabbar();
+
+    document.querySelectorAll(".nav-links").forEach((navLinks) => {
+      const { anchor } = ensureMobileNavPortal(navLinks);
+
+      if (useBottomTabbar) {
+        if (navLinks.parentNode !== document.body) {
+          document.body.appendChild(navLinks);
+        }
+        return;
+      }
+
+      const parent = anchor.parentNode;
+      if (!parent) {
+        return;
+      }
+
+      if (navLinks.parentNode !== parent || navLinks.previousSibling !== anchor) {
+        parent.insertBefore(navLinks, anchor.nextSibling);
+      }
+    });
+  }
+
+  function installMobileNavListeners() {
+    if (mobileNavListenersInstalled) {
+      return;
+    }
+
+    mobileNavListenersInstalled = true;
+
+    window.addEventListener("resize", () => {
+      syncMobileTabBarPlacement();
+      ensureHorizontalScrollHints();
+      ensureActiveNavLinkVisible();
     });
   }
 
@@ -509,10 +571,13 @@
     ensureSiteIcon();
     ensureFooterSocialLinks();
     installUrlChangeListeners();
+    installMobileNavListeners();
     syncSeasonAwareLinks();
     initAdminAccess();
+    syncMobileTabBarPlacement();
     ensureHorizontalScrollHints();
     window.requestAnimationFrame(() => {
+      syncMobileTabBarPlacement();
       ensureActiveNavLinkVisible();
       ensureHorizontalScrollHints();
     });

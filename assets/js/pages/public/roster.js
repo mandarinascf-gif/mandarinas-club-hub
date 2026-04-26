@@ -261,9 +261,62 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    if (!rows.some((player) => Number(player.id) === Number(selectedPlayerId))) {
-      selectedPlayerId = rows[0].id;
+    if (selectedPlayerId == null) {
+      return;
     }
+
+    if (!rows.some((player) => Number(player.id) === Number(selectedPlayerId))) {
+      selectedPlayerId = null;
+    }
+  }
+
+  function renderPlayerDetailMarkup(player) {
+    const standingsMap = buildStandingsMap(allStandings);
+    const stats = getPlayerStats(player.id, standingsMap);
+    const nameParts = playerNameParts(player);
+    const positions =
+      Array.isArray(player.positions) && player.positions.length
+        ? player.positions.join(", ")
+        : "Not set";
+    const age = calculateAge(player.birth_date);
+    const history = playerDetailsMap.get(player.id) || [];
+
+    return `
+      <div class="detail-card">
+        <div class="section-label">Identity</div>
+        <h3>${escapeHtml(nameParts.primary || playerDisplayName(player))}</h3>
+        <ul>
+          <li>Full name: <strong>${escapeHtml(`${player.first_name || ""} ${player.last_name || ""}`.trim())}</strong></li>
+          <li>Nickname: <strong>${escapeHtml(player.nickname || "Not set")}</strong></li>
+          <li>Nationality: <strong>${escapeHtml(player.nationality || "Not set")}</strong></li>
+          <li>Age: <strong>${escapeHtml(age == null ? "Unknown" : age)}</strong></li>
+        </ul>
+      </div>
+      <div class="detail-card">
+        <div class="section-label">Season Profile</div>
+        <ul>
+          <li>Tier: <strong>${escapeHtml(formatStatusLabel(player.status))}</strong></li>
+          <li>Positions: <strong>${escapeHtml(positions)}</strong></li>
+          <li>Rank: <strong>${escapeHtml(stats.rank)}</strong></li>
+          <li>Points: <strong>${escapeHtml(stats.total_points || 0)}</strong></li>
+          <li>Points per game: <strong>${escapeHtml(Number(stats.points_per_game || 0).toFixed(2))}</strong></li>
+        </ul>
+      </div>
+      <div class="detail-card">
+        <div class="section-label">Season Totals</div>
+        <ul>
+          <li>Attendance: <strong>${escapeHtml(stats.days_attended || 0)}</strong></li>
+          <li>Goals: <strong>${escapeHtml(stats.goals || 0)}</strong></li>
+          <li>Goalkeeping points: <strong>${escapeHtml(stats.goal_keep_points_earned || 0)}</strong></li>
+          <li>Clean sheets: <strong>${escapeHtml(stats.clean_sheets || 0)}</strong></li>
+          <li>Record: <strong>${escapeHtml(`${stats.wins || 0}-${stats.draws || 0}-${stats.losses || 0}`)}</strong></li>
+        </ul>
+      </div>
+      <div class="detail-card">
+        <div class="section-label">Recent Matchdays</div>
+        ${renderRecentHistory(history)}
+      </div>
+    `;
   }
 
   function renderRoster() {
@@ -285,17 +338,23 @@ document.addEventListener("DOMContentLoaded", async () => {
         const subtitle = [nameParts.secondary, formatStatusLabel(player.status)]
           .filter(Boolean)
           .join(" · ");
+        const isActive = Number(player.id) === Number(selectedPlayerId);
 
         return `
-          <article class="list-item ${Number(player.id) === Number(selectedPlayerId) ? "active" : ""}" data-player-id="${player.id}">
+          <article class="list-item ${isActive ? "active" : ""}" data-player-id="${player.id}">
             <div>
               <div class="list-item-title">${escapeHtml(nameParts.primary || playerDisplayName(player))}</div>
               <div class="compact-row-copy">${escapeHtml(subtitle || "Club player")}</div>
             </div>
             <div class="list-actions">
               <span class="tier-pill ${escapeHtml(player.status)}">${escapeHtml(formatStatusLabel(player.status))}</span>
-              <a class="secondary-button" href="#player-detail">View</a>
+              <button class="secondary-button" type="button">${isActive ? "Hide" : "View"}</button>
             </div>
+            ${
+              isActive
+                ? `<div class="roster-inline-detail">${renderPlayerDetailMarkup(player)}</div>`
+                : ""
+            }
           </article>
         `;
       })
@@ -341,52 +400,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    const standingsMap = buildStandingsMap(allStandings);
-    const stats = getPlayerStats(player.id, standingsMap);
-    const nameParts = playerNameParts(player);
-    const positions =
-      Array.isArray(player.positions) && player.positions.length
-        ? player.positions.join(", ")
-        : "Not set";
-    const age = calculateAge(player.birth_date);
-    const history = playerDetailsMap.get(player.id) || [];
-
-    playerDetail.innerHTML = `
-      <div class="detail-card">
-        <div class="section-label">Identity</div>
-        <h3>${escapeHtml(nameParts.primary || playerDisplayName(player))}</h3>
-        <ul>
-          <li>Full name: <strong>${escapeHtml(`${player.first_name || ""} ${player.last_name || ""}`.trim())}</strong></li>
-          <li>Nickname: <strong>${escapeHtml(player.nickname || "Not set")}</strong></li>
-          <li>Nationality: <strong>${escapeHtml(player.nationality || "Not set")}</strong></li>
-          <li>Age: <strong>${escapeHtml(age == null ? "Unknown" : age)}</strong></li>
-        </ul>
-      </div>
-      <div class="detail-card">
-        <div class="section-label">Season Profile</div>
-        <ul>
-          <li>Tier: <strong>${escapeHtml(formatStatusLabel(player.status))}</strong></li>
-          <li>Positions: <strong>${escapeHtml(positions)}</strong></li>
-          <li>Rank: <strong>${escapeHtml(stats.rank)}</strong></li>
-          <li>Points: <strong>${escapeHtml(stats.total_points || 0)}</strong></li>
-          <li>Points per game: <strong>${escapeHtml(Number(stats.points_per_game || 0).toFixed(2))}</strong></li>
-        </ul>
-      </div>
-      <div class="detail-card">
-        <div class="section-label">Season Totals</div>
-        <ul>
-          <li>Attendance: <strong>${escapeHtml(stats.days_attended || 0)}</strong></li>
-          <li>Goals: <strong>${escapeHtml(stats.goals || 0)}</strong></li>
-          <li>Goalkeeping points: <strong>${escapeHtml(stats.goal_keep_points_earned || 0)}</strong></li>
-          <li>Clean sheets: <strong>${escapeHtml(stats.clean_sheets || 0)}</strong></li>
-          <li>Record: <strong>${escapeHtml(`${stats.wins || 0}-${stats.draws || 0}-${stats.losses || 0}`)}</strong></li>
-        </ul>
-      </div>
-      <div class="detail-card">
-        <div class="section-label">Recent Matchdays</div>
-        ${renderRecentHistory(history)}
-      </div>
-    `;
+    playerDetail.innerHTML = renderPlayerDetailMarkup(player);
   }
 
   function updateSummaryStats() {
@@ -629,9 +643,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       );
 
       ensureSelectedPlayerStillVisible();
-      if (!selectedPlayerId) {
-        selectedPlayerId = allPlayers[0]?.id || null;
-      }
 
       updateSummaryStats();
       renderRoster();
@@ -691,12 +702,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   playerList.addEventListener("click", (event) => {
+    if (event.target.closest(".roster-inline-detail")) {
+      return;
+    }
+
     const item = event.target.closest("[data-player-id]");
     if (!item) {
       return;
     }
 
-    selectedPlayerId = Number(item.dataset.playerId);
+    const nextPlayerId = Number(item.dataset.playerId);
+    selectedPlayerId = Number(selectedPlayerId) === nextPlayerId ? null : nextPlayerId;
     renderRoster();
     renderDetail();
   });
