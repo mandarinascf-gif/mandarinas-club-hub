@@ -161,12 +161,12 @@ li + li {
 }
 
 .logo-dot {
-  width: 1.9rem;
-  height: 2.05rem;
+  width: 2.3rem;
+  height: 2.3rem;
   flex: none;
   background:
     center / contain no-repeat
-    url("../images/brand/mandarinas-crest.png");
+    url("../icons/clublogo-source.png");
 }
 
 .logo-accent {
@@ -2506,8 +2506,8 @@ body.manager-touch::before {
 
 @media (max-width: 719px) {
   .logo-dot {
-    width: 1.7rem;
-    height: 1.82rem;
+    width: 2rem;
+    height: 2rem;
   }
 
   .club-footer-copy::before,
