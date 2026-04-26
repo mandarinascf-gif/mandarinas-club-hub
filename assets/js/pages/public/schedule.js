@@ -265,7 +265,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
             <div class="list-actions">
               <span class="state-pill ${escapeHtml(state.key)}">${escapeHtml(state.label)}</span>
-              <button class="secondary-button" type="button">View</button>
+              <a class="secondary-button" href="#matchday-detail">View</a>
             </div>
           </article>
         `;
