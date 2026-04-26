@@ -372,6 +372,15 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
+  function canonicalAttendanceRowsForMatchday() {
+    return (activeBundle?.playerStats || [])
+      .filter((row) => Number(row.matchday_id) === Number(selectedMatchdayId))
+      .filter((row) => {
+        const status = normalizeText(row.attendance_status || "").toLowerCase();
+        return row.attended || status === "in" || status === "attended";
+      });
+  }
+
   async function loadSubmissionsForMatchday() {
     statSubmissions = [];
     ratingSubmissions = [];
@@ -460,14 +469,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const rows = [];
     const seenIds = new Set();
     const kickoffPassed = Boolean(matchday?.kickoff_at && new Date(matchday.kickoff_at).getTime() <= Date.now());
+    const playerSelectionOpen = previewMode || kickoffPassed;
+
+    if (!playerSelectionOpen) {
+      return [];
+    }
 
     assignments.forEach((assignment) => {
       const player = playersById.get(assignment.player_id);
       if (!player || seenIds.has(player.id)) {
-        return;
-      }
-
-      if (!previewMode && !kickoffPassed) {
         return;
       }
 
@@ -477,6 +487,21 @@ document.addEventListener("DOMContentLoaded", () => {
         team_code: assignment.team_code,
       });
     });
+
+    if (!rows.length) {
+      canonicalAttendanceRowsForMatchday().forEach((row) => {
+        const player = playersById.get(row.player_id);
+        if (!player || seenIds.has(player.id)) {
+          return;
+        }
+
+        seenIds.add(player.id);
+        rows.push({
+          ...player,
+          team_code: null,
+        });
+      });
+    }
 
     return rows
       .map((player) => ({
@@ -758,6 +783,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderPlayerOptions() {
     const rows = filteredPlayersForSelect();
+    const matchday = selectedMatchday();
+    const kickoffPending = Boolean(
+      matchday?.kickoff_at && new Date(matchday.kickoff_at).getTime() > Date.now() && !previewMode
+    );
+    const attendanceRows = canonicalAttendanceRowsForMatchday();
 
     if (!selectedMatchdayId) {
       playerSelect.innerHTML = '<option value="">Waiting for the current report</option>';
@@ -766,7 +796,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (!rows.length) {
-      playerSelect.innerHTML = '<option value="">No players played on this matchday yet</option>';
+      const emptyLabel = kickoffPending
+        ? "Player selection opens after kickoff"
+        : attendanceRows.length
+          ? "No player options were saved for this matchday yet"
+          : "No players were marked in for this matchday yet";
+      playerSelect.innerHTML = `<option value="">${escapeHtml(emptyLabel)}</option>`;
       playerSelect.disabled = true;
       return;
     }
