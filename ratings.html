@@ -27,7 +27,7 @@
         }
       })();
     </script>
-    <link rel="stylesheet" href="./assets/css/app.css?v=20260425b" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260425f" />
     <title>Match Centre · Ratings</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/js/core/club_logic.js"></script>
@@ -61,7 +61,7 @@
           <h1>Player Ratings</h1>
           <p id="ratings-hero-copy">
             Pick yourself, open the rating queue, and work through one player at a time. Stats stay
-            on a separate page so this console stays focused.
+            on a separate page if you need them, but they are not required to rate.
           </p>
         </div>
         <div class="actions">
@@ -138,7 +138,7 @@
         <div class="section-label">Step 2</div>
         <h2>Ratings Console</h2>
         <p id="ratings-copy">
-          Work through each teammate and opponent one at a time using the same soccer-specific scale.
+          Work through each teammate one at a time with one overall star rating for that day.
         </p>
 
         <div id="ratings-rating-summary" class="summary-grid manager-summary-grid">
@@ -146,11 +146,6 @@
             <span>Teammates</span>
             <strong id="rating-teammate-count">0</strong>
             <span class="summary-copy">Same team queue</span>
-          </div>
-          <div class="summary-card">
-            <span>Opponents</span>
-            <strong id="rating-opponent-count">0</strong>
-            <span class="summary-copy">Across the other teams</span>
           </div>
           <div class="summary-card">
             <span>Saved ratings</span>
@@ -174,7 +169,7 @@
                 <div class="section-label" id="submission-rating-relationship">Teammate</div>
                 <h3 id="submission-rating-name">Choose a player to rate</h3>
                 <p class="section-copy" id="submission-rating-progress-copy">
-                  Saved ratings appear as you move through the queue.
+                  Saved ratings appear as you move through the teammate queue.
                 </p>
               </div>
               <span class="tag-pill" id="submission-rating-team-pill">-</span>
@@ -197,7 +192,7 @@
               <button class="secondary-button" type="button" id="submission-next-rating-button">Next player</button>
             </div>
             <p class="micro-note" id="submission-rating-note">
-              Each player gets one saved rating per matchday from you.
+              Each teammate gets one saved rating per matchday from you.
             </p>
           </div>
         </form>
@@ -212,6 +207,6 @@
       <div class="club-footer-copy">Match Centre · Ratings</div>
     </footer>
 
-    <script src="./assets/js/pages/public/ratings.js?v=20260424b"></script>
+    <script src="./assets/js/pages/public/ratings.js?v=20260425f"></script>
   </body>
 </html>
