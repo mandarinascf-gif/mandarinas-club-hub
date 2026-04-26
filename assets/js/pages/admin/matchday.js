@@ -12,11 +12,13 @@
       const {
         TEAM_ORDER,
         buildScoringSettings,
+        buildBalancedTeams,
         normalizeTeamDisplayConfig,
         teamDisplayLabel,
         applyTeamDisplayConfig,
         sortSeasonsChronologically,
         normalizePlayerDesiredTier,
+        summarizeBalancedAssignments,
         summarizeMatchdayProgress,
       } = window.MandarinasLogic;
 
@@ -26,6 +28,12 @@
         { code: "green", label: "Green", maxPlayers: 9 },
         { code: "orange", label: "Orange", maxPlayers: 9 },
       ];
+      const TEAM_MAX_PLAYERS_BY_CODE = Object.freeze(
+        TEAM_CONFIG.reduce((lookup, team) => {
+          lookup[team.code] = team.maxPlayers;
+          return lookup;
+        }, {})
+      );
       const ROUND_ONE_DEFAULTS = [
         { round_number: 1, match_order: 1, home_team_code: "blue", away_team_code: "magenta" },
         { round_number: 1, match_order: 2, home_team_code: "orange", away_team_code: "green" },
@@ -90,6 +98,7 @@
       let clubPlayers = [];
       let seasonRosterRows = [];
       let seasonRosterPlayerIds = new Set();
+      let historicalAssignments = [];
       let statsByPlayerId = new Map();
       let assignments = [];
       let matches = [];
@@ -645,6 +654,7 @@
         statsByPlayerId = new Map();
         tierMetricsByPlayerId = new Map();
         rosterPlan = null;
+        historicalAssignments = [];
         matchdayLauncherBlock.hidden = false;
         setMatchdayUiLocked(true);
         heroCopy.textContent =
@@ -1114,6 +1124,98 @@
         return players.filter((player) => isAttending(player.id));
       }
 
+      function buildTeamBalanceOptions() {
+        return {
+          teamCodes: TEAM_CONFIG.map((team) => team.code),
+          maxPlayersByTeam: TEAM_MAX_PLAYERS_BY_CODE,
+          sizeSeed: Math.max(Number(matchday?.matchday_number || 1) - 1, 0),
+          historicalAssignments,
+        };
+      }
+
+      function currentTeamBalanceSummary() {
+        return summarizeBalancedAssignments(
+          getAttendingPlayers(),
+          assignments,
+          buildTeamBalanceOptions()
+        );
+      }
+
+      function formatBalanceMetric(value, suffix = "", digits = 1) {
+        const numeric = Number(value);
+
+        if (!Number.isFinite(numeric)) {
+          return "n/a";
+        }
+
+        return `${numeric.toFixed(digits)}${suffix}`;
+      }
+
+      function formatTeamRoleCounts(primaryCounts) {
+        return `G${Number(primaryCounts?.GK || 0)} D${Number(primaryCounts?.DEF || 0)} M${Number(
+          primaryCounts?.MID || 0
+        )} A${Number(primaryCounts?.ATT || 0)}`;
+      }
+
+      function teamBalanceSummaryMarkup(summary, teamCode) {
+        const teamSummary = summary?.byTeamCode?.get(teamCode);
+
+        if (!teamSummary) {
+          return "";
+        }
+
+        return `
+          <div class="compact-badges">
+            <span class="tag-pill">Skill ${escapeHtml(formatBalanceMetric(teamSummary.averageSkill))}</span>
+            <span class="tag-pill">Age ${escapeHtml(formatBalanceMetric(teamSummary.averageAge, "y"))}</span>
+            <span class="tag-pill">${escapeHtml(formatTeamRoleCounts(teamSummary.primaryCounts))}</span>
+            <span class="tag-pill">Repeat ${escapeHtml(formatBalanceMetric(teamSummary.teammateRepeatLoad, "", 0))}</span>
+          </div>
+        `;
+      }
+
+      function autoBalanceSummaryMarkup(summary) {
+        if (!summary) {
+          return "";
+        }
+
+        return `
+          <div class="summary-grid">
+            <div class="summary-card">
+              <span>Skill spread</span>
+              <strong>${escapeHtml(formatBalanceMetric(summary.skillSpread))}</strong>
+              <span class="summary-copy">Lower is better</span>
+            </div>
+            <div class="summary-card">
+              <span>Age spread</span>
+              <strong>${escapeHtml(formatBalanceMetric(summary.ageSpread, "y"))}</strong>
+              <span class="summary-copy">Known ages only</span>
+            </div>
+            <div class="summary-card">
+              <span>Repeat load</span>
+              <strong>${escapeHtml(formatBalanceMetric(summary.teammateRepeatLoad, "", 0))}</strong>
+              <span class="summary-copy">Same-team history carried forward</span>
+            </div>
+            <div class="summary-card">
+              <span>Position mismatch</span>
+              <strong>${escapeHtml(formatBalanceMetric(summary.positionMismatch))}</strong>
+              <span class="summary-copy">Primary-role spread across teams</span>
+            </div>
+          </div>
+          ${
+            summary.unassignedPlayerCount
+              ? `
+                <p class="micro-note">
+                  ${escapeHtml(summary.unassignedPlayerCount)} IN player${
+                    summary.unassignedPlayerCount === 1 ? "" : "s"
+                  } still sit outside a team. These balance numbers settle once every IN player is placed.
+                </p>
+              `
+              : ""
+          }
+        `;
+      }
+
       function updateHeroStats() {
         const attending = getAttendingPlayers().length;
         const assigned = assignments.length;
@@ -1394,13 +1496,13 @@
               "tier_status",
               "is_eligible",
               ...(includeMetadata ? ["registration_tier", "payment_status"] : []),
-              `player:players(id, first_name, last_name, nickname, nationality, positions${
+              `player:players(id, first_name, last_name, nickname, nationality, birth_date, positions, skill_rating${
                 includeDesiredTier ? ", desired_tier" : ""
               }, status)`,
             ].join(", ");
 
           const buildDirectoryPlayerSelect = (includeDesiredTier) =>
-            `id, first_name, last_name, nickname, nationality, positions${
+            `id, first_name, last_name, nickname, nationality, birth_date, positions, skill_rating${
               includeDesiredTier ? ", desired_tier" : ""
             }, status`;
 
@@ -1528,6 +1630,34 @@
 
           assignments = assignmentRows || [];
 
+          const { data: priorMatchdayRows, error: priorMatchdayError } = await supabaseClient
+            .from("matchdays")
+            .select("id")
+            .eq("season_id", season.id)
+            .lt("matchday_number", matchday.matchday_number);
+
+          if (priorMatchdayError) {
+            throw priorMatchdayError;
+          }
+
+          const priorMatchdayIds = (priorMatchdayRows || []).map((row) => row.id);
+
+          if (priorMatchdayIds.length) {
+            const { data: historicalAssignmentRows, error: historicalAssignmentsError } =
+              await supabaseClient
+                .from("matchday_assignments")
+                .select("matchday_id, player_id, team_code")
+                .in("matchday_id", priorMatchdayIds);
+
+            if (historicalAssignmentsError) {
+              throw historicalAssignmentsError;
+            }
+
+            historicalAssignments = historicalAssignmentRows || [];
+          } else {
+            historicalAssignments = [];
+          }
+
           const { data: matchRows, error: matchError } = await supabaseClient
             .from("matchday_matches")
             .select("id, round_number, match_order, home_team_code, away_team_code, home_score, away_score")
@@ -1602,6 +1732,7 @@
           seasonRosterRows = [];
           seasonRosterPlayerIds = new Set();
           clubPlayers = [];
+          historicalAssignments = [];
           priorityFillButton.disabled = true;
           renderReplacementTools();
           setMatchdayUiLocked(true);
