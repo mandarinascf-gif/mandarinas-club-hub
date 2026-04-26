@@ -27,7 +27,7 @@
         }
       })();
     </script>
-    <link rel="stylesheet" href="./assets/css/app.css?v=20260425c" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260425f" />
     <title>Match Centre · Report</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/js/core/club_logic.js"></script>
@@ -60,8 +60,8 @@
           <div class="section-label">Fixtures · Matchday report</div>
           <h1>Player Report</h1>
           <p id="submission-hero-copy">
-            Pick your name first. Your team and scores load automatically, then you save your stat
-            line and unlock ratings for the rest of the players.
+            Pick your name first. Your team and scores load automatically, then submit stats or
+            ratings in whichever order fits the matchday.
           </p>
         </div>
         <div class="actions">
@@ -119,7 +119,7 @@
         <h2>Stats Console</h2>
         <p id="submission-stats-copy">
           Review the scores you played in, then enter your own goals, goalkeeper points, and clean
-          sheet.
+          sheet if you have stats to report.
         </p>
 
         <div id="submission-match-scores-card" class="detail-card">
@@ -172,7 +172,7 @@
         <div class="section-label">Step 3</div>
         <h2>Ratings Console</h2>
         <p id="submission-ratings-copy">
-          Rate every teammate and opponent except yourself using the same scale for each player.
+          Give each teammate one overall star rating for that day.
         </p>
 
         <div id="submission-rating-summary" class="summary-grid manager-summary-grid">
@@ -180,11 +180,6 @@
             <span>Teammates</span>
             <strong id="submission-rating-teammate-count">0</strong>
             <span class="summary-copy">Same team queue</span>
-          </div>
-          <div class="summary-card">
-            <span>Opponents</span>
-            <strong id="submission-rating-opponent-count">0</strong>
-            <span class="summary-copy">Across the other teams</span>
           </div>
           <div class="summary-card">
             <span>Saved ratings</span>
@@ -209,7 +204,7 @@
                 <div class="section-label" id="submission-rating-relationship">Teammate</div>
                 <h3 id="submission-rating-name">Choose a player to rate</h3>
                 <p class="section-copy" id="submission-rating-progress-line">
-                  Saved ratings appear as you move through the queue.
+                  Saved ratings appear as you move through the teammate queue.
                 </p>
               </div>
               <span class="tag-pill" id="submission-rating-team-pill">-</span>
@@ -232,7 +227,7 @@
               <button class="secondary-button" type="button" id="submission-next-rating-button">Next player</button>
             </div>
             <p class="micro-note" id="submission-rating-note">
-              Each player gets one saved rating per matchday from you.
+              Each teammate gets one saved rating per matchday from you.
             </p>
           </div>
         </form>
@@ -247,6 +242,6 @@
       <div class="club-footer-copy">Match Centre · Report</div>
     </footer>
 
-    <script src="./assets/js/pages/public/submissions.js?v=20260425e"></script>
+    <script src="./assets/js/pages/public/submissions.js?v=20260425i"></script>
   </body>
 </html>

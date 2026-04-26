@@ -1,4 +1,16 @@
 document.addEventListener("DOMContentLoaded", async () => {
+  const shell = window.MandarinasShell || {};
+  const refreshMotion = shell.refreshMotion || (() => {});
+  const pulseSurface = shell.pulseSurface || (() => {});
+  const playFeedback = shell.playFeedback || ((element, options = {}) => {
+    pulseSurface(element, options.className || "ball-tap");
+  });
+  const animateNumber = shell.animateNumber || ((element, value) => {
+    if (element) {
+      element.textContent = String(value);
+    }
+  });
+
   if (!window.MandarinasPublic) {
     const msg = "MandarinasPublic failed to load. Check browser console for script errors.";
     document.getElementById("status-text").textContent = msg;
@@ -277,12 +289,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     `;
   }
 
-  function updateSummaryStats() {
-    totalPlayersEl.textContent = String(allPlayers.length);
-    corePlayersEl.textContent = String(allPlayers.filter((player) => player.status === "core").length);
-    rotationPlayersEl.textContent = String(
-      allPlayers.filter((player) => player.status === "rotation").length
-    );
+  function updateSummaryStats(animate = false) {
+    const updateCount = animate
+      ? animateNumber
+      : (element, value) => {
+          element.textContent = String(value);
+        };
+
+    updateCount(totalPlayersEl, allPlayers.length);
+    updateCount(corePlayersEl, allPlayers.filter((player) => player.status === "core").length);
+    updateCount(rotationPlayersEl, allPlayers.filter((player) => player.status === "rotation").length);
   }
 
   async function loadSeason() {
@@ -333,13 +349,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         selectedPlayerId = allPlayers[0]?.id || null;
       }
 
-      updateSummaryStats();
+      updateSummaryStats(true);
       renderRoster();
       renderDetail();
+      refreshMotion(playerList);
+      refreshMotion(playerDetail);
+      pulseSurface(playerList, "goal-flash");
 
       statusLine.classList.remove("loading", "error", "warning");
       statusLine.classList.add("success");
       statusText.textContent = `${selectedSeason.name} · ${allPlayers.length} players loaded`;
+      pulseSurface(statusLine);
     } catch (error) {
       const message = readableError(error);
       statusLine.classList.remove("loading", "success", "warning");
@@ -352,6 +372,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   document.querySelectorAll(".filter-chip").forEach((button) => {
     button.addEventListener("click", (event) => {
+      playFeedback(event.currentTarget, {
+        className: "ball-tap",
+        vibrationPattern: 8,
+      });
+
       const filterType = event.currentTarget.dataset.filter;
       const filterValue = event.currentTarget.dataset.value;
 
@@ -368,6 +393,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       ensureSelectedPlayerStillVisible();
       renderRoster();
       renderDetail();
+      refreshMotion(playerList);
+      refreshMotion(playerDetail);
     });
   });
 
@@ -383,12 +410,24 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
+    playFeedback(item, {
+      className: "ball-tap",
+      vibrationPattern: [10, 22, 12],
+    });
+
     selectedPlayerId = Number(item.dataset.playerId);
     renderRoster();
     renderDetail();
+    refreshMotion(playerDetail);
+    pulseSurface(playerDetail, "lineup-lock");
   });
 
   seasonSelect.addEventListener("change", async () => {
+    playFeedback(seasonSelect, {
+      className: "ball-tap",
+      vibrationPattern: 10,
+    });
+
     activeSeasonId = Number(seasonSelect.value) || null;
     await loadSeason();
   });

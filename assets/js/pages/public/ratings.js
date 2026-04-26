@@ -28,34 +28,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const RATING_QUESTIONS = [
     {
-      key: "first_touch",
-      label: "First touch / control",
-      hint: "Did they control the ball cleanly and keep it moving?",
-    },
-    {
-      key: "passing_vision",
-      label: "Passing / vision",
-      hint: "Did they connect play and spot good options?",
-    },
-    {
-      key: "defensive_work",
-      label: "Defensive work",
-      hint: "Did they recover, press, and protect the team shape?",
-    },
-    {
-      key: "positioning",
-      label: "Positioning / decisions",
-      hint: "Did they take smart spaces and make good match decisions?",
-    },
-    {
-      key: "work_rate",
-      label: "Work rate / team play",
-      hint: "Did they compete, support teammates, and stay involved?",
-    },
-    {
-      key: "impact",
-      label: "Overall impact",
-      hint: "How much did they influence the match tonight?",
+      key: "overall",
+      label: "Overall rating",
+      hint: "How did they do overall for your team that day? Half stars are allowed.",
     },
   ];
 
@@ -90,7 +65,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const selectedPlayerCard = document.getElementById("ratings-selected-player-card");
   const ratingsCopy = document.getElementById("ratings-copy");
   const ratingTeammateCount = document.getElementById("rating-teammate-count");
-  const ratingOpponentCount = document.getElementById("rating-opponent-count");
   const ratingSavedCount = document.getElementById("rating-saved-count");
   const ratingTargets = document.getElementById("submission-rating-targets");
   const ratingForm = document.getElementById("submission-rating-form");
@@ -122,6 +96,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function normalizeText(value) {
     return String(value || "").trim().replace(/\s+/g, " ");
+  }
+
+  function roundToHalf(value) {
+    return Math.round(Number(value || 0) * 2) / 2;
+  }
+
+  function sameRatingScore(left, right) {
+    return Math.abs(Number(left || 0) - Number(right || 0)) < 0.01;
+  }
+
+  function isValidRatingScore(value) {
+    const numeric = Number(value || 0);
+    return numeric >= 0.5 && numeric <= 5 && sameRatingScore(numeric * 2, Math.round(numeric * 2));
+  }
+
+  function formatRatingScore(value) {
+    const numeric = Number(value || 0);
+    return Number.isInteger(numeric) ? String(numeric) : numeric.toFixed(1);
+  }
+
+  function ratingFillPercent(value) {
+    const numeric = Math.max(0, Math.min(5, Number(value || 0)));
+    return `${(numeric / 5) * 100}%`;
+  }
+
+  function isTeammateRelationship(value) {
+    return normalizeText(value).toLowerCase() === "teammate";
   }
 
   function setStatus(message, tone = "") {
@@ -425,7 +426,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function ratingRowsForPlayer(playerId) {
-    return ratingSubmissions.filter((row) => Number(row.rater_player_id) === Number(playerId));
+    return ratingSubmissions.filter(
+      (row) =>
+        Number(row.rater_player_id) === Number(playerId) &&
+        isTeammateRelationship(row.relationship)
+    );
   }
 
   function eligiblePlayers() {
@@ -468,22 +473,28 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    const totalTargets = Math.max(assignments.length - 1, 0);
-
     return rows
-      .map((player) => ({
-        ...player,
-        stat_saved: Boolean(statSubmissionForPlayer(player.id)),
-        ratings_saved: ratingRowsForPlayer(player.id).length,
-        ratings_total: player.team_code ? totalTargets : 0,
-      }))
+      .map((player) => {
+        const teammateTargetCount = player.team_code
+          ? assignments.filter(
+              (assignment) =>
+                Number(assignment.player_id) !== Number(player.id) &&
+                normalizeText(assignment.team_code) === normalizeText(player.team_code)
+            ).length
+          : 0;
+
+        return {
+          ...player,
+          stat_saved: Boolean(statSubmissionForPlayer(player.id)),
+          ratings_saved: ratingRowsForPlayer(player.id).length,
+          ratings_total: teammateTargetCount,
+        };
+      })
       .sort((left, right) => playerDisplayName(left).localeCompare(playerDisplayName(right)));
   }
 
   function filteredPlayersForSelect() {
-    return eligiblePlayers().filter(
-      (player) => previewMode || player.stat_saved || Number(player.id) === Number(selectedPlayerId)
-    );
+    return eligiblePlayers();
   }
 
   function selectedPlayer() {
@@ -519,28 +530,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const playersById = playerMap();
     return assignmentRowsForMatchday()
-      .filter((assignment) => Number(assignment.player_id) !== Number(player.id))
+      .filter(
+        (assignment) =>
+          Number(assignment.player_id) !== Number(player.id) &&
+          normalizeText(assignment.team_code) === normalizeText(player.team_code)
+      )
       .map((assignment) => {
         const ratee = playersById.get(assignment.player_id);
         if (!ratee) {
           return null;
         }
 
-        const relationship = assignment.team_code === player.team_code ? "teammate" : "opponent";
         return {
           ...ratee,
-          relationship,
+          relationship: "teammate",
           team_code: assignment.team_code,
         };
       })
       .filter(Boolean)
-      .sort((left, right) => {
-        if (left.relationship !== right.relationship) {
-          return left.relationship.localeCompare(right.relationship);
-        }
-
-        return playerDisplayName(left).localeCompare(playerDisplayName(right));
-      });
+      .sort((left, right) => playerDisplayName(left).localeCompare(playerDisplayName(right)));
   }
 
   function savedRatingForTarget(rateeId) {
@@ -554,6 +562,41 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
+  function normalizeScorePayload(value) {
+    if (!value) {
+      return {};
+    }
+
+    if (typeof value === "string") {
+      try {
+        const parsed = JSON.parse(value);
+        return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+      } catch (error) {
+        return {};
+      }
+    }
+
+    return typeof value === "object" && !Array.isArray(value) ? value : {};
+  }
+
+  function extractOverallScore(value) {
+    const scores = normalizeScorePayload(value);
+    const explicitOverall = Number(scores.overall || 0);
+    if (isValidRatingScore(explicitOverall)) {
+      return explicitOverall;
+    }
+
+    const legacyValues = Object.values(scores)
+      .map((entry) => Number(entry || 0))
+      .filter((entry) => Number.isFinite(entry) && entry >= 1 && entry <= 5);
+
+    if (!legacyValues.length) {
+      return null;
+    }
+
+    return legacyValues.reduce((sum, entry) => sum + entry, 0) / legacyValues.length;
+  }
+
   function ratingDraftFor(rateeId) {
     if (!rateeId) {
       return null;
@@ -564,8 +607,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const saved = savedRatingForTarget(rateeId);
+    const overallScore = extractOverallScore(saved?.scores);
     const nextDraft = {
-      scores: { ...(saved?.scores || {}) },
+      scores: overallScore !== null ? { overall: roundToHalf(overallScore) } : {},
       comment: saved?.comment || "",
     };
     ratingDrafts.set(rateeId, nextDraft);
@@ -581,11 +625,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function ratingProgressText(targetCount, savedCount) {
     if (!targetCount) {
-      return "No teammate or opponent queue is ready for this player yet.";
+      return "No teammate queue is ready for this player yet.";
     }
 
     if (savedCount === targetCount) {
-      return "Every available rating in this queue has been saved.";
+      return "Every teammate in this queue has been rated.";
     }
 
     return `${savedCount} of ${targetCount} ratings saved.`;
@@ -620,9 +664,9 @@ document.addEventListener("DOMContentLoaded", () => {
           ? (matchday.kickoff_at ? formatDateTime(matchday.kickoff_at) : "Preview")
           : submissionState.ratingsOpen
             ? "Ratings open"
-            : submissionState.statsOpen
-              ? "Stats first"
-              : "Closed";
+            : submissionState.ratingsClosed
+              ? "Closed"
+              : "Waiting";
 
         return `
           <option value="${matchday.id}" ${Number(matchday.id) === Number(selectedMatchdayId) ? "selected" : ""}>
@@ -684,10 +728,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (state.ratingsOpen) {
       badges.push('<span class="tag-pill plan-selected">Ratings open</span>');
-    } else if (state.statsOpen) {
-      badges.push('<span class="tag-pill">Stats first</span>');
-    } else {
+    } else if (state.ratingsClosed) {
       badges.push('<span class="tag-pill">Closed</span>');
+    } else {
+      badges.push('<span class="tag-pill">Waiting</span>');
     }
 
     reportCard.innerHTML = `
@@ -721,10 +765,9 @@ document.addEventListener("DOMContentLoaded", () => {
       ${rows
         .map((player) => {
           const teamLabel = player.team_code ? formatTeamLabel(player.team_code) : "No team";
-          const suffix = player.stat_saved ? `${teamLabel} · Ready` : `${teamLabel} · Stats first`;
           return `
             <option value="${player.id}" ${Number(player.id) === Number(selectedPlayerId) ? "selected" : ""}>
-              ${escapeHtml(playerDisplayName(player))} · ${escapeHtml(suffix)}
+              ${escapeHtml(playerDisplayName(player))} · ${escapeHtml(teamLabel)}
             </option>
           `;
         })
@@ -758,7 +801,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ${teamBadge}
       </div>
       <div class="compact-badges">
-        <span class="tag-pill">${player.stat_saved ? "Stats saved" : "Stats required first"}</span>
+        <span class="tag-pill">${player.stat_saved ? "Stats saved" : "No stats submitted"}</span>
         <span class="tag-pill">${escapeHtml(savedCount)} / ${escapeHtml(targetCount)} rated</span>
       </div>
     `;
@@ -779,6 +822,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     ratingQuestionList.innerHTML = RATING_QUESTIONS.map((question) => {
       const selectedValue = Number(draft.scores?.[question.key] || 0);
+      const selectedCopy = isValidRatingScore(selectedValue)
+        ? `${formatRatingScore(selectedValue)} / 5 stars selected`
+        : "Tap a star. Half stars work too.";
 
       return `
         <section class="submission-rating-question">
@@ -787,21 +833,30 @@ document.addEventListener("DOMContentLoaded", () => {
             <span>${escapeHtml(question.hint)}</span>
           </div>
           <div class="submission-rating-scale" role="group" aria-label="${escapeHtml(question.label)}">
-            ${[1, 2, 3, 4, 5]
-              .map(
-                (value) => `
-                  <button
-                    class="chip-button ${selectedValue === value ? "active" : ""}"
-                    type="button"
-                    data-rating-question="${escapeHtml(question.key)}"
-                    data-rating-score="${escapeHtml(value)}"
-                    aria-pressed="${selectedValue === value ? "true" : "false"}"
-                  >
-                    ${escapeHtml(value)}
-                  </button>
-                `
-              )
-              .join("")}
+            <div class="submission-star-interaction">
+              <div class="submission-star-strip" aria-hidden="true">
+                <span class="submission-star-track">★★★★★</span>
+                <span class="submission-star-fill" style="width: ${ratingFillPercent(selectedValue)};">★★★★★</span>
+              </div>
+              <div class="submission-star-hit-targets">
+              ${[0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]
+                .map(
+                  (value) => `
+                    <button
+                      class="submission-star-step ${sameRatingScore(selectedValue, value) ? "active" : ""}"
+                      type="button"
+                      data-rating-question="${escapeHtml(question.key)}"
+                      data-rating-score="${escapeHtml(value)}"
+                      aria-pressed="${sameRatingScore(selectedValue, value) ? "true" : "false"}"
+                      aria-label="${escapeHtml(`${formatRatingScore(value)} stars`)}"
+                      title="${escapeHtml(`${formatRatingScore(value)} stars`)}"
+                    ></button>
+                  `
+                )
+                .join("")}
+              </div>
+            </div>
+            <div class="submission-star-caption">${escapeHtml(selectedCopy)}</div>
           </div>
         </section>
       `;
@@ -833,14 +888,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const player = selectedPlayer();
     const matchday = selectedMatchday();
     const targets = ratingTargetsForPlayer(player);
-    const teammateCount = targets.filter((target) => target.relationship === "teammate").length;
-    const opponentCount = targets.filter((target) => target.relationship === "opponent").length;
+    const teammateCount = targets.length;
     const savedCount = ratingRowsForPlayer(player?.id).length;
 
     ensureRateeSelection();
 
     ratingTeammateCount.textContent = String(teammateCount);
-    ratingOpponentCount.textContent = String(opponentCount);
     ratingSavedCount.textContent = String(savedCount);
 
     if (!player || !matchday) {
@@ -851,20 +904,11 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    if (!previewMode && !player.stat_saved) {
-      ratingTargets.innerHTML = '<div class="empty-state">Save your stat line first on the Player Stats page, then come back to ratings.</div>';
-      ratingForm.hidden = true;
-      ratingsEmpty.hidden = false;
-      ratingsEmpty.textContent = "Save your stat line first on the Player Stats page, then come back to ratings.";
-      ratingsCopy.textContent = "Ratings stay separate so you only arrive here after your own stat line is saved.";
-      return;
-    }
-
     if (!targets.length) {
-      ratingTargets.innerHTML = '<div class="empty-state">No teammate or opponent queue is available until teams are saved for this matchday.</div>';
+      ratingTargets.innerHTML = '<div class="empty-state">No teammate queue is available until teams are saved for this matchday.</div>';
       ratingForm.hidden = true;
       ratingsEmpty.hidden = false;
-      ratingsEmpty.textContent = "No teammate or opponent queue is available until teams are saved for this matchday.";
+      ratingsEmpty.textContent = "No teammate queue is available until teams are saved for this matchday.";
       ratingsCopy.textContent = "Ratings appear once the matchday has saved team assignments.";
       return;
     }
@@ -881,7 +925,7 @@ document.addEventListener("DOMContentLoaded", () => {
             data-ratee-id="${target.id}"
           >
             <span>${escapeHtml(playerDisplayName(target))}</span>
-            <span class="mini-sub">${escapeHtml(target.relationship === "teammate" ? "Teammate" : "Opponent")}</span>
+            <span class="mini-sub">Teammate</span>
           </button>
         `;
       })
@@ -900,13 +944,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     ratingsEmpty.hidden = true;
     ratingForm.hidden = false;
-    ratingRelationship.textContent = target.relationship === "teammate" ? "Teammate" : "Opponent";
+    ratingRelationship.textContent = "Teammate";
     ratingName.textContent = playerDisplayName(target);
     ratingTeamPill.className = `team-badge ${escapeHtml(teamClassName(target.team_code))}`;
     ratingTeamPill.textContent = formatTeamLabel(target.team_code);
     ratingProgressCopy.textContent = ratingProgressText(targets.length, savedCount);
     ratingsCopy.textContent = submissionTablesReady
-      ? "Use the same soccer-specific scale for every player so staff can compare reports cleanly."
+      ? "Give one overall star rating from 0.5 to 5 for each teammate."
       : "Live rating saving is not switched on for this screen yet.";
     saveRatingButton.disabled = !saveEnabled;
     nextRatingButton.disabled = !targets.length;
@@ -947,7 +991,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     playerPanelCopy.textContent = previewMode
       ? "Choose your name from this saved matchday. Open access keeps the full roster available for testing."
-      : "Choose your name from the current roster. Live ratings stay focused on players who already saved stats.";
+      : "Choose your name from the current roster. Ratings stay separate from stats, so either form can be handled on its own.";
 
     const scheduleHref = activeSeasonId ? `./schedule.html?season_id=${activeSeasonId}` : "./schedule.html";
     scheduleLink.href = scheduleHref;
@@ -981,7 +1025,7 @@ document.addEventListener("DOMContentLoaded", () => {
       heroCopy.textContent = previewMode
         ? `${activeBundle.season.name} ratings desk is open for staff testing. Open any matchday, pick a player, and inspect the rating queue.`
         : selectedMatchdayId
-          ? `${activeBundle.season.name} player ratings are live for the current matchday. Pick yourself and work through the queue after your stats are saved.`
+          ? `${activeBundle.season.name} player ratings are live for the current matchday. Pick yourself and work through the queue whenever ratings are open.`
           : `${activeBundle.season.name} player ratings are waiting for the next live window.`;
 
       renderAll();
@@ -1022,11 +1066,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    if (!previewMode && !player.stat_saved) {
-      setStatus("Save your stat line on the Player Stats page before rating this matchday.", "warning");
-      return;
-    }
-
     const submissionState = matchdayWindowState(matchday);
     if (!submissionState.ratingsOpen) {
       setStatus("The rating window is not open for this matchday right now.", "warning");
@@ -1035,11 +1074,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const missingQuestions = RATING_QUESTIONS.filter((question) => {
       const value = Number(draft.scores?.[question.key] || 0);
-      return !Number.isInteger(value) || value < 1 || value > 5;
+      return !isValidRatingScore(value);
     });
 
     if (missingQuestions.length) {
-      setStatus(`Finish every rating question for ${playerDisplayName(target)} before saving.`, "warning");
+      setStatus(`Add an overall rating for ${playerDisplayName(target)} before saving.`, "warning");
       return;
     }
 

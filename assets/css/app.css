@@ -22,6 +22,11 @@
   --space-4: 1rem;
   --space-5: 1.25rem;
   --space-6: 1.75rem;
+  --motion-fast: 160ms;
+  --motion-base: 240ms;
+  --motion-slow: 420ms;
+  --ease-quick: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 *,
@@ -60,6 +65,7 @@ svg {
 a {
   color: var(--accent);
   text-decoration: none;
+  transition: color var(--motion-fast) var(--ease-quick);
 }
 
 a:hover {
@@ -148,6 +154,7 @@ li + li {
   color: var(--text);
   font-weight: 700;
   min-height: 44px;
+  transition: transform var(--motion-fast) var(--ease-quick);
 }
 
 .site-logo:hover {
@@ -251,6 +258,12 @@ summary {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   scroll-snap-align: start;
+  transition:
+    transform var(--motion-fast) var(--ease-quick),
+    color var(--motion-fast) var(--ease-quick),
+    background-color var(--motion-base) var(--ease-quick),
+    border-color var(--motion-base) var(--ease-quick),
+    box-shadow var(--motion-base) var(--ease-quick);
 }
 
 .nav-link.active,
@@ -259,6 +272,38 @@ summary {
   background: var(--accent);
   border-color: var(--accent);
   color: #ffffff;
+}
+
+.nav-link:active,
+.nav-mode-badge:active,
+.primary-button:active,
+.secondary-button:active,
+.ghost-button:active,
+.danger-button:active,
+.link-button:active,
+.button-link:active,
+button:active {
+  transform: translateY(0) scale(0.985);
+}
+
+@media (hover: hover) {
+  .site-logo:hover {
+    transform: translateY(-1px);
+  }
+
+  .nav-link:hover,
+  .nav-mode-badge:hover,
+  .primary-button:hover,
+  .secondary-button:hover,
+  .ghost-button:hover,
+  .danger-button:hover,
+  .link-button:hover,
+  .button-link:hover,
+  button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(17, 17, 17, 0.08);
+    text-decoration: none;
+  }
 }
 
 .ghost-link,
@@ -327,14 +372,51 @@ textarea:disabled {
 
 .home-hero {
   position: relative;
-  overflow: visible;
+  overflow: hidden;
   gap: var(--space-4);
   background:
     radial-gradient(circle at top left, #fff6e7 0, rgba(255, 246, 231, 0.92) 26%, #ffffff 62%),
     linear-gradient(135deg, #fff9f1 0%, #ffffff 58%);
 }
 
+.home-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto -8% -28% 54%;
+  width: min(36vw, 19rem);
+  aspect-ratio: 1;
+  border-radius: 999px;
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    rgba(255, 188, 77, 0.46) 0%,
+    rgba(255, 188, 77, 0.16) 42%,
+    rgba(255, 188, 77, 0) 74%
+  );
+  filter: blur(8px);
+  animation: hero-float 11s ease-in-out infinite alternate;
+}
+
+.home-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      112deg,
+      rgba(255, 255, 255, 0.16) 0 1px,
+      rgba(255, 255, 255, 0) 1px 68px
+    );
+  opacity: 0.24;
+  mask-image: linear-gradient(110deg, rgba(0, 0, 0, 0.78) 12%, transparent 72%);
+  transform: translateX(-5%);
+  animation: pitch-sweep 15s linear infinite;
+}
+
 .home-hero-copy {
+  position: relative;
+  z-index: 1;
   display: grid;
   gap: var(--space-4);
   align-content: start;
@@ -385,6 +467,7 @@ textarea:disabled {
   height: 100%;
   object-fit: cover;
   object-position: center;
+  transition: transform var(--motion-slow) var(--ease-standard);
 }
 
 .champion-card--winter .champion-card-media img {
@@ -591,6 +674,12 @@ textarea:disabled {
   border-radius: var(--radius);
   background: var(--surface);
   box-shadow: 0 1px 2px rgba(17, 17, 17, 0.04);
+  transition:
+    transform var(--motion-base) var(--ease-standard),
+    background-color var(--motion-base) var(--ease-quick),
+    border-color var(--motion-base) var(--ease-quick),
+    box-shadow var(--motion-base) var(--ease-quick),
+    opacity var(--motion-fast) var(--ease-quick);
 }
 
 .panel,
@@ -739,6 +828,37 @@ textarea {
   background: #fff;
   color: var(--text);
   font: inherit;
+  transition:
+    border-color var(--motion-fast) var(--ease-quick),
+    box-shadow var(--motion-fast) var(--ease-quick),
+    background-color var(--motion-fast) var(--ease-quick);
+}
+
+input[type="checkbox"] {
+  width: 1.1rem;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  min-height: 1.1rem;
+  margin: 0;
+  padding: 0;
+}
+
+.mini-field.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  justify-self: start;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+  outline: none;
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 4px rgba(147, 197, 253, 0.22);
 }
 
 textarea {
@@ -770,6 +890,12 @@ summary {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface-muted);
+  transition:
+    transform var(--motion-fast) var(--ease-quick),
+    background-color var(--motion-fast) var(--ease-quick),
+    border-color var(--motion-fast) var(--ease-quick),
+    color var(--motion-fast) var(--ease-quick),
+    opacity var(--motion-fast) var(--ease-quick);
 }
 
 .status-line:empty {
@@ -806,6 +932,11 @@ summary {
   gap: var(--space-1);
   align-content: start;
   background: var(--surface-muted);
+  transition:
+    transform var(--motion-base) var(--ease-standard),
+    background-color var(--motion-base) var(--ease-quick),
+    border-color var(--motion-base) var(--ease-quick),
+    box-shadow var(--motion-base) var(--ease-quick);
 }
 
 .summary-card strong,
@@ -853,6 +984,12 @@ summary {
   border-radius: 999px;
   background: var(--surface-muted);
   font-size: 0.88rem;
+  transition:
+    transform var(--motion-fast) var(--ease-quick),
+    background-color var(--motion-fast) var(--ease-quick),
+    border-color var(--motion-fast) var(--ease-quick),
+    color var(--motion-fast) var(--ease-quick),
+    box-shadow var(--motion-fast) var(--ease-quick);
 }
 
 .filter-chip.active,
@@ -947,11 +1084,27 @@ summary {
 .season-card.active {
   border-color: #93c5fd;
   background: var(--accent-soft);
+  box-shadow: 0 12px 24px rgba(17, 17, 17, 0.08);
 }
 
 .player-pick-card.active {
   border-color: #93c5fd;
   background: var(--accent-soft);
+}
+
+@media (hover: hover) {
+  .summary-card:hover,
+  .champion-card:hover,
+  .list-item[data-player-id]:hover,
+  .list-item[data-matchday-id]:hover,
+  .season-card[data-season-id]:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 28px rgba(17, 17, 17, 0.08);
+  }
+
+  .champion-card:hover .champion-card-media img {
+    transform: scale(1.04);
+  }
 }
 
 .compact-row-main,
@@ -1143,14 +1296,101 @@ summary {
 
 .submission-rating-scale {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: var(--space-2);
 }
 
-.submission-rating-scale .chip-button {
-  width: 100%;
+.submission-star-scale {
+  display: none;
+}
+
+.submission-star-interaction {
+  position: relative;
+  display: inline-grid;
+  width: max-content;
+  max-width: 100%;
+}
+
+.submission-star-strip {
+  position: relative;
+  display: inline-grid;
+}
+
+.submission-star-track,
+.submission-star-fill {
+  display: block;
+  min-height: 3rem;
+  font-size: clamp(2rem, 4vw, 2.5rem);
+  line-height: 1;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.submission-star-track {
+  color: rgba(148, 163, 184, 0.38);
+  text-shadow: 0 6px 14px rgba(15, 23, 42, 0.18);
+}
+
+.submission-star-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  overflow: hidden;
+  color: #fbbf24;
+  text-shadow: 0 6px 14px rgba(15, 23, 42, 0.18);
+}
+
+.submission-star-hit-targets {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+}
+
+.submission-star-step {
   min-width: 0;
-  justify-content: center;
+  min-height: 3rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.submission-star-step:hover,
+.submission-star-step:focus-visible {
+  background: rgba(59, 130, 246, 0.08);
+  outline: none;
+}
+
+.submission-star-step:focus-visible {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.24);
+}
+
+.submission-star-step.active {
+  background: transparent;
+}
+
+.submission-star-caption {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.submission-star-fill,
+.submission-star-track {
+  pointer-events: none;
+}
+
+.submission-star-fill,
+.submission-star-track,
+.submission-star-step {
+  transition:
+    color var(--motion-fast) var(--ease-quick),
+    background-color var(--motion-fast) var(--ease-quick),
+    box-shadow var(--motion-fast) var(--ease-quick);
+}
+
+.submission-star-fill {
+  color: #fbbf24;
 }
 
 .role-chip.active {
@@ -1384,12 +1624,20 @@ tr:last-child td {
   display: grid;
   place-items: center;
   padding: var(--space-4);
+  opacity: 0;
+  transition: opacity var(--motion-base) var(--ease-quick);
+}
+
+.site-modal.is-open {
+  opacity: 1;
 }
 
 .site-modal-backdrop {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transition: opacity var(--motion-base) var(--ease-quick);
 }
 
 .site-modal-card {
@@ -1398,10 +1646,24 @@ tr:last-child td {
   width: min(100%, 900px);
   max-height: calc(100vh - 2rem);
   overflow: auto;
+  opacity: 0;
+  transform: translateY(18px) scale(0.985);
+  transition:
+    transform var(--motion-base) var(--ease-standard),
+    opacity var(--motion-base) var(--ease-quick);
 }
 
 .site-modal-card-wide {
   width: min(100%, 1100px);
+}
+
+.site-modal.is-open .site-modal-backdrop {
+  opacity: 1;
+}
+
+.site-modal.is-open .site-modal-card {
+  opacity: 1;
+  transform: none;
 }
 
 .site-modal-body {
@@ -1463,6 +1725,143 @@ tr:last-child td {
     center / contain no-repeat
     url("../images/brand/mandarinas-wordmark.png");
   opacity: 0.82;
+}
+
+.motion-reveal {
+  opacity: 0;
+  transform: translateY(16px) scale(0.988);
+  transition:
+    opacity var(--motion-slow) var(--ease-standard) var(--motion-delay, 0ms),
+    transform var(--motion-slow) var(--ease-standard) var(--motion-delay, 0ms);
+}
+
+.motion-reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.motion-swap {
+  animation: content-swap var(--motion-base) var(--ease-standard);
+}
+
+.count-bump {
+  animation: count-bump 520ms var(--ease-standard);
+}
+
+.ball-tap {
+  animation: ball-tap 360ms var(--ease-standard);
+  transform-origin: center;
+}
+
+.goal-flash {
+  animation: goal-flash 760ms var(--ease-standard);
+}
+
+.lineup-lock {
+  animation: lineup-lock 440ms var(--ease-standard);
+}
+
+@keyframes hero-float {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  100% {
+    transform: translate3d(-12px, -18px, 0) scale(1.08);
+  }
+}
+
+@keyframes pitch-sweep {
+  0% {
+    transform: translateX(-7%);
+  }
+
+  100% {
+    transform: translateX(4%);
+  }
+}
+
+@keyframes content-swap {
+  0% {
+    opacity: 0.24;
+    transform: translateY(8px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ball-tap {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  24% {
+    transform: translate3d(-2px, 1px, 0) rotate(-2.8deg) scale(0.985);
+  }
+
+  62% {
+    transform: translate3d(5px, -1px, 0) rotate(2.1deg) scale(1.03);
+  }
+
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes goal-flash {
+  0% {
+    box-shadow: 0 0 0 rgba(251, 191, 36, 0), 0 0 0 rgba(34, 197, 94, 0);
+    transform: scale(0.992);
+  }
+
+  40% {
+    box-shadow:
+      0 0 0 4px rgba(251, 191, 36, 0.18),
+      0 0 26px rgba(34, 197, 94, 0.16);
+    transform: scale(1.01);
+  }
+
+  100% {
+    box-shadow: none;
+    transform: none;
+  }
+}
+
+@keyframes lineup-lock {
+  0% {
+    transform: translateY(8px) scale(0.985);
+    box-shadow: 0 0 0 rgba(59, 130, 246, 0);
+  }
+
+  58% {
+    transform: translateY(-2px) scale(1.008);
+    box-shadow: 0 16px 28px rgba(59, 130, 246, 0.16);
+  }
+
+  100% {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+@keyframes count-bump {
+  0% {
+    opacity: 0.28;
+    transform: translateY(7px);
+  }
+
+  60% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 body.manager-touch {
@@ -1610,6 +2009,25 @@ body.manager-touch::before {
     radial-gradient(circle at top right, rgba(110, 231, 183, 0.1), transparent 38%);
 }
 
+.manager-touch .home-hero::after {
+  background: radial-gradient(
+    circle,
+    rgba(110, 231, 183, 0.34) 0%,
+    rgba(59, 130, 246, 0.16) 38%,
+    rgba(110, 231, 183, 0) 74%
+  );
+}
+
+.manager-touch .home-hero::before {
+  background:
+    repeating-linear-gradient(
+      112deg,
+      rgba(110, 231, 183, 0.16) 0 1px,
+      rgba(110, 231, 183, 0) 1px 68px
+    );
+  opacity: 0.34;
+}
+
 .manager-touch .manager-panel {
   position: relative;
   overflow: hidden;
@@ -1688,12 +2106,28 @@ body.manager-touch::before {
   color: #d1fae5;
 }
 
+@media (hover: hover) {
+  .manager-touch .summary-card:hover,
+  .manager-touch .champion-card:hover,
+  .manager-touch .list-item[data-player-id]:hover,
+  .manager-touch .list-item[data-matchday-id]:hover,
+  .manager-touch .season-card[data-season-id]:hover {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 22px 40px rgba(2, 6, 12, 0.34);
+  }
+}
+
 .manager-touch input,
 .manager-touch select,
 .manager-touch textarea {
   border-color: rgba(84, 108, 144, 0.92);
   background: linear-gradient(180deg, rgba(10, 17, 28, 0.95), rgba(13, 22, 35, 0.95));
   color: var(--text);
+}
+
+.manager-touch input[type="checkbox"] {
+  accent-color: #6ee7b7;
 }
 
 .manager-touch input::placeholder,
@@ -1836,6 +2270,19 @@ body.manager-touch::before {
   color: #d1fae5;
 }
 
+.manager-touch .submission-star-track {
+  color: rgba(122, 146, 177, 0.42);
+}
+
+.manager-touch .submission-star-step:hover,
+.manager-touch .submission-star-step:focus-visible {
+  background: rgba(110, 231, 183, 0.1);
+}
+
+.manager-touch .submission-star-step.active {
+  background: transparent;
+}
+
 .manager-touch .submission-target-chip.complete {
   border-color: rgba(134, 239, 172, 0.6);
   background: rgba(134, 239, 172, 0.12);
@@ -1974,6 +2421,26 @@ body.manager-touch::before {
 
   .show-mobile {
     display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .motion-reveal {
+    opacity: 1;
+    transform: none;
   }
 }
 

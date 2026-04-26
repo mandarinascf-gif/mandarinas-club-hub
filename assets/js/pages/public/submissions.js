@@ -29,40 +29,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const RATING_QUESTIONS = [
     {
-      key: "first_touch",
-      label: "First touch / control",
-      shortLabel: "Control",
-      hint: "Did they handle the ball cleanly and keep it moving?",
-    },
-    {
-      key: "passing_vision",
-      label: "Passing / vision",
-      shortLabel: "Passing",
-      hint: "Did they connect play and find the right option?",
-    },
-    {
-      key: "defensive_work",
-      label: "Defensive work",
-      shortLabel: "Defending",
-      hint: "Did they recover, press, and help protect the team shape?",
-    },
-    {
-      key: "positioning",
-      label: "Positioning / decisions",
-      shortLabel: "Decisions",
-      hint: "Did they take smart spaces and make good match decisions?",
-    },
-    {
-      key: "work_rate",
-      label: "Work rate / team play",
-      shortLabel: "Team play",
-      hint: "Did they compete, support teammates, and stay involved?",
-    },
-    {
-      key: "impact",
-      label: "Overall impact",
-      shortLabel: "Impact",
-      hint: "How much did they influence the match tonight?",
+      key: "overall",
+      label: "Overall rating",
+      hint: "How did they do overall for your team that day? Half stars are allowed.",
     },
   ];
 
@@ -99,7 +68,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const statsNote = document.getElementById("submission-stats-note");
   const ratingsCopy = document.getElementById("submission-ratings-copy");
   const ratingTeammateCount = document.getElementById("submission-rating-teammate-count");
-  const ratingOpponentCount = document.getElementById("submission-rating-opponent-count");
   const ratingSavedCount = document.getElementById("submission-rating-saved-count");
   const ratingProgressPill = document.getElementById("submission-rating-progress-pill");
   const ratingProgressCopy = document.getElementById("submission-rating-progress-copy");
@@ -134,6 +102,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function normalizeText(value) {
     return String(value || "").trim().replace(/\s+/g, " ");
+  }
+
+  function roundToHalf(value) {
+    return Math.round(Number(value || 0) * 2) / 2;
+  }
+
+  function sameRatingScore(left, right) {
+    return Math.abs(Number(left || 0) - Number(right || 0)) < 0.01;
+  }
+
+  function isValidRatingScore(value) {
+    const numeric = Number(value || 0);
+    return numeric >= 0.5 && numeric <= 5 && sameRatingScore(numeric * 2, Math.round(numeric * 2));
+  }
+
+  function formatRatingScore(value) {
+    const numeric = Number(value || 0);
+    return Number.isInteger(numeric) ? String(numeric) : numeric.toFixed(1);
+  }
+
+  function ratingFillPercent(value) {
+    const numeric = Math.max(0, Math.min(5, Number(value || 0)));
+    return `${(numeric / 5) * 100}%`;
+  }
+
+  function isTeammateRelationship(value) {
+    return normalizeText(value).toLowerCase() === "teammate";
   }
 
   function setStatus(message, tone = "") {
@@ -440,7 +435,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function ratingRowsForPlayer(playerId) {
-    return ratingSubmissions.filter((row) => Number(row.rater_player_id) === Number(playerId));
+    return ratingSubmissions.filter(
+      (row) =>
+        Number(row.rater_player_id) === Number(playerId) &&
+        isTeammateRelationship(row.relationship)
+    );
   }
 
   function savedRatingForTarget(rateeId) {
@@ -516,8 +515,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const playersById = playerMap();
 
     return assignmentRowsForMatchday()
-      .filter((assignment) => normalizeText(assignment.team_code))
-      .filter((assignment) => Number(assignment.player_id) !== Number(player.id))
+      .filter(
+        (assignment) =>
+          normalizeText(assignment.team_code) &&
+          Number(assignment.player_id) !== Number(player.id) &&
+          normalizeText(assignment.team_code) === normalizeText(player.team_code)
+      )
       .map((assignment) => {
         const ratee = playersById.get(assignment.player_id);
         if (!ratee) {
@@ -526,18 +529,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         return {
           ...ratee,
-          relationship: assignment.team_code === player.team_code ? "teammate" : "opponent",
+          relationship: "teammate",
           team_code: assignment.team_code,
         };
       })
       .filter(Boolean)
-      .sort((left, right) => {
-        if (left.relationship !== right.relationship) {
-          return left.relationship === "teammate" ? -1 : 1;
-        }
-
-        return playerDisplayName(left).localeCompare(playerDisplayName(right));
-      });
+      .sort((left, right) => playerDisplayName(left).localeCompare(playerDisplayName(right)));
   }
 
   function ratingDraftFor(rateeId) {
@@ -550,8 +547,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const saved = savedRatingForTarget(rateeId);
+    const overallScore = extractOverallScore(saved?.scores);
     const nextDraft = {
-      scores: { ...(saved?.scores || {}) },
+      scores: overallScore !== null ? { overall: roundToHalf(overallScore) } : {},
       comment: saved?.comment || "",
     };
     ratingDrafts.set(rateeId, nextDraft);
@@ -601,6 +599,24 @@ document.addEventListener("DOMContentLoaded", () => {
     return typeof value === "object" && !Array.isArray(value) ? value : {};
   }
 
+  function extractOverallScore(value) {
+    const scores = normalizeScorePayload(value);
+    const explicitOverall = Number(scores.overall || 0);
+    if (isValidRatingScore(explicitOverall)) {
+      return explicitOverall;
+    }
+
+    const legacyValues = Object.values(scores)
+      .map((entry) => Number(entry || 0))
+      .filter((entry) => Number.isFinite(entry) && entry >= 1 && entry <= 5);
+
+    if (!legacyValues.length) {
+      return null;
+    }
+
+    return legacyValues.reduce((sum, entry) => sum + entry, 0) / legacyValues.length;
+  }
+
   function countLabel(count, singular, plural = `${singular}s`) {
     return `${count} ${count === 1 ? singular : plural}`;
   }
@@ -610,7 +626,8 @@ document.addEventListener("DOMContentLoaded", () => {
       (row) =>
         Number(row.matchday_id) === Number(selectedMatchdayId) &&
         Number(row.ratee_player_id) === Number(playerId) &&
-        Number(row.rater_player_id) !== Number(playerId)
+        Number(row.rater_player_id) !== Number(playerId) &&
+        isTeammateRelationship(row.relationship)
     );
   }
 
@@ -621,8 +638,7 @@ document.addEventListener("DOMContentLoaded", () => {
         copy: "Your matchday form appears here after you open your own report.",
         feedbackLabel: "0 feedback cards",
         teammateLabel: countLabel(0, "teammate"),
-        opponentLabel: countLabel(0, "opponent"),
-        strengths: [],
+        averageLabel: "",
         note: "Raw peer ratings stay off the public squad page.",
       };
     }
@@ -633,15 +649,13 @@ document.addEventListener("DOMContentLoaded", () => {
         copy: "Matchday feedback will appear here once live rating saving is switched on.",
         feedbackLabel: "View mode",
         teammateLabel: "Waiting",
-        opponentLabel: "Waiting",
-        strengths: [],
+        averageLabel: "",
         note: "Raw peer ratings stay off the public squad page.",
       };
     }
 
     const rows = receivedRatingsForPlayer(playerId);
-    const teammateCount = rows.filter((row) => row.relationship === "teammate").length;
-    const opponentCount = rows.filter((row) => row.relationship === "opponent").length;
+    const teammateCount = rows.length;
 
     if (!rows.length) {
       return {
@@ -649,58 +663,40 @@ document.addEventListener("DOMContentLoaded", () => {
         copy: "Other players can finish their reports first. Your matchday form summary appears here as their ratings land.",
         feedbackLabel: "0 feedback cards",
         teammateLabel: countLabel(teammateCount, "teammate"),
-        opponentLabel: countLabel(opponentCount, "opponent"),
-        strengths: [],
+        averageLabel: "",
         note: "Raw peer ratings stay off the public squad page.",
       };
     }
 
-    const averages = RATING_QUESTIONS.map((question) => {
-      const values = rows
-        .map((row) => Number(normalizeScorePayload(row.scores)?.[question.key] || 0))
-        .filter((value) => Number.isFinite(value) && value >= 1 && value <= 5);
-
-      if (!values.length) {
-        return { ...question, average: null };
-      }
-
-      return {
-        ...question,
-        average: values.reduce((sum, value) => sum + value, 0) / values.length,
-      };
-    }).filter((question) => question.average !== null);
-
-    const strengths = averages
-      .filter((question) => Number(question.average) >= 3.75)
-      .sort((left, right) => Number(right.average) - Number(left.average))
-      .slice(0, 2)
-      .map((question) => question.shortLabel);
+    const overallValues = rows
+      .map((row) => extractOverallScore(row.scores))
+      .filter((value) => Number.isFinite(value));
+    const overallAverage = overallValues.length
+      ? overallValues.reduce((sum, value) => sum + Number(value || 0), 0) / overallValues.length
+      : null;
+    const averageLabel = overallAverage !== null ? `${overallAverage.toFixed(1)} / 5 overall` : "";
 
     if (rows.length === 1) {
       return {
         title: "First feedback is in",
-        copy: "This is an early read. It settles once more teammates and opponents finish their reports.",
+        copy: "This is an early read. It settles once more teammates finish their reports.",
         feedbackLabel: "1 feedback card",
         teammateLabel: countLabel(teammateCount, "teammate"),
-        opponentLabel: countLabel(opponentCount, "opponent"),
-        strengths,
+        averageLabel,
         note: "Raw peer ratings stay off the public squad page.",
       };
     }
 
-    const overallAverage =
-      averages.reduce((sum, question) => sum + Number(question.average || 0), 0) / Math.max(averages.length, 1);
-
     let title = "Building night";
     let copy = "Feedback is still mixed, so use this as a check-in rather than a verdict.";
 
-    if (overallAverage >= 4.35) {
+    if (overallAverage !== null && overallAverage >= 4.35) {
       title = "Matchday highlight";
-      copy = "Feedback points to a big all-around night with strong impact across the match.";
-    } else if (overallAverage >= 3.7) {
+      copy = "Feedback points to a big all-around night with strong impact for the team.";
+    } else if (overallAverage !== null && overallAverage >= 3.7) {
       title = "Positive night";
       copy = "Feedback is pointing in a good direction with a solid overall contribution.";
-    } else if (overallAverage >= 3.1) {
+    } else if (overallAverage !== null && overallAverage >= 3.1) {
       title = "Steady night";
       copy = "Feedback says you gave the team a steady contribution across the night.";
     }
@@ -710,8 +706,7 @@ document.addEventListener("DOMContentLoaded", () => {
       copy,
       feedbackLabel: `${rows.length} feedback cards`,
       teammateLabel: countLabel(teammateCount, "teammate"),
-      opponentLabel: countLabel(opponentCount, "opponent"),
-      strengths,
+      averageLabel,
       note: "Raw peer ratings stay off the public squad page.",
     };
   }
@@ -810,7 +805,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (state.statsOpen) {
-      badges.push('<span class="tag-pill plan-selected">Reports open</span>');
+      badges.push('<span class="tag-pill plan-selected">Stats + ratings open</span>');
     } else if (state.ratingsOpen) {
       badges.push('<span class="tag-pill">Ratings open</span>');
     } else {
@@ -850,7 +845,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ${teamBadge}
       </div>
       <div class="compact-badges">
-        <span class="tag-pill">${statSubmission ? "Stats saved" : "Next: save stats"}</span>
+        <span class="tag-pill">${statSubmission ? "Stats saved" : "No stats submitted"}</span>
         <span class="tag-pill">${escapeHtml(targets.length)} ratings waiting</span>
         <span class="tag-pill">${escapeHtml(formSummary.feedbackLabel)}</span>
       </div>
@@ -861,12 +856,11 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="compact-badges">
           <span class="tag-pill">${escapeHtml(formSummary.feedbackLabel)}</span>
           <span class="tag-pill">${escapeHtml(formSummary.teammateLabel)}</span>
-          <span class="tag-pill">${escapeHtml(formSummary.opponentLabel)}</span>
         </div>
         <p class="micro-note">
           ${
-            formSummary.strengths.length
-              ? `Best feedback so far: <strong>${escapeHtml(formSummary.strengths.join(" · "))}</strong>.`
+            formSummary.averageLabel
+              ? `Average overall rating so far: <strong>${escapeHtml(formSummary.averageLabel)}</strong>. `
               : ""
           }
           ${escapeHtml(formSummary.note)}
@@ -949,8 +943,8 @@ document.addEventListener("DOMContentLoaded", () => {
     saveStatsButton.disabled = !saveEnabled;
 
     statsCopy.textContent = player.team_code
-      ? `You played on ${formatTeamLabel(player.team_code)}. Save your own stat line here first, then the ratings queue opens below.`
-      : "Enter your own goals, goalkeeper points, and clean sheet here.";
+      ? `You played on ${formatTeamLabel(player.team_code)}. Save your own stat line here if you need to report stats. Ratings stay separate below.`
+      : "Enter your own goals, goalkeeper points, and clean sheet here if you need to report stats. Ratings stay separate below.";
 
     if (!statTablesReady) {
       statsNote.textContent = "Live stat saving is not switched on yet.";
@@ -959,21 +953,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (previewMode) {
       statsNote.textContent = statSubmission
-        ? "Stats saved. Ratings stay open below so staff can keep testing the flow."
-        : "Open access is on right now so staff can test the full report flow.";
+        ? "Stats saved. Staff can keep testing ratings separately below."
+        : "Open access is on right now so staff can test stat saving at any time.";
       return;
     }
 
     if (statSubmission) {
       statsNote.textContent = ratingTablesReady
-        ? `Stats saved. Ratings stay open until ${formatLongDate(submissionState.ratingsCloseAt)}.`
+        ? `Stats saved. Ratings stay separate and remain open until ${formatLongDate(submissionState.ratingsCloseAt)}.`
         : "Stats saved. Ratings remain in view mode until live saving is switched on.";
       return;
     }
 
     statsNote.textContent = submissionState.statsOpen
-      ? `Reports are open right now and close ${formatLongDate(submissionState.statsCloseAt)}.`
-      : "The player report window is not open for this matchday right now.";
+      ? `Stat entry is open right now and closes ${formatLongDate(submissionState.statsCloseAt)}.`
+      : "Stat entry is not open for this matchday right now.";
   }
 
   function renderRatingQuestions() {
@@ -988,6 +982,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     ratingQuestionList.innerHTML = RATING_QUESTIONS.map((question) => {
       const selectedValue = Number(draft.scores?.[question.key] || 0);
+      const selectedCopy = isValidRatingScore(selectedValue)
+        ? `${formatRatingScore(selectedValue)} / 5 stars selected`
+        : "Tap a star. Half stars work too.";
 
       return `
         <section class="submission-rating-question">
@@ -996,21 +993,30 @@ document.addEventListener("DOMContentLoaded", () => {
             <span>${escapeHtml(question.hint)}</span>
           </div>
           <div class="submission-rating-scale" role="group" aria-label="${escapeHtml(question.label)}">
-            ${[1, 2, 3, 4, 5]
-              .map(
-                (value) => `
-                  <button
-                    class="chip-button ${selectedValue === value ? "active" : ""}"
-                    type="button"
-                    data-rating-question="${escapeHtml(question.key)}"
-                    data-rating-score="${escapeHtml(value)}"
-                    aria-pressed="${selectedValue === value ? "true" : "false"}"
-                  >
-                    ${escapeHtml(value)}
-                  </button>
-                `
-              )
-              .join("")}
+            <div class="submission-star-interaction">
+              <div class="submission-star-strip" aria-hidden="true">
+                <span class="submission-star-track">★★★★★</span>
+                <span class="submission-star-fill" style="width: ${ratingFillPercent(selectedValue)};">★★★★★</span>
+              </div>
+              <div class="submission-star-hit-targets">
+              ${[0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]
+                .map(
+                  (value) => `
+                    <button
+                      class="submission-star-step ${sameRatingScore(selectedValue, value) ? "active" : ""}"
+                      type="button"
+                      data-rating-question="${escapeHtml(question.key)}"
+                      data-rating-score="${escapeHtml(value)}"
+                      aria-pressed="${sameRatingScore(selectedValue, value) ? "true" : "false"}"
+                      aria-label="${escapeHtml(`${formatRatingScore(value)} stars`)}"
+                      title="${escapeHtml(`${formatRatingScore(value)} stars`)}"
+                    ></button>
+                  `
+                )
+                .join("")}
+              </div>
+            </div>
+            <div class="submission-star-caption">${escapeHtml(selectedCopy)}</div>
           </div>
         </section>
       `;
@@ -1023,24 +1029,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const player = selectedPlayer();
     const matchday = selectedMatchday();
     const targets = ratingTargetsForPlayer(player);
-    const statSubmission = player ? statSubmissionForPlayer(player.id) : null;
-    const teammateCount = targets.filter((target) => target.relationship === "teammate").length;
-    const opponentCount = targets.filter((target) => target.relationship === "opponent").length;
+    const teammateCount = targets.length;
     const savedCount = ratingRowsForPlayer(player?.id).length;
 
     ensureRateeSelection();
 
     ratingTeammateCount.textContent = String(teammateCount);
-    ratingOpponentCount.textContent = String(opponentCount);
     ratingSavedCount.textContent = String(savedCount);
-    ratingProgressPill.textContent = player && !statSubmission ? "Locked" : `${savedCount} / ${targets.length}`;
+    ratingProgressPill.textContent = player ? `${savedCount} / ${targets.length}` : "0 / 0";
     ratingProgressCopy.textContent = !player
       ? "Choose your name to open the queue."
-      : !statSubmission
-        ? "Save your stats to unlock ratings."
-        : targets.length
-          ? `${savedCount} of ${targets.length} ratings saved.`
-          : "No rating queue is available yet.";
+      : targets.length
+        ? `${savedCount} of ${targets.length} ratings saved.`
+        : "No teammate queue is available yet.";
 
     if (!player || !matchday) {
       ratingTargets.innerHTML = '<div class="empty-state">Choose your name first.</div>';
@@ -1050,20 +1051,11 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    if (!statSubmission) {
-      ratingTargets.innerHTML = '<div class="empty-state">Save your own stats first. Ratings unlock right after that.</div>';
-      ratingForm.hidden = true;
-      ratingsEmpty.hidden = false;
-      ratingsEmpty.textContent = "Save your own stats first. Ratings unlock right after that.";
-      ratingsCopy.textContent = "Ratings stay locked until your own stat line is saved so the flow stays simple.";
-      return;
-    }
-
     if (!targets.length) {
-      ratingTargets.innerHTML = '<div class="empty-state">No teammates or opponents are saved for this matchday yet.</div>';
+      ratingTargets.innerHTML = '<div class="empty-state">No teammates are saved for this matchday yet.</div>';
       ratingForm.hidden = true;
       ratingsEmpty.hidden = false;
-      ratingsEmpty.textContent = "No teammates or opponents are saved for this matchday yet.";
+      ratingsEmpty.textContent = "No teammates are saved for this matchday yet.";
       ratingsCopy.textContent = "Ratings open after teams and players exist on the saved matchday.";
       return;
     }
@@ -1080,7 +1072,7 @@ document.addEventListener("DOMContentLoaded", () => {
             data-ratee-id="${target.id}"
           >
             <span>${escapeHtml(playerDisplayName(target))}</span>
-            <span class="mini-sub">${escapeHtml(target.relationship === "teammate" ? "Teammate" : "Opponent")}</span>
+            <span class="mini-sub">Teammate</span>
           </button>
         `;
       })
@@ -1099,14 +1091,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     ratingsEmpty.hidden = true;
     ratingForm.hidden = false;
-    ratingRelationship.textContent = target.relationship === "teammate" ? "Teammate" : "Opponent";
+    ratingRelationship.textContent = "Teammate";
     ratingName.textContent = playerDisplayName(target);
     ratingProgressLine.textContent = targets.length
       ? `${savedCount} of ${targets.length} ratings saved.`
       : "No queue yet.";
     ratingTeamPill.className = `team-badge ${escapeHtml(teamClassName(target.team_code))}`;
     ratingTeamPill.textContent = formatTeamLabel(target.team_code);
-    ratingsCopy.textContent = "Rate every teammate and opponent except yourself from this same report.";
+    ratingsCopy.textContent = "Give each teammate one overall star rating from 0.5 to 5.";
     saveRatingButton.disabled = !saveEnabled;
     nextRatingButton.disabled = !targets.length;
     ratingNote.textContent = !ratingTablesReady
@@ -1137,21 +1129,21 @@ document.addEventListener("DOMContentLoaded", () => {
       ? "Player reports are open in view mode while live saving is being switched on."
       : previewMode
         ? "Open access is on right now so staff can test the full player report flow."
-        : state.statsOpen
-          ? `Player reports are open right now and close ${formatLongDate(state.statsCloseAt)}.`
-          : state.ratingsOpen
-            ? `Stat entry is closed. Ratings stay open until ${formatLongDate(state.ratingsCloseAt)}.`
-            : "This matchday is closed.";
+        : state.statsOpen && state.ratingsOpen
+          ? `Stats and ratings are open right now. Stats close ${formatLongDate(state.statsCloseAt)} and ratings close ${formatLongDate(state.ratingsCloseAt)}.`
+        : state.ratingsOpen
+          ? `Stat entry is closed. Ratings stay open until ${formatLongDate(state.ratingsCloseAt)}.`
+          : "This matchday is closed.";
   }
 
   function updateHeaderCopy() {
     const matchday = selectedMatchday();
 
     heroCopy.textContent = previewMode
-      ? "Choose a completed night, pick your name first, then move through stats and ratings in the same order players use after a match."
+      ? "Choose a completed night, pick your name first, then test stats and ratings independently."
       : matchday
-        ? "Choose your name first. Your team and scores load automatically, then you save stats and unlock ratings."
-        : "Open a matchday from Fixtures, then choose your name, save your stats, and unlock ratings.";
+        ? "Choose your name first. Your team and scores load automatically, then save stats or rate players in whichever order you need."
+        : "Open a matchday from Fixtures, then choose your name to submit stats or ratings.";
 
     playerCopy.textContent = previewMode
       ? "Open the report by choosing your name from the players who appeared on this saved matchday."
@@ -1349,11 +1341,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const missingQuestions = RATING_QUESTIONS.filter((question) => {
       const value = Number(draft.scores?.[question.key] || 0);
-      return !Number.isInteger(value) || value < 1 || value > 5;
+      return !isValidRatingScore(value);
     });
 
     if (missingQuestions.length) {
-      setStatus(`Finish every rating question for ${playerDisplayName(target)} before saving.`, "warning");
+      setStatus(`Add an overall rating for ${playerDisplayName(target)} before saving.`, "warning");
       return;
     }
 
