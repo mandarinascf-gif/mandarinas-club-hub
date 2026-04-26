@@ -194,7 +194,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             </div>
             <div class="list-actions">
               <span class="tier-pill ${escapeHtml(player.status)}">${escapeHtml(formatStatusLabel(player.status))}</span>
-              <button class="secondary-button" type="button">View</button>
+              <a class="secondary-button" href="#player-detail">View</a>
             </div>
           </article>
         `;
