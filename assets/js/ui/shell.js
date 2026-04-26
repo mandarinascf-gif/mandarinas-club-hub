@@ -258,8 +258,8 @@
 
     const iconLink = document.createElement("link");
     iconLink.rel = "icon";
-    iconLink.type = "image/svg+xml";
-    iconLink.href = "./assets/icons/mandarinas-mark.svg";
+    iconLink.type = "image/png";
+    iconLink.href = "./assets/icons/icon-192.png";
     document.head.appendChild(iconLink);
   }
 
