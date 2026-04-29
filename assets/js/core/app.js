@@ -63,6 +63,10 @@
   const BASE_SEASON_SELECT =
     "id, name, total_matchdays, core_spots, rotation_spots, attendance_points, win_points, draw_points, loss_points, goal_keep_points, team_goal_points, created_at";
   const SEASON_SELECT_WITH_TEAM_DISPLAY = `${BASE_SEASON_SELECT}, team_display_config`;
+  const PLAYER_DIRECTORY_SELECT =
+    "id, first_name, last_name, nickname, nationality, birth_date, positions, skill_rating, desired_tier, status, dominant_foot, created_at";
+  const PLAYER_DIRECTORY_SELECT_FALLBACK =
+    "id, first_name, last_name, nickname, nationality, birth_date, positions, skill_rating, status, dominant_foot, created_at";
 
   let activeTeamDisplayConfig = applyTeamDisplayConfig(null);
 
@@ -437,6 +441,264 @@
     };
   }
 
+  function mergeStandingsEntryTotals(target, source) {
+    target.total_points += Number(source.total_points || 0);
+    target.attendance_points += Number(source.attendance_points || 0);
+    target.days_attended += Number(source.days_attended || 0);
+    target.games_played += Number(source.games_played || 0);
+    target.wins += Number(source.wins || 0);
+    target.draws += Number(source.draws || 0);
+    target.losses += Number(source.losses || 0);
+    target.goalie_points += Number(source.goalie_points || 0);
+    target.goal_keeps += Number(source.goal_keeps || 0);
+    target.goal_keep_points_earned += Number(source.goal_keep_points_earned || 0);
+    target.team_goals += Number(source.team_goals || 0);
+    target.team_goal_points_earned += Number(source.team_goal_points_earned || 0);
+    target.result_points += Number(source.result_points || 0);
+    target.goals += Number(source.goals || 0);
+    target.clean_sheets += Number(source.clean_sheets || 0);
+    target.no_shows += Number(source.no_shows || 0);
+    target.late_cancels += Number(source.late_cancels || 0);
+  }
+
+  function buildAllTimeStandings(players, seasons, matchdays, matches, assignments, playerStats) {
+    const normalizedPlayers = (players || []).map((player) =>
+      normalizePlayerDesiredTier(player, "rotation")
+    );
+    const standingsSeed = new Map(
+      normalizedPlayers.map((player) => [
+        Number(player.id),
+        {
+          player_id: Number(player.id),
+          player,
+          total_points: 0,
+          attendance_points: 0,
+          days_attended: 0,
+          games_played: 0,
+          wins: 0,
+          draws: 0,
+          losses: 0,
+          goalie_points: 0,
+          goal_keeps: 0,
+          goal_keep_points_earned: 0,
+          team_goals: 0,
+          team_goal_points_earned: 0,
+          result_points: 0,
+          goals: 0,
+          clean_sheets: 0,
+          no_shows: 0,
+          late_cancels: 0,
+        },
+      ])
+    );
+    const seasonMap = new Map(
+      sortSeasonsChronologically(seasons || []).map((season) => [Number(season.id), season])
+    );
+    const seasonMatchdays = new Map();
+    const seasonMatches = new Map();
+    const seasonAssignments = new Map();
+    const seasonPlayerStats = new Map();
+    const matchdaySeasonMap = new Map();
+
+    (matchdays || []).forEach((matchday) => {
+      const seasonId = Number(matchday.season_id);
+      if (!Number.isFinite(seasonId)) {
+        return;
+      }
+
+      const existing = seasonMatchdays.get(seasonId) || [];
+      existing.push(matchday);
+      seasonMatchdays.set(seasonId, existing);
+      matchdaySeasonMap.set(Number(matchday.id), seasonId);
+    });
+
+    (matches || []).forEach((match) => {
+      const seasonId = matchdaySeasonMap.get(Number(match.matchday_id));
+      if (!Number.isFinite(seasonId)) {
+        return;
+      }
+
+      const existing = seasonMatches.get(seasonId) || [];
+      existing.push(match);
+      seasonMatches.set(seasonId, existing);
+    });
+
+    (assignments || []).forEach((assignment) => {
+      const seasonId = matchdaySeasonMap.get(Number(assignment.matchday_id));
+      if (!Number.isFinite(seasonId)) {
+        return;
+      }
+
+      const existing = seasonAssignments.get(seasonId) || [];
+      existing.push(assignment);
+      seasonAssignments.set(seasonId, existing);
+    });
+
+    (playerStats || []).forEach((stat) => {
+      const seasonId = matchdaySeasonMap.get(Number(stat.matchday_id));
+      if (!Number.isFinite(seasonId)) {
+        return;
+      }
+
+      const existing = seasonPlayerStats.get(seasonId) || [];
+      existing.push(stat);
+      seasonPlayerStats.set(seasonId, existing);
+    });
+
+    seasonMap.forEach((season, seasonId) => {
+      const matchdaysForSeason = seasonMatchdays.get(seasonId) || [];
+      if (!matchdaysForSeason.length) {
+        return;
+      }
+
+      const matchesForSeason = seasonMatches.get(seasonId) || [];
+      const completedMatchdays = buildCompletedMatchdays(matchdaysForSeason, matchesForSeason);
+      const standings = buildStandings(
+        normalizedPlayers,
+        seasonAssignments.get(seasonId) || [],
+        seasonPlayerStats.get(seasonId) || [],
+        completedMatchdays,
+        season
+      );
+
+      standings.forEach((entry) => {
+        const playerId = Number(entry.player_id || entry.player?.id);
+        if (!Number.isFinite(playerId) || !standingsSeed.has(playerId)) {
+          return;
+        }
+
+        mergeStandingsEntryTotals(standingsSeed.get(playerId), entry);
+      });
+    });
+
+    return sortStandings(
+      Array.from(standingsSeed.values()).filter((entry) => entry.days_attended > 0),
+      "total_points",
+      "desc"
+    ).map((entry, index) => ({
+      ...entry,
+      points_per_game: entry.games_played
+        ? Number((entry.total_points / entry.games_played).toFixed(2))
+        : 0,
+      rank: index + 1,
+    }));
+  }
+
+  async function fetchAllTimeStandings(options = {}) {
+    const upToSeasonId = Number(options?.upToSeasonId);
+    const hasSeasonLimit = Number.isFinite(upToSeasonId) && upToSeasonId > 0;
+    let playerPromise = supabaseClient
+      .from("players")
+      .select(PLAYER_DIRECTORY_SELECT)
+      .order("created_at", { ascending: true })
+      .limit(5000);
+    const [{ data: seasons, error: seasonsError }, { data: players, error: playersError }] =
+      await Promise.all([
+        supabaseClient
+          .from("seasons")
+          .select(BASE_SEASON_SELECT)
+          .order("created_at", { ascending: true })
+          .limit(500),
+        playerPromise,
+      ]);
+
+    let normalizedPlayers = players;
+    let normalizedPlayersError = playersError;
+
+    if (normalizedPlayersError && hasMissingDesiredTierColumn(normalizedPlayersError)) {
+      ({ data: normalizedPlayers, error: normalizedPlayersError } = await supabaseClient
+        .from("players")
+        .select(PLAYER_DIRECTORY_SELECT_FALLBACK)
+        .order("created_at", { ascending: true })
+        .limit(5000));
+    }
+
+    if (seasonsError) {
+      throw seasonsError;
+    }
+    if (normalizedPlayersError) {
+      throw normalizedPlayersError;
+    }
+
+    const orderedSeasons = sortSeasonsChronologically(seasons || []);
+    const seasonScope = hasSeasonLimit
+      ? (() => {
+          const selectedIndex = orderedSeasons.findIndex(
+            (season) => Number(season.id) === Number(upToSeasonId)
+          );
+          return selectedIndex >= 0 ? orderedSeasons.slice(0, selectedIndex + 1) : orderedSeasons;
+        })()
+      : orderedSeasons;
+    const scopedSeasonIds = seasonScope
+      .map((season) => Number(season.id))
+      .filter(Number.isFinite);
+
+    if (!scopedSeasonIds.length) {
+      return [];
+    }
+
+    const { data: matchdays, error: matchdaysError } = await supabaseClient
+      .from("matchdays")
+      .select("id, season_id, matchday_number, kickoff_at, goals_count_as_points")
+      .in("season_id", scopedSeasonIds)
+      .order("season_id", { ascending: true })
+      .order("matchday_number", { ascending: true })
+      .limit(5000);
+
+    if (matchdaysError) {
+      throw matchdaysError;
+    }
+
+    const scopedMatchdayIds = (matchdays || [])
+      .map((matchday) => Number(matchday.id))
+      .filter(Number.isFinite);
+
+    if (!scopedMatchdayIds.length) {
+      return [];
+    }
+
+    const [{ data: matches, error: matchesError }, { data: assignments, error: assignmentsError }, { data: allPlayerStats, error: allPlayerStatsError }] =
+      await Promise.all([
+        supabaseClient
+          .from("matchday_matches")
+          .select("*")
+          .in("matchday_id", scopedMatchdayIds)
+          .order("matchday_id", { ascending: true })
+          .order("round_number", { ascending: true })
+          .order("match_order", { ascending: true })
+          .limit(20000),
+        supabaseClient
+          .from("matchday_assignments")
+          .select("*")
+          .in("matchday_id", scopedMatchdayIds)
+          .limit(40000),
+        supabaseClient
+          .from("matchday_player_stats")
+          .select("*")
+          .in("matchday_id", scopedMatchdayIds)
+          .limit(40000),
+      ]);
+
+    if (matchesError) {
+      throw matchesError;
+    }
+    if (assignmentsError) {
+      throw assignmentsError;
+    }
+    if (allPlayerStatsError) {
+      throw allPlayerStatsError;
+    }
+
+    return buildAllTimeStandings(
+      normalizedPlayers || [],
+      seasonScope,
+      matchdays || [],
+      matches || [],
+      assignments || [],
+      allPlayerStats || []
+    );
+  }
+
   function buildLeaderboards(standings) {
     const source = standings || [];
     const byMetric = (sortFn) => [...source].sort(sortFn).slice(0, 8);
@@ -647,9 +909,11 @@
     fetchSeasons,
     pickSeason,
     fetchSeasonBundle,
+    fetchAllTimeStandings,
     fetchHistoricalTierAttendance,
     buildCompletedMatchdays,
     buildStandings,
+    buildAllTimeStandings,
     buildPlayerMatchdayDetails,
     sortStandings,
     buildLeaderboards,
