@@ -17,27 +17,30 @@
     return Number.isFinite(number) ? number : fallback;
   }
 
-  function formatAge(value) {
-    const age = normalizeNumber(value, null);
-    return age == null ? "N/A" : `${age} yrs`;
-  }
-
   function formatBirthYear(value) {
     const text = normalizeText(value, "");
     if (!text) {
       return "";
     }
 
+    let fullYear = "";
+
     if (/^\d{4}$/.test(text)) {
-      return text;
+      fullYear = text;
+    } else {
+      const date = new Date(text);
+      if (Number.isNaN(date.getTime())) {
+        return "";
+      }
+
+      fullYear = String(date.getFullYear());
     }
 
-    const date = new Date(text);
-    if (Number.isNaN(date.getTime())) {
+    if (!/^\d{4}$/.test(fullYear)) {
       return "";
     }
 
-    return String(date.getFullYear());
+    return `'${fullYear.slice(-2)}`;
   }
 
   function formatPpg(value) {
@@ -48,17 +51,6 @@
   function formatRank(value) {
     const rank = Number(value);
     return Number.isFinite(rank) && rank > 0 ? String(rank) : "--";
-  }
-
-  function formatTier(value) {
-    const tier = normalizeText(value, "N/A");
-    if (tier === "flex_sub") {
-      return "Flex/Sub";
-    }
-    if (tier === "core" || tier === "rotation") {
-      return tier.charAt(0).toUpperCase() + tier.slice(1);
-    }
-    return tier;
   }
 
   function formatPosition(player) {
@@ -74,22 +66,8 @@
   }
 
   function formatMeta(player) {
-    const parts = [];
-    const nationality = normalizeText(player?.nationality, "");
     const birthYear = formatBirthYear(player?.birth_year ?? player?.birthYear ?? player?.birth_date);
-    const age = formatAge(player?.age);
-
-    if (nationality) {
-      parts.push(nationality);
-    }
-
-    if (birthYear) {
-      parts.push(birthYear);
-    } else if (age !== "N/A") {
-      parts.push(age);
-    }
-
-    return parts.length ? parts.join(" · ") : "N/A";
+    return birthYear || "N/A";
   }
 
   function createBadgeMarkup() {
@@ -107,8 +85,6 @@
           <div class="badge-overlay badge-name" data-field="name">Player</div>
 
           <div class="badge-overlay badge-positions" data-field="position">N/A</div>
-
-          <div class="badge-overlay badge-tier" data-field="tier">N/A</div>
 
           <div class="badge-overlay badge-ovr">
             <span>OVR</span>
@@ -150,7 +126,6 @@
       meta: formatMeta(player),
       name: normalizeText(player?.name, "N/A"),
       position: formatPosition(player),
-      tier: formatTier(player?.tier ?? player?.status),
       apps: normalizeNumber(stats?.apps ?? stats?.attendance ?? stats?.days_attended, 0),
       goals: normalizeNumber(stats?.goals, 0),
     };
