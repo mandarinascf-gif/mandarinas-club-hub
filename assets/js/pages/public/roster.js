@@ -71,6 +71,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let allTimeStandingsPromiseCache = new Map();
   let pendingAllTimePlayerId = null;
   let playerStatViewById = new Map();
+  const ALL_TIME_CACHE_KEY = "all";
 
   function hasMissingDesiredTierColumn(error) {
     const message = String(error?.message || "").toLowerCase();
@@ -186,33 +187,32 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function allTimeStandingsForActiveSeason() {
-    return allTimeStandingsCache.get(Number(activeSeasonId)) || null;
+    return allTimeStandingsCache.get(ALL_TIME_CACHE_KEY) || null;
   }
 
   async function ensureAllTimeStandingsLoaded() {
-    const seasonKey = Number(activeSeasonId);
-    if (!Number.isFinite(seasonKey) || seasonKey <= 0) {
+    if (!seasons.length) {
       return new Map();
     }
 
-    if (allTimeStandingsCache.has(seasonKey)) {
-      return allTimeStandingsCache.get(seasonKey);
+    if (allTimeStandingsCache.has(ALL_TIME_CACHE_KEY)) {
+      return allTimeStandingsCache.get(ALL_TIME_CACHE_KEY);
     }
 
-    if (allTimeStandingsPromiseCache.has(seasonKey)) {
-      return allTimeStandingsPromiseCache.get(seasonKey);
+    if (allTimeStandingsPromiseCache.has(ALL_TIME_CACHE_KEY)) {
+      return allTimeStandingsPromiseCache.get(ALL_TIME_CACHE_KEY);
     }
 
     const promise = (async () => {
-      const standings = await fetchAllTimeStandings({ upToSeasonId: seasonKey });
+      const standings = await fetchAllTimeStandings();
       const standingsMap = buildStandingsMap(standings);
-      allTimeStandingsCache.set(seasonKey, standingsMap);
+      allTimeStandingsCache.set(ALL_TIME_CACHE_KEY, standingsMap);
       return standingsMap;
     })().finally(() => {
-      allTimeStandingsPromiseCache.delete(seasonKey);
+      allTimeStandingsPromiseCache.delete(ALL_TIME_CACHE_KEY);
     });
 
-    allTimeStandingsPromiseCache.set(seasonKey, promise);
+    allTimeStandingsPromiseCache.set(ALL_TIME_CACHE_KEY, promise);
     return promise;
   }
 
@@ -480,13 +480,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       nationality,
       flag,
       birth_date: player.birth_date,
-      dominant_foot: player.dominant_foot,
       overall_rating: overall,
       rank: playerRankDisplay(stats.rank),
       ppg: Number(pointsPerGame),
       primary_position: positions[0] || normalizeText(player.primary_position || "", "N/A"),
       position_label: positionLabel,
-      tier: player.status,
       positions,
     };
     const badgeStats = {
@@ -500,39 +498,38 @@ document.addEventListener("DOMContentLoaded", async () => {
     const badgeMarkup = window.renderPlayerBadge
       ? window.renderPlayerBadge(badgePlayer, badgeStats).outerHTML
       : "";
-    const selectedSeasonName = normalizeText(seasonNameEl.textContent) || "Selected season";
     const viewNote = loadingAllTime
-      ? `Loading club totals through ${selectedSeasonName}...`
+      ? "Loading club totals across all recorded seasons..."
       : view === "all_time"
-        ? `Club totals across recorded seasons through ${selectedSeasonName}.`
-        : `${selectedSeasonName} badge totals.`;
+        ? "Club totals across all recorded seasons."
+        : `${normalizeText(seasonNameEl.textContent) || "Current season"} badge totals.`;
     const seasonActive = view === "season" || loadingAllTime;
     const allTimeActive = view === "all_time" && !loadingAllTime;
 
     return `
       <div class="player-badge-toolbar">
-        <div class="player-badge-view-toggle" role="tablist" aria-label="${escapeHtml(
+        <div class="player-badge-view-toggle season-toggle" role="tablist" aria-label="${escapeHtml(
           `${playerDisplayName(player)} badge stat range`
         )}">
           <button
-            class="view-chip player-badge-view-chip ${seasonActive ? "active" : ""}"
+            class="view-chip player-badge-view-chip pill ${seasonActive ? "active" : ""}"
             type="button"
             data-player-stat-view="season"
             data-player-id="${player.id}"
             aria-pressed="${seasonActive ? "true" : "false"}"
             ${loadingAllTime ? "disabled" : ""}
           >
-            Current season
+            CURRENT SEASON
           </button>
           <button
-            class="view-chip player-badge-view-chip ${allTimeActive ? "active" : ""}"
+            class="view-chip player-badge-view-chip pill ${allTimeActive ? "active" : ""}"
             type="button"
             data-player-stat-view="all_time"
             data-player-id="${player.id}"
             aria-pressed="${allTimeActive ? "true" : "false"}"
             ${loadingAllTime ? "disabled" : ""}
           >
-            All time
+            ALL TIME
           </button>
         </div>
         <p class="player-badge-view-note">${escapeHtml(viewNote)}</p>
