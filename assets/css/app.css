@@ -3876,9 +3876,10 @@ body.manager-touch::before {
 }
 
 .player-badge-toolbar {
-  width: min(100%, 24rem);
+  width: min(100%, 340px);
+  max-width: calc(100vw - 2rem);
   display: grid;
-  gap: 0.45rem;
+  gap: 0.6rem;
   justify-items: center;
   margin: 0 auto;
 }
@@ -3898,7 +3899,8 @@ body.manager-touch::before {
 
 .player-badge-view-chip,
 .pill {
-  flex: 1 1 9rem;
+  flex: 1 1 0;
+  min-width: 0;
   min-height: 44px;
   padding: 10px 12px;
   border: none;
@@ -3958,6 +3960,10 @@ body.manager-touch::before {
   text-align: center;
 }
 
+.player-badge-share-button {
+  width: 100%;
+}
+
 .page-roster .roster-player-card.expanded {
   overflow: visible;
   padding-bottom: 24px;
@@ -3986,12 +3992,58 @@ body.manager-touch::before {
   min-width: 0;
   display: grid;
   justify-items: center;
-  margin: 12px auto 0;
+  margin: 0 auto;
   gap: 0.12rem;
 }
 
 .page-roster .roster-player-badge.is-loading {
   opacity: 0.82;
+}
+
+.page-roster .player-badge-summary {
+  width: min(100%, 340px);
+  max-width: calc(100vw - 2rem);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin: 0 auto;
+}
+
+.page-roster .player-badge-summary-stat {
+  display: grid;
+  gap: 0.18rem;
+  padding: 0.72rem 0.5rem 0.66rem;
+  border: 1px solid rgba(127, 229, 166, 0.18);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(16, 28, 41, 0.94), rgba(10, 18, 28, 0.9));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 12px 28px rgba(0, 0, 0, 0.18);
+}
+
+.page-roster .player-badge-summary-stat span {
+  color: #9fdab8;
+  font-family: "Oswald", sans-serif;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.page-roster .player-badge-summary-stat strong {
+  color: #f7f1de;
+  font-size: 1rem;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.page-roster .player-badge-share-card {
+  width: min(100%, 340px);
+  max-width: calc(100vw - 2rem);
+  margin: 0 auto;
+  padding: 12px 8px 18px;
 }
 
 :is(.page-roster, .page-player) .roster-orbit-badge {
@@ -5816,32 +5868,21 @@ body.manager-touch::before {
 
 .game-player-badge {
   position: relative;
-  width: min(92vw, 380px);
+  width: min(92vw, 340px);
+  max-width: calc(100vw - 2rem);
   aspect-ratio: 1 / 1.05;
-  margin: 16px auto;
-  max-width: 100%;
+  margin: 20px auto;
+  box-sizing: border-box;
   border-radius: 48% 48% 18% 18%;
   overflow: visible;
   background:
-    radial-gradient(circle at 50% 35%, rgba(40, 78, 90, 0.45), transparent 42%),
+    radial-gradient(circle at 50% 34%, rgba(40, 78, 90, 0.34), transparent 42%),
     linear-gradient(180deg, #0d1b2a 0%, #07111d 100%);
   border: 2px solid rgba(127, 229, 166, 0.7);
   box-shadow:
-    inset 0 0 18px rgba(127, 229, 166, 0.08),
-    0 14px 28px rgba(0, 0, 0, 0.38);
+    inset 0 0 14px rgba(127, 229, 166, 0.08),
+    0 14px 28px rgba(0, 0, 0, 0.28);
   isolation: isolate;
-  animation: badgeIn 0.25s ease-out both;
-}
-
-@keyframes badgeIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
 }
 
 .game-player-badge::before,
@@ -5878,68 +5919,50 @@ body.manager-touch::before {
 }
 
 .badge-header {
-  top: 1rem;
+  top: 0.95rem;
   left: 50%;
   transform: translateX(-50%);
-  width: 88%;
+  width: 80%;
   display: grid;
   justify-items: center;
-  gap: 0.08rem;
+  gap: 0.02rem;
   text-align: center;
 }
 
 .badge-header::before,
 .badge-header::after {
-  content: "";
-  position: absolute;
-  top: 3.85rem;
-  width: 0.8rem;
-  aspect-ratio: 1;
-  background: radial-gradient(circle, rgba(255, 196, 90, 1) 0%, rgba(255, 196, 90, 0.82) 42%, rgba(255, 196, 90, 0) 72%);
-  clip-path: polygon(50% 0, 64% 36%, 100% 50%, 64% 64%, 50% 100%, 36% 64%, 0 50%, 36% 36%);
-  filter: drop-shadow(0 0 5px rgba(255, 196, 90, 0.26));
-}
-
-.badge-header::before {
-  left: 0.2rem;
-}
-
-.badge-header::after {
-  right: 0.2rem;
+  content: none;
 }
 
 .badge-title {
   color: #f6ecd0;
   font-family: "Anton", sans-serif;
-  font-size: clamp(30px, 7.4vw, 54px);
-  letter-spacing: 0.08em;
-  line-height: 0.9;
+  font-size: clamp(26px, 6.2vw, 42px);
+  letter-spacing: 0.06em;
+  line-height: 0.92;
   white-space: nowrap;
-  transform: perspective(420px) rotateX(14deg);
-  transform-origin: center bottom;
   text-shadow:
-    0 3px 8px rgba(0, 0, 0, 0.64),
-    0 0 10px rgba(216, 162, 74, 0.12);
+    0 2px 6px rgba(0, 0, 0, 0.64),
+    0 0 8px rgba(216, 162, 74, 0.1);
 }
 
 .badge-subtitle {
   color: #8fe1a5;
   font-family: "Oswald", sans-serif;
-  font-size: clamp(9px, 2.1vw, 15px);
+  font-size: clamp(8px, 1.9vw, 12px);
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   line-height: 1.1;
   text-transform: uppercase;
   white-space: nowrap;
-  transform: perspective(420px) rotateX(9deg) scaleX(0.96);
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.74);
 }
 
 .gold-ball {
   position: absolute;
   left: 50%;
-  top: 42%;
-  width: 54%;
+  top: 46%;
+  width: 50%;
   aspect-ratio: 1;
   transform: translate(-50%, -50%);
   border-radius: 50%;
@@ -5947,16 +5970,16 @@ body.manager-touch::before {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 0.28rem;
-  padding: 1.2rem 0.85rem 1rem;
+  gap: 0.2rem;
+  padding: 1rem 0.7rem 0.8rem;
   overflow: hidden;
-  border: 3px solid rgba(216, 162, 74, 0.9);
+  border: 2.5px solid rgba(216, 162, 74, 0.9);
   box-shadow:
     inset 0 0 0 1px rgba(0, 0, 0, 0.18),
-    inset 0 0 0 16px rgba(255, 255, 255, 0.02),
-    inset 0 0 18px rgba(255, 215, 120, 0.22),
-    inset 0 -18px 26px rgba(0, 0, 0, 0.34),
-    0 0 12px rgba(216, 162, 74, 0.28);
+    inset 0 0 0 12px rgba(255, 255, 255, 0.02),
+    inset 0 0 14px rgba(255, 215, 120, 0.18),
+    inset 0 -14px 20px rgba(0, 0, 0, 0.28),
+    0 0 10px rgba(216, 162, 74, 0.22);
   background:
     radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.35), transparent 25%),
     radial-gradient(circle at 70% 30%, rgba(255, 210, 120, 0.45), transparent 22%),
@@ -5976,37 +5999,7 @@ body.manager-touch::before {
 }
 
 .gold-ball::after {
-  content: "";
-  position: absolute;
-  inset: -20%;
-  background: linear-gradient(
-    115deg,
-    transparent 35%,
-    rgba(255, 255, 255, 0.18) 47%,
-    transparent 60%
-  );
-  transform: translateX(-70%);
-  animation: ballShine 7s ease-in-out infinite;
-  pointer-events: none;
-}
-
-@keyframes ballShine {
-  0%,
-  55% {
-    transform: translateX(-70%);
-    opacity: 0;
-  }
-  65% {
-    opacity: 0.55;
-  }
-  85% {
-    transform: translateX(70%);
-    opacity: 0;
-  }
-  100% {
-    transform: translateX(70%);
-    opacity: 0;
-  }
+  content: none;
 }
 
 .ball-flag,
@@ -6020,9 +6013,9 @@ body.manager-touch::before {
 }
 
 .ball-flag {
-  font-size: clamp(18px, 5vw, 26px);
+  font-size: clamp(16px, 4vw, 22px);
   line-height: 1;
-  margin-bottom: 6px;
+  margin-bottom: 2px;
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.85));
 }
 
@@ -6030,7 +6023,7 @@ body.manager-touch::before {
   width: 92%;
   font-family: "Great Vibes", cursive;
   color: #d8a24a;
-  font-size: var(--badge-name-size, clamp(28px, 7vw, 42px));
+  font-size: var(--badge-name-size, clamp(24px, 6vw, 34px));
   line-height: 0.86;
   white-space: nowrap;
   overflow: hidden;
@@ -6044,7 +6037,7 @@ body.manager-touch::before {
   font-family: "Oswald", sans-serif;
   color: #e5b761;
   font-weight: 700;
-  font-size: var(--badge-meta-size, clamp(12px, 3vw, 16px));
+  font-size: var(--badge-meta-size, clamp(11px, 2.6vw, 14px));
   letter-spacing: 0.04em;
   line-height: 1.05;
   opacity: 0.85;
@@ -6058,8 +6051,8 @@ body.manager-touch::before {
   font-family: "Oswald", sans-serif;
   color: #9ff2c5;
   font-weight: 700;
-  font-size: var(--badge-position-size, clamp(12px, 3.2vw, 18px));
-  letter-spacing: 0.16em;
+  font-size: var(--badge-position-size, clamp(11px, 2.8vw, 15px));
+  letter-spacing: 0.12em;
   line-height: 1.05;
   text-transform: uppercase;
   white-space: nowrap;
@@ -6069,15 +6062,16 @@ body.manager-touch::before {
 }
 
 .badge-side {
-  top: 30%;
-  width: 24.5%;
+  top: 50%;
+  width: 20%;
   aspect-ratio: 1;
+  transform: translate(-50%, -50%);
   border-radius: 50%;
   display: grid;
   align-content: center;
   justify-items: center;
-  gap: 0.12rem;
-  padding: 0.65rem 0.28rem;
+  gap: 0.08rem;
+  padding: 0.45rem 0.22rem;
   text-align: center;
   background:
     radial-gradient(circle at 50% 12%, rgba(44, 73, 98, 0.42), transparent 36%),
@@ -6088,7 +6082,7 @@ body.manager-touch::before {
 }
 
 .badge-ovr {
-  left: 3%;
+  left: 14%;
   border: 2px solid rgba(145, 240, 180, 0.72);
   box-shadow:
     0 10px 18px rgba(0, 0, 0, 0.22),
@@ -6097,7 +6091,8 @@ body.manager-touch::before {
 }
 
 .badge-rank {
-  right: 3%;
+  left: 86%;
+  right: auto;
   border: 2px solid rgba(246, 176, 77, 0.7);
   box-shadow:
     0 10px 18px rgba(0, 0, 0, 0.22),
@@ -6107,9 +6102,9 @@ body.manager-touch::before {
 
 .badge-side span {
   font-family: "Oswald", sans-serif;
-  font-size: clamp(12px, 3vw, 18px);
+  font-size: clamp(11px, 2.5vw, 14px);
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   line-height: 1.04;
 }
 
@@ -6124,32 +6119,27 @@ body.manager-touch::before {
 .badge-side strong {
   color: #ffffff;
   font-family: "Anton", sans-serif;
-  font-size: clamp(38px, 10vw, 68px);
+  font-size: clamp(32px, 8vw, 52px);
   line-height: 0.92;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.76);
 }
 
 .badge-side small {
-  color: #eef5fb;
-  font-family: "Oswald", sans-serif;
-  font-size: clamp(11px, 2.8vw, 16px);
-  font-weight: 700;
-  line-height: 1.08;
-  letter-spacing: 0.03em;
+  display: none;
 }
 
 .badge-stats {
   left: 50%;
-  bottom: 1rem;
-  width: 81%;
+  bottom: 9%;
+  width: 78%;
   transform: translateX(-50%);
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0;
-  padding: 0.78rem 0.82rem 0.72rem;
-  border-radius: 1.6rem;
+  padding: 0.68rem 0.78rem 0.62rem;
+  border-radius: 1.35rem;
   border: 1px solid rgba(127, 229, 166, 0.25);
-  background: rgba(10, 18, 28, 0.55);
+  background: rgba(10, 18, 28, 0.72);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   box-shadow: none;
@@ -6176,64 +6166,63 @@ body.manager-touch::before {
 .badge-stats span {
   color: #efbf64;
   font-family: "Oswald", sans-serif;
-  font-size: clamp(13px, 3vw, 18px);
+  font-size: clamp(12px, 2.6vw, 16px);
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.12em;
   line-height: 1.06;
 }
 
 .badge-stats strong {
   color: #ffffff;
   font-family: "Anton", sans-serif;
-  font-size: clamp(38px, 9vw, 60px);
+  font-size: clamp(32px, 7.5vw, 48px);
   line-height: 0.95;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.68);
 }
 
 @media (max-width: 390px) {
   .game-player-badge {
-    width: min(92vw, 380px);
+    width: min(92vw, 340px);
+    max-width: calc(100vw - 1.5rem);
   }
 
   .badge-title {
-    font-size: clamp(27px, 7vw, 46px);
+    font-size: clamp(24px, 6.4vw, 36px);
   }
 
   .badge-subtitle {
-    font-size: clamp(8px, 2.1vw, 14px);
-    letter-spacing: 0.14em;
+    font-size: clamp(8px, 1.9vw, 11px);
+    letter-spacing: 0.12em;
   }
 
   .badge-side {
-    width: 25.5%;
-    top: 31%;
+    width: 21%;
   }
 
   .badge-side strong {
-    font-size: clamp(34px, 9vw, 58px);
+    font-size: clamp(30px, 7vw, 46px);
   }
 
   .ball-meta {
-    font-size: var(--badge-meta-size, clamp(11px, 2.8vw, 15px));
+    font-size: var(--badge-meta-size, clamp(10px, 2.5vw, 13px));
   }
 
   .ball-positions {
-    font-size: var(--badge-position-size, clamp(13px, 3.6vw, 18px));
+    font-size: var(--badge-position-size, clamp(11px, 2.9vw, 14px));
   }
 
   .badge-stats {
-    width: 84%;
-    padding-inline: 0.75rem;
+    width: 80%;
+    padding-inline: 0.68rem;
   }
 
   .badge-stats strong {
-    font-size: clamp(38px, 9vw, 58px);
+    font-size: clamp(30px, 7vw, 44px);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .game-player-badge,
-  .gold-ball::after,
   .season-toggle .pill,
   .player-badge-view-toggle .player-badge-view-chip {
     animation: none !important;
