@@ -1,10 +1,10 @@
 # Canonical Import Dry Run
 
-- Generated at: `2026-04-24T14:04:42-07:00`
+- Generated at: `2026-04-28T11:09:52-07:00`
 - Ready to reseed: `True`
 - Seasons processed: `8`
 - Workbooks found: `8` / `8`
-- Canonical players across processed seasons: `80`
+- Canonical players across processed seasons: `79`
 - Raw assignment rows: `2198`
 - Generated assignment rows: `2608`
 - Raw stat rows: `652`

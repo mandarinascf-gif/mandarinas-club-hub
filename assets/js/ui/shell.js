@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  const ADMIN_CODE = "1234";
+  const DEFAULT_ADMIN_CODE = "1234";
   const ADMIN_STATE_KEY = "mcfAdminUnlocked";
   const PUBLIC_FALLBACK = "./home.html";
   const BUSSES_ACCESS_PAGE = "busses.html";
@@ -43,6 +43,23 @@
   const mobileNavPortalRefs = new WeakMap();
   let historyListenersInstalled = false;
   let mobileNavListenersInstalled = false;
+
+  function normalizeConfigValue(value) {
+    return typeof value === "string" ? value.trim() : "";
+  }
+
+  function currentAdminCode() {
+    const runtimeOverrides =
+      window.__MANDARINAS_APP_CONFIG__ || window.__MANDARINAS_SUPABASE_CONFIG__ || {};
+
+    return (
+      normalizeConfigValue(
+        runtimeOverrides.adminCode ||
+          runtimeOverrides.ADMIN_CODE ||
+          runtimeOverrides.NEXT_PUBLIC_ADMIN_CODE
+      ) || DEFAULT_ADMIN_CODE
+    );
+  }
 
   function currentPageName() {
     const path = window.location.pathname || "";
@@ -230,7 +247,7 @@
       event.preventDefault();
 
       const entered = String(input.value || "").trim();
-      if (entered !== ADMIN_CODE) {
+      if (entered !== currentAdminCode()) {
         status.textContent = "Incorrect busses code.";
         status.hidden = false;
         input.focus();
@@ -285,13 +302,19 @@
     document.head.appendChild(linkTag);
   }
 
+  function supportsWebManifest() {
+    return window.location.protocol !== "file:";
+  }
+
   function ensureInstallMetadata() {
     ensureMetaTag("theme-color", "#8bd4a1");
     ensureMetaTag("mobile-web-app-capable", "yes");
     ensureMetaTag("apple-mobile-web-app-capable", "yes");
     ensureMetaTag("apple-mobile-web-app-title", "Mandarinas CF");
     ensureMetaTag("apple-mobile-web-app-status-bar-style", "black-translucent");
-    ensureLinkTag("manifest", "./site.webmanifest");
+    if (supportsWebManifest()) {
+      ensureLinkTag("manifest", "./site.webmanifest");
+    }
     ensureLinkTag("apple-touch-icon", "./assets/icons/apple-touch-icon.png");
   }
 

@@ -128,10 +128,10 @@
     flex_sub: 0,
   });
   const DEFAULT_TEAM_DISPLAY_CONFIG = Object.freeze({
-    magenta: Object.freeze({ label: "Magenta", color: "#f472b6" }),
-    blue: Object.freeze({ label: "Blue", color: "#60a5fa" }),
-    green: Object.freeze({ label: "Green", color: "#4ade80" }),
-    orange: Object.freeze({ label: "Orange", color: "#fb923c" }),
+    magenta: Object.freeze({ label: "Magenta", color: "#ff00ff" }),
+    blue: Object.freeze({ label: "Blue", color: "#00bfff" }),
+    green: Object.freeze({ label: "Green", color: "#00ff00" }),
+    orange: Object.freeze({ label: "Orange", color: "#ffa500" }),
   });
   const TEAM_BALANCE_POSITION_ORDER = Object.freeze(["GK", "DEF", "MID", "ATT"]);
   const TEAM_BALANCE_WEIGHTS = Object.freeze({
@@ -379,6 +379,97 @@
 
   function formatTrendLabel(trend) {
     return TREND_LABELS[trend] || "Holding";
+  }
+
+  function badgeIconMarkup(kind, options = {}) {
+    const normalizedKind = normalizeText(kind).toLowerCase().replace(/\s+/g, "_");
+    const className = normalizeText(options.className || "");
+    const label = normalizeText(options.label || "");
+    const decorative = options.decorative !== false;
+    const iconMarkup = {
+      winner: `
+        <path d="M6 4.75H14V8.05C14 10.7 12.2 12.85 10 12.85C7.8 12.85 6 10.7 6 8.05V4.75Z" />
+        <path d="M6 5.9H4.75C4.06 5.9 3.5 6.46 3.5 7.15C3.5 8.67 4.73 9.9 6.25 9.9H6" />
+        <path d="M14 5.9H15.25C15.94 5.9 16.5 6.46 16.5 7.15C16.5 8.67 15.27 9.9 13.75 9.9H14" />
+        <path d="M10 12.85V15.35" />
+        <path d="M7.65 17.25H12.35" />
+        <path d="M8.4 15.35H11.6" />
+      `,
+      core: `
+        <path d="M10 2.8L15.65 4.95V9.15C15.65 12.95 13.02 15.62 10 17.2C6.98 15.62 4.35 12.95 4.35 9.15V4.95L10 2.8Z" />
+        <path d="M12.45 7.1A3 3 0 1 0 12.45 12.9" />
+      `,
+      rotation: `
+        <path d="M14.5 6.35A5.15 5.15 0 0 0 5.35 6.85" />
+        <path d="M14.45 3.95V6.7H11.7" />
+        <path d="M5.5 13.65A5.15 5.15 0 0 0 14.65 13.15" />
+        <path d="M5.55 16.05V13.3H8.3" />
+      `,
+      flex: `
+        <path d="M10 4.2V15.8" />
+        <path d="M4.2 10H15.8" />
+      `,
+      up: `
+        <path d="M4.5 13.5L7.5 10.5L10.05 12.55L15.5 7.1" />
+        <path d="M12.8 7.1H15.5V9.8" />
+      `,
+      down: `
+        <path d="M4.5 6.5L7.5 9.5L10.05 7.45L15.5 12.9" />
+        <path d="M12.8 12.9H15.5V10.2" />
+      `,
+      steady: `
+        <path d="M10 4.1L11.25 8.75L15.9 10L11.25 11.25L10 15.9L8.75 11.25L4.1 10L8.75 8.75L10 4.1Z" />
+      `,
+      impact: `
+        <path d="M10 3.4L11.5 8.5L16.6 10L11.5 11.5L10 16.6L8.5 11.5L3.4 10L8.5 8.5L10 3.4Z" />
+      `,
+      active: `
+        <circle cx="10" cy="10" r="6.3" />
+        <path d="M10 4.1L11.8 5.2L11.55 7.35L13.35 8.35L15.35 7.55L16.3 9.5L15 11.25L15.6 13.35L14.05 14.85L11.95 14.25L10 15.55L8.05 14.25L5.95 14.85L4.4 13.35L5 11.25L3.7 9.5L4.65 7.55L6.65 8.35L8.45 7.35L8.2 5.2L10 4.1Z" />
+      `,
+    }[normalizedKind];
+
+    if (!iconMarkup) {
+      return "";
+    }
+
+    const classes = ["badge-icon", className].filter(Boolean).join(" ");
+    const accessibleAttrs = decorative
+      ? 'aria-hidden="true"'
+      : `role="img" aria-label="${escapeHtml(label || normalizedKind)}"`;
+    const titleMarkup = !decorative && label ? `<title>${escapeHtml(label)}</title>` : "";
+
+    return `
+      <span class="${classes}">
+        <svg
+          viewBox="0 0 20 20"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          ${accessibleAttrs}
+        >
+          ${titleMarkup}
+          ${iconMarkup}
+        </svg>
+      </span>
+    `;
+  }
+
+  function tierIconMarkup(status, options = {}) {
+    const normalized = normalizeTierValue(status, "rotation");
+    const kind = normalized === "flex_sub" ? "flex" : normalized;
+    return badgeIconMarkup(kind, {
+      label: formatStatusLabel(normalized),
+      ...options,
+    });
+  }
+
+  function trendIconMarkup(trend, options = {}) {
+    const normalized = normalizeText(trend).toLowerCase();
+    const kind = normalized === "up" || normalized === "down" ? normalized : "steady";
+    return badgeIconMarkup(kind, {
+      label: formatTrendLabel(kind === "steady" ? "steady" : normalized),
+      ...options,
+    });
   }
 
   function normalizeTierValue(value, fallback = "rotation") {
@@ -2036,6 +2127,9 @@
     calculateAge,
     formatStatusLabel,
     formatTrendLabel,
+    badgeIconMarkup,
+    tierIconMarkup,
+    trendIconMarkup,
     normalizeTierValue,
     playerDesiredTier,
     normalizePlayerDesiredTier,

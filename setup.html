@@ -8,16 +8,143 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Mandarinas CF" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="manifest" href="./site.webmanifest" />
     <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png" />
-    <meta http-equiv="refresh" content="0; url=./seasons.html" />
-    <title>Redirecting...</title>
-    <script>
-      window.location.replace("./seasons.html");
-    </script>
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260428m" />
+    <title>Busses · Setup</title>
+    <script src="./assets/js/core/runtime_config.js?v=20260427a"></script>
+    <script src="./assets/js/ui/shell.js?v=20260427a" defer></script>
   </head>
-  <body>
-    <p>Redirecting to <a href="./seasons.html">Season Centre</a>...</p>
+  <body class="manager-touch admin-app page-setup">
+    <nav class="site-nav">
+      <div class="site-nav-inner">
+        <a href="./seasons.html" class="site-logo">
+          <span class="logo-dot"></span>
+          <span>Mandarinas <span class="logo-accent">CF</span></span>
+        </a>
+        <div class="nav-links">
+          <a class="nav-link" href="./seasons.html">Seasons</a>
+          <a class="nav-link" href="./matchday.html">Matchday</a>
+          <a class="nav-link" href="./squad.html">Squad</a>
+          <a class="nav-link" href="./standings.html">Standings</a>
+          <a class="nav-link" href="./tiers.html">Tiers</a>
+          <a class="nav-link nav-link-extra active" href="./setup.html">Setup</a>
+        </div>
+        <a href="./home.html" class="nav-mode-badge">Club</a>
+      </div>
+    </nav>
+
+    <main class="page page-flow">
+      <section class="panel page-header manager-header-card">
+        <div class="page-header-main">
+          <div class="section-label">Busses · Setup</div>
+          <h1>Admin setup and help</h1>
+          <p>
+            This page keeps the current static workflow easy to reopen on a phone. It points Busses
+            back to the existing season, matchday, squad, standings, and tier tools without adding a
+            second access system.
+          </p>
+        </div>
+        <div class="actions">
+          <a class="primary-button" href="./seasons.html">Open seasons</a>
+          <a class="secondary-button" href="./matchday.html">Open matchday</a>
+          <a class="secondary-button" href="./busses.html">Back to Busses entry</a>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-label">Status</div>
+        <h2>Workspace flow</h2>
+        <div class="summary-grid">
+          <div class="summary-card">
+            <span>Entry</span>
+            <strong>Busses</strong>
+            <span class="summary-copy">Use the existing shared shell unlock flow before protected pages.</span>
+          </div>
+          <div class="summary-card">
+            <span>Season</span>
+            <strong>Choose live campaign</strong>
+            <span class="summary-copy">Launch or switch seasons before any matchday work.</span>
+          </div>
+          <div class="summary-card">
+            <span>Matchday</span>
+            <strong>Run the night</strong>
+            <span class="summary-copy">Check attendance, assign teams, enter scores, and finalize.</span>
+          </div>
+          <div class="summary-card">
+            <span>Review</span>
+            <strong>Standings + tiers</strong>
+            <span class="summary-copy">Verify the table and queue after completed results.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-label">Quick Actions</div>
+        <h2>Open the right workspace</h2>
+        <div class="quick-action-grid">
+          <a class="list-item" href="./seasons.html">
+            <div class="list-item-main">
+              <div class="list-item-title">Seasons</div>
+              <div class="compact-row-copy">Select the active campaign, manage roster, or set kickoffs.</div>
+            </div>
+            <strong>Open</strong>
+          </a>
+          <a class="list-item" href="./matchday.html">
+            <div class="list-item-main">
+              <div class="list-item-title">Matchday</div>
+              <div class="compact-row-copy">Run attendance, teams, scoring, and confirmation actions.</div>
+            </div>
+            <strong>Open</strong>
+          </a>
+          <a class="list-item" href="./squad.html">
+            <div class="list-item-main">
+              <div class="list-item-title">Squad</div>
+              <div class="compact-row-copy">Approve or create player records and prep the next season.</div>
+            </div>
+            <strong>Open</strong>
+          </a>
+          <a class="list-item" href="./standings.html">
+            <div class="list-item-main">
+              <div class="list-item-title">Standings</div>
+              <div class="compact-row-copy">Review the ranking board before sharing it publicly.</div>
+            </div>
+            <strong>Open</strong>
+          </a>
+          <a class="list-item" href="./tiers.html">
+            <div class="list-item-main">
+              <div class="list-item-title">Tiers</div>
+              <div class="compact-row-copy">Check live queue order and tier recommendations.</div>
+            </div>
+            <strong>Open</strong>
+          </a>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-label">Notes</div>
+        <h2>Current guardrails</h2>
+        <details class="disclosure-card" open>
+          <summary class="disclosure-summary">
+            <div class="disclosure-copy">
+              <div class="disclosure-title">What stays unchanged in this build</div>
+              <div class="micro-note">The mobile refactor keeps the current static deployment and current admin gate behavior.</div>
+            </div>
+          </summary>
+          <div class="disclosure-body">
+            <ul>
+              <li>Public pages remain public and keep their current URLs.</li>
+              <li>Protected pages still rely on the existing shared shell unlock flow.</li>
+              <li>`season_id` stays in the URL flow for season-aware pages.</li>
+              <li>Supabase browser data loading remains in the existing static HTML, CSS, and JS structure.</li>
+            </ul>
+          </div>
+        </details>
+      </section>
+    </main>
+
+    <footer class="club-footer">
+      <div class="club-footer-copy">Busses · Setup</div>
+    </footer>
   </body>
 </html>

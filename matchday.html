@@ -8,18 +8,18 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Mandarinas CF" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="manifest" href="./site.webmanifest" />
     <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png" />
-    <link rel="stylesheet" href="./assets/css/app.css?v=20260426f" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260428m" />
     <title>Busses · Match Centre</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/js/core/club_logic.js"></script>
     <script src="./assets/js/core/supabase_config.js"></script>
     <script src="./assets/js/core/weather.js"></script>
-    <script src="./assets/js/ui/shell.js?v=20260426h"></script>
+    <script src="./assets/js/core/runtime_config.js?v=20260427a"></script>
+    <script src="./assets/js/ui/shell.js?v=20260427a"></script>
   </head>
-  <body class="manager-touch">
+  <body class="manager-touch admin-app page-matchday">
     <nav class="site-nav">
       <div class="site-nav-inner">
         <a href="./squad.html" class="site-logo">
@@ -27,10 +27,12 @@
           <span>Mandarinas <span class="logo-accent">CF</span></span>
         </a>
         <div class="nav-links">
-          <a class="nav-link" href="./squad.html">Directory</a>
-          <a class="nav-link" href="./seasons.html">Season</a>
+          <a class="nav-link" href="./seasons.html">Seasons</a>
           <a class="nav-link active" href="./matchday.html">Matchday</a>
-          <a class="nav-link" href="./tiers.html">Planner</a>
+          <a class="nav-link" href="./squad.html">Squad</a>
+          <a class="nav-link" href="./standings.html">Standings</a>
+          <a class="nav-link" href="./tiers.html">Tiers</a>
+          <a class="nav-link nav-link-extra" href="./setup.html">Setup</a>
         </div>
         <a href="./home.html" class="nav-mode-badge">Club</a>
       </div>
@@ -105,9 +107,20 @@
             <p class="micro-note" id="matchday-launcher-note">Choose a campaign to continue.</p>
           </div>
 
-          <div class="field">
-            <label for="player-search">Search players on this matchday</label>
-            <input id="player-search" type="search" placeholder="Search by name, nickname, nationality, or position" />
+          <div class="field-row">
+            <div class="field">
+              <label for="player-search">Search season squad</label>
+              <input id="player-search" type="search" placeholder="Search by name, nickname, nationality, or position" />
+            </div>
+            <div class="field">
+              <label for="player-tier-filter">Filter by tier</label>
+              <select id="player-tier-filter">
+                <option value="all" selected>All tiers</option>
+                <option value="core">Core</option>
+                <option value="rotation">Rotation</option>
+                <option value="flex_sub">Flex/Sub</option>
+              </select>
+            </div>
           </div>
 
           <section class="section-block">
@@ -116,10 +129,10 @@
                 <h3 class="section-title">Late replacements</h3>
                 <p class="section-copy">
                   Rostered players already appear in attendance below. Use this only when a replacement
-                  exists in the squad register but is missing from the current season squad.
+                  exists in the full squad register but is missing from the current season squad.
                 </p>
               </div>
-              <a class="ghost-link" href="./squad.html" id="open-player-directory-link">Open squad register</a>
+              <a class="ghost-link" href="./squad.html" id="open-player-directory-link">Open full squad</a>
             </div>
             <div class="field-grid">
               <div class="field">
@@ -149,7 +162,7 @@
               <a class="secondary-button" href="./seasons.html" id="open-season-roster-link">Open season squad</a>
             </div>
             <p class="micro-note" id="replacement-note">
-              Pull from an inactive season squad spot or add a squad player into this season,
+              Pull from an inactive season squad spot or add a full-squad player into this season,
               then continue with attendance and team assignment.
             </p>
           </section>
@@ -227,8 +240,8 @@
             <div class="group-head">
               <div>
                 <div class="section-label">Step 1</div>
-                <h2>Attendance</h2>
-                <p>Set each player's matchday status. Only players marked as <strong>IN</strong> can be placed on a team.</p>
+                <h2>Roster</h2>
+                <p>Set attendance first. Players marked IN unlock team assignment and stat controls on their card, while Matchday roster gives you a team-by-team view.</p>
               </div>
               <div class="count-badge">
                 <span>Current pool</span>
@@ -236,33 +249,54 @@
               </div>
             </div>
 
-            <section class="section-block">
-              <div class="panel-header">
-                <div>
-                  <h3 class="section-title">Weekly queue</h3>
-                  <p class="section-copy">
-                    Core players are considered first. Rotation players with fewer model-era appearances
-                    come next. Flex/Sub fills the remaining space.
-                  </p>
+            <div class="workspace-switcher" role="tablist" aria-label="Roster workspace">
+              <button
+                class="workspace-btn active"
+                type="button"
+                role="tab"
+                aria-selected="true"
+                data-roster-view-trigger="season"
+              >
+                Season squad
+              </button>
+              <button
+                class="workspace-btn"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                data-roster-view-trigger="matchday"
+              >
+                Matchday roster
+              </button>
+            </div>
+
+            <div class="workspace-pane" data-roster-view="season">
+              <section class="section-block">
+                <div class="panel-header">
+                  <div>
+                    <h3 class="section-title">Weekly queue</h3>
+                    <p class="section-copy">
+                      Core players are considered first. Rotation players with fewer model-era appearances
+                      come next. Flex/Sub fills the remaining space. Queue order and queue metrics now
+                      live on each attendance card below.
+                    </p>
+                  </div>
+                  <button class="secondary-button" type="button" id="priority-fill-button" disabled>Apply queue priority</button>
                 </div>
-                <button class="secondary-button" type="button" id="priority-fill-button" disabled>Apply queue priority</button>
-              </div>
-              <div id="priority-summary-grid" class="summary-grid"></div>
-              <div id="priority-board-wrap" class="table-wrap"></div>
-            </section>
+                <div id="priority-summary-grid" class="summary-grid"></div>
+                <div id="priority-board-wrap" class="table-wrap"></div>
+              </section>
 
-            <div id="attendance-grid" class="player-grid"></div>
-          </section>
+              <div id="attendance-grid" class="player-grid"></div>
+            </div>
 
-          <section class="panel detail-panel" id="teams-step" hidden>
-            <div class="section-label">Step 2</div>
-            <h2>Teams and Player Stats</h2>
-            <p>Assign checked-in players to the four teams. Player stat entry lives inside the team cards.</p>
-            <section class="team-grid" id="team-grid"></section>
+            <div class="workspace-pane" data-roster-view="matchday" hidden>
+              <section class="team-grid" id="team-grid"></section>
+            </div>
           </section>
 
           <section class="panel detail-panel" id="scores-step" hidden>
-            <div class="section-label">Step 3</div>
+            <div class="section-label">Step 2</div>
             <h2>Match Results</h2>
             <p>
               Save the four bracket scores. Round 1 is fixed. Round 2 resolves from those results as
@@ -278,6 +312,6 @@
       <div class="club-footer-copy">Busses · Match Centre</div>
     </footer>
 
-    <script src="./assets/js/pages/admin/matchday.js?v=20260425a"></script>
+    <script src="./assets/js/pages/admin/matchday.js?v=20260428b"></script>
   </body>
 </html>

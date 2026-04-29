@@ -36,9 +36,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const RATING_QUESTIONS = [
     {
-      key: "overall",
+      key: "club_rating",
       label: "Overall rating",
-      hint: "How did they do overall for your team that day? Half stars are allowed.",
+      hint: "Slide until the club rating feels right for the night they had.",
     },
   ];
 
@@ -57,9 +57,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const pageTitle = document.getElementById("submission-page-title");
   const submissionWorkspace = document.getElementById("submission-workspace");
   const submissionWorkspaceFrame = document.getElementById("submission-workspace-frame");
+  const submissionReportPane = document.getElementById("submission-report-pane");
+  const submissionSuggestionsPane = document.getElementById("submission-suggestions-pane");
   const submissionViewTriggers = Array.from(document.querySelectorAll("[data-submission-view-trigger]"));
-  const submissionViewPanes = Array.from(document.querySelectorAll("[data-submission-view]"));
   const submissionNavLinks = Array.from(document.querySelectorAll("[data-submission-nav]"));
+  const submissionProgressSteps = Array.from(document.querySelectorAll("[data-submission-step]"));
   const reportTitle = document.getElementById("submission-report-title");
   const scheduleLink = document.getElementById("submission-schedule-link");
   const statusLine = document.getElementById("submission-status-line");
@@ -87,18 +89,22 @@ document.addEventListener("DOMContentLoaded", () => {
   const ratingSavedCount = document.getElementById("submission-rating-saved-count");
   const ratingProgressPill = document.getElementById("submission-rating-progress-pill");
   const ratingProgressCopy = document.getElementById("submission-rating-progress-copy");
+  const ratingLiveGrade = document.getElementById("submission-rating-live-grade");
+  const ratingLiveGradeCopy = document.getElementById("submission-rating-live-grade-copy");
   const ratingTargets = document.getElementById("submission-rating-targets");
   const ratingForm = document.getElementById("submission-rating-form");
   const ratingsEmpty = document.getElementById("submission-ratings-empty");
-  const ratingRelationship = document.getElementById("submission-rating-relationship");
   const ratingName = document.getElementById("submission-rating-name");
   const ratingProgressLine = document.getElementById("submission-rating-progress-line");
   const ratingTeamPill = document.getElementById("submission-rating-team-pill");
+  const ratingGradeNumber = document.getElementById("submission-rating-grade-number");
+  const ratingGradeLabel = document.getElementById("submission-rating-grade-label");
   const ratingQuestionList = document.getElementById("submission-rating-question-list");
   const ratingCommentInput = document.getElementById("submission-rating-comment");
   const saveRatingButton = document.getElementById("submission-save-rating-button");
   const nextRatingButton = document.getElementById("submission-next-rating-button");
   const ratingNote = document.getElementById("submission-rating-note");
+  const ratingsPanel = document.getElementById("submission-ratings-panel");
   const suggestionsCopy = document.getElementById("submission-suggestions-copy");
   const suggestionCount = document.getElementById("submission-suggestion-count");
   const replyCount = document.getElementById("submission-reply-count");
@@ -111,10 +117,20 @@ document.addEventListener("DOMContentLoaded", () => {
   const suggestionBoardCopy = document.getElementById("submission-suggestion-board-copy");
   const refreshSuggestionsButton = document.getElementById("submission-refresh-suggestions-button");
   const suggestionThreadList = document.getElementById("submission-suggestion-thread-list");
+  const completionPanel = document.getElementById("submission-complete-panel");
+  const completionCard = document.getElementById("submission-complete-card");
+  const choosePlayerPanel = playerSelect?.closest(".panel") || null;
+  const reportPanel = reportCard?.closest(".panel") || null;
+  const statsPanel = statsForm?.closest(".panel") || null;
 
   let seasons = [];
   let activeSeasonId = requestedSeasonId;
-  let activeSubmissionView = requestedView === "suggestions" ? "suggestions" : "report";
+  let activeSubmissionView =
+    requestedView === "suggestions"
+      ? "suggestions"
+      : requestedView === "ratings"
+        ? "ratings"
+        : "stats";
   let selectedMatchdayId =
     Number.isInteger(requestedMatchdayId) && requestedMatchdayId > 0 ? requestedMatchdayId : null;
   let selectedPlayerId =
@@ -138,6 +154,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let ratingTablesReady = true;
   let discussionTablesReady = true;
   let previewFallbackApplied = false;
+  let playerSelectionFallbackNote = "";
 
   function normalizeText(value) {
     return String(value || "").trim().replace(/\s+/g, " ");
@@ -147,23 +164,127 @@ document.addEventListener("DOMContentLoaded", () => {
     return Math.round(Number(value || 0) * 2) / 2;
   }
 
-  function sameRatingScore(left, right) {
-    return Math.abs(Number(left || 0) - Number(right || 0)) < 0.01;
-  }
-
-  function isValidRatingScore(value) {
+  function isValidLegacyRatingScore(value) {
     const numeric = Number(value || 0);
-    return numeric >= 0.5 && numeric <= 5 && sameRatingScore(numeric * 2, Math.round(numeric * 2));
+    return numeric >= 0.5 && numeric <= 5 && Math.abs(numeric * 2 - Math.round(numeric * 2)) < 0.01;
   }
 
-  function formatRatingScore(value) {
+  function isValidClubRating(value) {
+    if (value === null || value === undefined || value === "") {
+      return false;
+    }
+
+    const numeric = Number(value);
+    return Number.isInteger(numeric) && numeric >= 0 && numeric <= 99;
+  }
+
+  function formatClubRating(value) {
+    if (!isValidClubRating(value)) {
+      return "--";
+    }
+
+    return String(Math.round(Number(value)));
+  }
+
+  function formatAverageGrade(value) {
     const numeric = Number(value || 0);
-    return Number.isInteger(numeric) ? String(numeric) : numeric.toFixed(1);
+    return Number.isFinite(numeric) ? numeric.toFixed(1) : "-";
   }
 
-  function ratingFillPercent(value) {
-    const numeric = Math.max(0, Math.min(5, Number(value || 0)));
-    return `${(numeric / 5) * 100}%`;
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function legacyScoreToGrade(value) {
+    const numeric = clamp(Number(value || 0), 0.5, 5);
+    const effectiveStars = Math.max(1, numeric);
+    return clamp(Math.round(40 + ((effectiveStars - 1) / 4) * 59), 40, 99);
+  }
+
+  function clubRatingToLegacyScore(value) {
+    const numeric = clamp(Number(value || 0), 0, 99);
+
+    if (numeric < 40) {
+      return 0.5;
+    }
+
+    const stars = 1 + ((numeric - 40) / 59) * 4;
+    return roundToHalf(clamp(stars, 1, 5));
+  }
+
+  function matchGradeLabel(value) {
+    const numeric =
+      value === null || value === undefined || value === ""
+        ? Number.NaN
+        : Number(value);
+    if (!Number.isFinite(numeric)) {
+      return "Waiting on a rating";
+    }
+    if (numeric >= 92) {
+      return "Match boss";
+    }
+    if (numeric >= 82) {
+      return "Difference maker";
+    }
+    if (numeric >= 70) {
+      return "Steady engine";
+    }
+    if (numeric >= 55) {
+      return "Grinding shift";
+    }
+    return "Reset night";
+  }
+
+  function matchGradeCopy(value) {
+    const numeric =
+      value === null || value === undefined || value === ""
+        ? Number.NaN
+        : Number(value);
+    if (!Number.isFinite(numeric)) {
+      return "Slide to set the live game read.";
+    }
+    if (numeric >= 92) {
+      return "Took over stretches and drove the game.";
+    }
+    if (numeric >= 82) {
+      return "Made a real difference for the team.";
+    }
+    if (numeric >= 70) {
+      return "Gave the team a solid, reliable game.";
+    }
+    if (numeric >= 55) {
+      return "Had a mixed game with some helpful moments.";
+    }
+    return "Had a tough game and never quite found the rhythm.";
+  }
+
+  function ratingSliderPercent(value) {
+    if (!isValidClubRating(value)) {
+      return "50%";
+    }
+
+    const numeric = clamp(Number(value || 0), 0, 99);
+    return `${(numeric / 99) * 100}%`;
+  }
+
+  function sliderDisplayValue(value) {
+    return isValidClubRating(value) ? Number(value) : 50;
+  }
+
+  function ratingSummaryText(value, grade) {
+    if (!isValidClubRating(value) || grade === null) {
+      return "Slide to choose a rating";
+    }
+
+    return `${formatClubRating(value)} / 99 club rating`;
+  }
+
+  function ratingSummaryMeta(value, grade) {
+    if (!isValidClubRating(value) || grade === null) {
+      return "Single-point slider";
+    }
+
+    return matchGradeLabel(grade);
   }
 
   function isTeammateRelationship(value) {
@@ -214,6 +335,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (activeSubmissionView === "suggestions") {
       url.searchParams.set("view", "suggestions");
+    } else if (activeSubmissionView === "ratings") {
+      url.searchParams.set("view", "ratings");
     } else {
       url.searchParams.delete("view");
     }
@@ -294,7 +417,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function readableSubmissionError(error) {
     if (hasMissingStatTable(error) || hasMissingRatingTable(error)) {
-      return "Player reports are still in view mode while live saving is being switched on.";
+      return "The night desk is still in view mode while live saving is being switched on.";
     }
 
     if (hasMissingSuggestionTable(error)) {
@@ -302,7 +425,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (hasMissingWindowColumns(error)) {
-      return "Player report windows are not scheduled for this matchday yet.";
+      return "Night-desk windows are not scheduled for this matchday yet.";
     }
 
     return baseReadableError(error);
@@ -451,13 +574,17 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
-  function canonicalAttendanceRowsForMatchday() {
+  function canonicalAttendanceRows(matchdayId) {
     return (activeBundle?.playerStats || [])
-      .filter((row) => Number(row.matchday_id) === Number(selectedMatchdayId))
+      .filter((row) => Number(row.matchday_id) === Number(matchdayId))
       .filter((row) => {
         const status = normalizeText(row.attendance_status || "").toLowerCase();
         return row.attended || status === "in" || status === "attended";
       });
+  }
+
+  function canonicalAttendanceRowsForMatchday() {
+    return canonicalAttendanceRows(selectedMatchdayId);
   }
 
   async function loadSubmissionsForMatchday() {
@@ -651,18 +778,25 @@ document.addEventListener("DOMContentLoaded", () => {
     return player ? playerDisplayName(player) : `Player ${playerId}`;
   }
 
-  function eligiblePlayers() {
-    const matchday = selectedMatchday();
+  function playerSelectionIsOpen(matchday) {
+    const kickoffPassed = Boolean(matchday?.kickoff_at && new Date(matchday.kickoff_at).getTime() <= Date.now());
+    return previewMode || kickoffPassed;
+  }
+
+  function playersForMatchday(matchdayId) {
+    const matchday = (activeBundle?.matchdays || []).find((row) => Number(row.id) === Number(matchdayId));
     const playersById = playerMap();
-    const assignments = assignmentRowsForMatchday().filter((assignment) => normalizeText(assignment.team_code));
     const rows = [];
     const seenIds = new Set();
-    const kickoffPassed = Boolean(matchday?.kickoff_at && new Date(matchday.kickoff_at).getTime() <= Date.now());
-    const playerSelectionOpen = previewMode || kickoffPassed;
 
-    if (!playerSelectionOpen) {
+    if (!matchday || !playerSelectionIsOpen(matchday)) {
       return [];
     }
+
+    const assignments = (activeBundle?.assignments || []).filter(
+      (assignment) =>
+        Number(assignment.matchday_id) === Number(matchdayId) && normalizeText(assignment.team_code)
+    );
 
     assignments.forEach((assignment) => {
       const player = playersById.get(assignment.player_id);
@@ -678,7 +812,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     if (!rows.length) {
-      canonicalAttendanceRowsForMatchday().forEach((row) => {
+      canonicalAttendanceRows(matchdayId).forEach((row) => {
         const player = playersById.get(row.player_id);
         if (!player || seenIds.has(player.id)) {
           return;
@@ -692,13 +826,48 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    return rows
-      .map((player) => ({
-        ...player,
-        stat_saved: Boolean(statSubmissionForPlayer(player.id)),
-        ratings_saved: ratingRowsForPlayer(player.id).length,
-      }))
-      .sort((left, right) => playerDisplayName(left).localeCompare(playerDisplayName(right)));
+    return rows.sort((left, right) => playerDisplayName(left).localeCompare(playerDisplayName(right)));
+  }
+
+  function latestSelectableMatchdayId(bundle) {
+    const allMatchdays = bundle?.matchdays || [];
+    const withPlayers = allMatchdays.filter((matchday) => playersForMatchday(matchday.id).length);
+
+    if (!withPlayers.length) {
+      return null;
+    }
+
+    const liveMatchday = newestLiveWindowMatchday(withPlayers);
+    if (liveMatchday) {
+      return liveMatchday.id;
+    }
+
+    const completedIds = new Set(
+      buildCompletedMatchdays(allMatchdays, bundle?.matches || []).map((matchday) => Number(matchday.id))
+    );
+    const completedWithPlayers = withPlayers
+      .filter((matchday) => completedIds.has(Number(matchday.id)))
+      .sort((left, right) => {
+        const leftKickoff = new Date(left.kickoff_at || 0).getTime();
+        const rightKickoff = new Date(right.kickoff_at || 0).getTime();
+        return rightKickoff - leftKickoff;
+      });
+
+    if (completedWithPlayers.length) {
+      return completedWithPlayers[0].id;
+    }
+
+    return withPlayers
+      .slice()
+      .sort((left, right) => {
+        const leftKickoff = new Date(left.kickoff_at || 0).getTime();
+        const rightKickoff = new Date(right.kickoff_at || 0).getTime();
+        return rightKickoff - leftKickoff;
+      })[0]?.id || null;
+  }
+
+  function eligiblePlayers() {
+    return playersForMatchday(selectedMatchdayId);
   }
 
   function filteredPlayersForSelect() {
@@ -761,9 +930,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const saved = savedRatingForTarget(rateeId);
-    const overallScore = extractOverallScore(saved?.scores);
+    const overallGrade = extractOverallGrade(saved?.scores);
     const nextDraft = {
-      scores: overallScore !== null ? { overall: roundToHalf(overallScore) } : {},
+      scores:
+        overallGrade !== null
+          ? { club_rating: Math.round(overallGrade), overall: clubRatingToLegacyScore(overallGrade) }
+          : {},
       comment: saved?.comment || "",
     };
     ratingDrafts.set(rateeId, nextDraft);
@@ -813,11 +985,16 @@ document.addEventListener("DOMContentLoaded", () => {
     return typeof value === "object" && !Array.isArray(value) ? value : {};
   }
 
-  function extractOverallScore(value) {
+  function extractOverallGrade(value) {
     const scores = normalizeScorePayload(value);
+    const explicitGrade = Number(scores.club_rating ?? scores.overall_grade ?? scores.grade);
+    if (isValidClubRating(explicitGrade)) {
+      return explicitGrade;
+    }
+
     const explicitOverall = Number(scores.overall || 0);
-    if (isValidRatingScore(explicitOverall)) {
-      return explicitOverall;
+    if (isValidLegacyRatingScore(explicitOverall)) {
+      return legacyScoreToGrade(explicitOverall);
     }
 
     const legacyValues = Object.values(scores)
@@ -828,7 +1005,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return null;
     }
 
-    return legacyValues.reduce((sum, entry) => sum + entry, 0) / legacyValues.length;
+    return legacyScoreToGrade(legacyValues.reduce((sum, entry) => sum + entry, 0) / legacyValues.length);
   }
 
   function countLabel(count, singular, plural = `${singular}s`) {
@@ -843,6 +1020,23 @@ document.addEventListener("DOMContentLoaded", () => {
         Number(row.rater_player_id) !== Number(playerId) &&
         isTeammateRelationship(row.relationship)
     );
+  }
+
+  function peerSnapshotForPlayer(playerId) {
+    const rows = receivedRatingsForPlayer(playerId);
+    const overallValues = rows
+      .map((row) => extractOverallGrade(row.scores))
+      .filter((value) => Number.isFinite(value));
+    const averageGrade = overallValues.length
+      ? overallValues.reduce((sum, value) => sum + Number(value || 0), 0) / overallValues.length
+      : null;
+    const matchGrade = averageGrade !== null ? Math.round(averageGrade) : null;
+
+    return {
+      rows,
+      averageGrade,
+      matchGrade,
+    };
   }
 
   function formSummaryForPlayer(playerId) {
@@ -883,12 +1077,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const overallValues = rows
-      .map((row) => extractOverallScore(row.scores))
+      .map((row) => extractOverallGrade(row.scores))
       .filter((value) => Number.isFinite(value));
     const overallAverage = overallValues.length
       ? overallValues.reduce((sum, value) => sum + Number(value || 0), 0) / overallValues.length
       : null;
-    const averageLabel = overallAverage !== null ? `${overallAverage.toFixed(1)} / 5 overall` : "";
+    const averageLabel = overallAverage !== null ? `${formatAverageGrade(overallAverage)} / 99 overall` : "";
 
     if (rows.length === 1) {
       return {
@@ -904,13 +1098,13 @@ document.addEventListener("DOMContentLoaded", () => {
     let title = "Building night";
     let copy = "Feedback is still mixed, so use this as a check-in rather than a verdict.";
 
-    if (overallAverage !== null && overallAverage >= 4.35) {
+    if (overallAverage !== null && overallAverage >= 89) {
       title = "Matchday highlight";
       copy = "Feedback points to a big all-around night with strong impact for the team.";
-    } else if (overallAverage !== null && overallAverage >= 3.7) {
+    } else if (overallAverage !== null && overallAverage >= 80) {
       title = "Positive night";
       copy = "Feedback is pointing in a good direction with a solid overall contribution.";
-    } else if (overallAverage !== null && overallAverage >= 3.1) {
+    } else if (overallAverage !== null && overallAverage >= 71) {
       title = "Steady night";
       copy = "Feedback says you gave the team a steady contribution across the night.";
     }
@@ -930,33 +1124,43 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (reportReady && discussionTablesReady) {
       return {
-        message: "Player report loaded.",
+        message: "Night desk loaded.",
         tone: "success",
       };
     }
 
     if (!reportReady && !discussionTablesReady) {
       return {
-        message: "Player report loaded in view mode. Suggestions stay in view mode too.",
+        message: "Night desk loaded in view mode. The board stays in view mode too.",
         tone: "warning",
       };
     }
 
     if (!reportReady) {
       return {
-        message: "Player report loaded in view mode.",
+        message: "Night desk loaded in view mode.",
         tone: "warning",
       };
     }
 
     return {
-      message: "Player report loaded. Suggestions stay in view mode.",
+      message: "Night desk loaded. The board stays in view mode.",
       tone: "warning",
     };
   }
 
+  function normalizeSubmissionView(view) {
+    if (view === "suggestions") {
+      return "suggestions";
+    }
+    if (view === "ratings") {
+      return "ratings";
+    }
+    return "stats";
+  }
+
   function setSubmissionView(view, options = {}) {
-    const nextView = view === "suggestions" ? "suggestions" : "report";
+    const nextView = normalizeSubmissionView(view);
     const {
       focus = false,
       scroll = false,
@@ -969,10 +1173,13 @@ document.addEventListener("DOMContentLoaded", () => {
       submissionWorkspaceFrame.dataset.submissionViewMode = nextView;
     }
 
-    submissionViewPanes.forEach((pane) => {
-      const isActive = pane.dataset.submissionView === nextView;
-      pane.hidden = !isActive;
-    });
+    if (submissionReportPane) {
+      submissionReportPane.hidden = nextView === "suggestions";
+    }
+
+    if (submissionSuggestionsPane) {
+      submissionSuggestionsPane.hidden = nextView !== "suggestions";
+    }
 
     submissionViewTriggers.forEach((button) => {
       const isActive = button.dataset.submissionViewTrigger === nextView;
@@ -983,17 +1190,20 @@ document.addEventListener("DOMContentLoaded", () => {
     submissionNavLinks.forEach((link) => {
       const isActive =
         (nextView === "suggestions" && link.dataset.submissionNav === "suggestions") ||
-        (nextView !== "suggestions" && link.dataset.submissionNav === "season");
+        (nextView !== "suggestions" && link.dataset.submissionNav === "report");
       link.classList.toggle("active", isActive);
     });
 
     updateHeaderCopy();
+    syncSubmissionWizard();
 
     if (updateHistory) {
       updateUrl();
     }
 
-    if (scroll && submissionWorkspace) {
+    if (nextView === "ratings" && selectedPlayer() && ratingsPanel && !ratingsPanel.classList.contains("is-hidden")) {
+      ratingsPanel.scrollIntoView({ behavior: scroll ? "smooth" : "auto", block: "start" });
+    } else if (scroll && submissionWorkspace) {
       submissionWorkspace.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
@@ -1004,10 +1214,153 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           playerSelect.focus();
         }
+      } else if (nextView === "ratings" && selectedPlayer() && selectedMatchday() && !ratingForm.hidden) {
+        ratingCommentInput.focus();
       } else {
         playerSelect.focus();
       }
     }
+  }
+
+  function currentSubmissionStep() {
+    const player = selectedPlayer();
+    const matchday = selectedMatchday();
+    if (!player || !matchday) {
+      return 1;
+    }
+
+    if (activeSubmissionView === "suggestions") {
+      return 5;
+    }
+
+    if (activeSubmissionView === "ratings") {
+      return 4;
+    }
+
+    const statSaved = Boolean(statSubmissionForPlayer(player.id));
+    const targets = ratingTargetsForPlayer(player);
+    const savedRatings = ratingRowsForPlayer(player.id).length;
+    const ratingsDone = targets.length ? savedRatings >= targets.length : true;
+    const submissionState = matchdayWindowState(matchday);
+    const statsEditable = statTablesReady && submissionState.statsOpen;
+    const ratingsEditable = ratingTablesReady && submissionState.ratingsOpen && targets.length;
+
+    if (!statsEditable && !ratingsEditable && !statSaved && !ratingsDone) {
+      return 2;
+    }
+
+    return 3;
+  }
+
+  function renderCompletionCard() {
+    const player = selectedPlayer();
+    const matchday = selectedMatchday();
+
+    if (!completionCard) {
+      return;
+    }
+
+    if (!player || !matchday) {
+      completionCard.innerHTML = '<div class="empty-state">Choose your name first to unlock the report flow.</div>';
+      return;
+    }
+
+    const statSaved = Boolean(statSubmissionForPlayer(player.id));
+    const targets = ratingTargetsForPlayer(player);
+    const savedRatings = ratingRowsForPlayer(player.id).length;
+    const ratingsDone = targets.length ? savedRatings >= targets.length : true;
+    const submissionState = matchdayWindowState(matchday);
+    const statsStillOpen = statTablesReady && submissionState.statsOpen;
+    const readyToFinish = ratingsDone;
+    const summaryMessage = readyToFinish
+      ? statSaved
+        ? "Your current report flow is complete for this matchday."
+        : "Your ratings are in. Add stats later only if you need to."
+      : "You still have ratings left before this report is complete.";
+    const statBadgeLabel = statSaved
+      ? "Stats saved"
+      : statsStillOpen
+        ? "Stats optional"
+        : "Stats closed";
+
+    completionCard.innerHTML = `
+      <div class="submission-complete-ready">
+        <div class="section-label">Current status</div>
+        <h3>${escapeHtml(summaryMessage)}</h3>
+        <div class="compact-badges">
+          <span class="tag-pill">${escapeHtml(statBadgeLabel)}</span>
+          <span class="tag-pill">${escapeHtml(`${savedRatings} / ${targets.length} ratings saved`)}</span>
+          <span class="tag-pill">${escapeHtml(
+            activeSubmissionView === "suggestions"
+              ? "Suggestions open"
+              : activeSubmissionView === "ratings"
+                ? "Ratings mode"
+                : "Stats mode"
+          )}</span>
+        </div>
+        <p class="section-copy">
+          ${escapeHtml(
+            readyToFinish
+              ? statSaved
+                ? "If you still want to leave tactical notes or ideas, switch into Suggestions."
+                : "Your ratings do not depend on stats. If you have no numbers to add, you are done."
+              : "Use the progress steps above to finish the remaining rating tasks on this matchday."
+          )}
+        </p>
+      </div>
+    `;
+  }
+
+  function syncSubmissionWizard() {
+    const currentStep = currentSubmissionStep();
+    const playerReady = Boolean(selectedPlayer() && selectedMatchday());
+    const mobileWizard = window.matchMedia("(max-width: 767px)").matches;
+    const player = selectedPlayer();
+    const targets = ratingTargetsForPlayer(player);
+    const savedRatings = ratingRowsForPlayer(player?.id).length;
+    const statSaved = Boolean(player && statSubmissionForPlayer(player.id));
+    const ratingsDone = targets.length ? savedRatings >= targets.length : true;
+    const submissionState = player && selectedMatchday() ? matchdayWindowState(selectedMatchday()) : null;
+    const statsResolved =
+      statSaved || ratingsDone || !statTablesReady || !submissionState?.statsOpen;
+    const readyToFinish = ratingsDone;
+    const viewingSuggestions = activeSubmissionView === "suggestions";
+    const viewingRatings = activeSubmissionView === "ratings";
+    const viewingStats = !viewingSuggestions && !viewingRatings;
+
+    document.body.dataset.submissionStep = String(currentStep);
+
+    submissionProgressSteps.forEach((stepNode) => {
+      const stepNumber = Number(stepNode.dataset.submissionStep);
+      const completed =
+        (stepNumber === 1 && playerReady) ||
+        (stepNumber === 2 && playerReady) ||
+        (stepNumber === 3 && statsResolved) ||
+        (stepNumber === 4 && ratingsDone) ||
+        (stepNumber === 5 && viewingSuggestions) ||
+        (stepNumber === 6 && readyToFinish);
+
+      stepNode.classList.toggle("is-active", stepNumber === currentStep);
+      stepNode.classList.toggle("is-complete", completed && stepNumber !== currentStep);
+    });
+
+    [
+      { panel: choosePlayerPanel, show: true },
+      { panel: reportPanel, show: playerReady && !viewingSuggestions },
+      { panel: statsPanel, show: playerReady && viewingStats },
+      { panel: ratingsPanel, show: playerReady && viewingRatings },
+      {
+        panel: completionPanel,
+        show: playerReady && !viewingSuggestions && (!mobileWizard || readyToFinish),
+      },
+    ].forEach(({ panel, show }) => {
+      if (!panel) {
+        return;
+      }
+
+      panel.classList.add("submission-step-panel");
+      panel.classList.toggle("is-hidden", !show);
+    });
   }
 
   function renderSuggestionSummary() {
@@ -1335,7 +1688,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const matchday = selectedMatchday();
 
     if (!matchday) {
-      reportCard.innerHTML = '<div class="empty-state">Open a matchday from Fixtures to start a player report.</div>';
+      reportCard.innerHTML = '<div class="empty-state">Open a matchday from Fixtures to start the night desk.</div>';
       return;
     }
 
@@ -1356,10 +1709,30 @@ document.addEventListener("DOMContentLoaded", () => {
       badges.push('<span class="tag-pill">Closed</span>');
     }
 
+    const pulseTitle = state.statsOpen
+      ? "Full night desk is live"
+      : state.ratingsOpen
+        ? "Stat line is closed, ratings still live"
+        : "This matchday is wrapped";
+    const pulseCopy = state.statsOpen
+      ? `Open your card, lock your numbers now or skip straight to ratings. Ratings stay open until ${formatLongDate(state.ratingsCloseAt)}.`
+      : state.ratingsOpen
+        ? `The stat window is done, but ratings stay open until ${formatLongDate(state.ratingsCloseAt)} whether or not you saved stats.`
+        : "The desk stays visible here, but no more live matchday reporting can be added right now.";
+
     reportCard.innerHTML = `
-      <div class="section-label">Current report</div>
-      <h3>Matchday ${escapeHtml(matchday.matchday_number)}</h3>
-      <div class="compact-badges">${badges.join("")}</div>
+      <div class="submission-report-stage">
+        <div class="submission-report-stage-copy">
+          <div class="section-label">Current report</div>
+          <h3>Matchday ${escapeHtml(matchday.matchday_number)}</h3>
+          <p class="section-copy">${escapeHtml(pulseTitle)}</p>
+        </div>
+        <div class="submission-report-stage-badges">${badges.join("")}</div>
+        <div class="submission-report-stage-foot">
+          <span class="submission-stage-pill">${escapeHtml(state.statsOpen ? "Desk live" : state.ratingsOpen ? "Ratings live" : "Closed")}</span>
+          <p class="micro-note">${escapeHtml(pulseCopy)}</p>
+        </div>
+      </div>
     `;
   }
 
@@ -1375,36 +1748,74 @@ document.addEventListener("DOMContentLoaded", () => {
     const statSubmission = statSubmissionForPlayer(player.id);
     const targets = ratingTargetsForPlayer(player);
     const formSummary = formSummaryForPlayer(player.id);
+    const peerSnapshot = peerSnapshotForPlayer(player.id);
     const teamBadge = player.team_code
       ? `<span class="team-badge ${escapeHtml(teamClassName(player.team_code))}">${escapeHtml(formatTeamLabel(player.team_code))}</span>`
       : '<span class="tag-pill">Team pending</span>';
+    const peerGrade = peerSnapshot.matchGrade;
+    const peerGradeNumber = peerGrade !== null ? String(peerGrade) : "--";
+    const peerGradeLabel = peerGrade !== null ? matchGradeLabel(peerGrade) : "Waiting on teammate ratings";
+    const peerGradeCopy = peerSnapshot.averageGrade !== null
+      ? `${formatAverageGrade(peerSnapshot.averageGrade)} / 99 peer average so far`
+      : "No teammate ratings have landed on this card yet.";
 
     selectedPlayerCard.innerHTML = `
-      <div class="submission-player-meta">
-        <div>
-          <div class="section-label">Selected player</div>
-          <h3>${escapeHtml(playerDisplayName(player))}</h3>
-          <p class="section-copy">${escapeHtml(matchday.kickoff_at ? formatDateTime(matchday.kickoff_at) : `Matchday ${matchday.matchday_number}`)}</p>
+      <div class="submission-identity-card">
+        <div class="submission-player-meta">
+          <div class="submission-identity-main">
+            <div class="section-label">Tonight's card</div>
+            <h3>${escapeHtml(playerDisplayName(player))}</h3>
+            <p class="section-copy">${escapeHtml(matchday.kickoff_at ? formatDateTime(matchday.kickoff_at) : `Matchday ${matchday.matchday_number}`)}</p>
+            <div class="compact-badges">
+              ${teamBadge}
+              <span class="tag-pill">${statSubmission ? "Stat line saved" : "Stat line open"}</span>
+            </div>
+          </div>
+          <div class="submission-grade-orbit">
+            <span class="submission-grade-eyebrow">Current peer rating</span>
+            <div class="submission-grade-score">
+              <strong>${escapeHtml(peerGradeNumber)}</strong>
+              <span>/ 99</span>
+            </div>
+            <p class="submission-grade-copy">${escapeHtml(peerGradeLabel)}</p>
+            <p class="micro-note">${escapeHtml(peerGradeCopy)}</p>
+          </div>
         </div>
-        ${teamBadge}
-      </div>
-      <div class="compact-badges">
-        <span class="tag-pill">${statSubmission ? "Stats saved" : "No stats submitted"}</span>
-        <span class="tag-pill">${escapeHtml(targets.length)} ratings waiting</span>
-        <span class="tag-pill">${escapeHtml(formSummary.feedbackLabel)}</span>
+        <div class="submission-identity-stat-grid">
+          <article class="submission-stat-tile">
+            <span>Stat line</span>
+            <strong>${escapeHtml(statSubmission ? "Saved" : "Open")}</strong>
+            <small>${escapeHtml(statSubmission ? "Your numbers are on the board." : "Goals, keeps, and clean sheet still editable.")}</small>
+          </article>
+          <article class="submission-stat-tile">
+            <span>Rating queue</span>
+            <strong>${escapeHtml(String(targets.length))}</strong>
+            <small>${escapeHtml(targets.length ? "Teammates waiting for a rating." : "No teammate queue is ready yet.")}</small>
+          </article>
+          <article class="submission-stat-tile">
+            <span>Feedback cards</span>
+            <strong>${escapeHtml(formSummary.feedbackLabel)}</strong>
+            <small>${escapeHtml(formSummary.copy)}</small>
+          </article>
+        </div>
       </div>
       <div class="submission-form-panel">
-        <div class="section-label">My form</div>
+        <div class="section-label">Form pulse</div>
         <h4>${escapeHtml(formSummary.title)}</h4>
         <p class="section-copy">${escapeHtml(formSummary.copy)}</p>
         <div class="compact-badges">
           <span class="tag-pill">${escapeHtml(formSummary.feedbackLabel)}</span>
           <span class="tag-pill">${escapeHtml(formSummary.teammateLabel)}</span>
+          ${
+            peerGrade !== null
+              ? `<span class="tag-pill">${escapeHtml(`${peerGrade} / 99 live`)}</span>`
+              : ""
+          }
         </div>
         <p class="micro-note">
           ${
-            formSummary.averageLabel
-              ? `Average overall rating so far: <strong>${escapeHtml(formSummary.averageLabel)}</strong>. `
+            peerSnapshot.averageGrade !== null
+              ? `Peer average so far: <strong>${escapeHtml(formatAverageGrade(peerSnapshot.averageGrade))} / 99</strong>. `
               : ""
           }
           ${escapeHtml(formSummary.note)}
@@ -1487,8 +1898,8 @@ document.addEventListener("DOMContentLoaded", () => {
     saveStatsButton.disabled = !saveEnabled;
 
     statsCopy.textContent = player.team_code
-      ? `You played on ${formatTeamLabel(player.team_code)}. Save your own stat line here if you need to report stats. Ratings stay separate below.`
-      : "Enter your own goals, goalkeeper points, and clean sheet here if you need to report stats. Ratings stay separate below.";
+      ? `You played on ${formatTeamLabel(player.team_code)}. Save your own stat line here if you need to report stats, or switch to Ratings if you only want to rate teammates.`
+      : "Enter your own goals, goalkeeper points, and clean sheet here if you need to report stats, or switch to Ratings if you only want to rate teammates.";
 
     if (!statTablesReady) {
       statsNote.textContent = "Live stat saving is not switched on yet.";
@@ -1497,14 +1908,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (previewMode) {
       statsNote.textContent = statSubmission
-        ? "Stats saved. Busses can keep testing ratings separately below."
+        ? "Stats saved. Busses can keep testing the Ratings tab separately."
         : "Open access is on right now so busses can test stat saving at any time.";
       return;
     }
 
     if (statSubmission) {
       statsNote.textContent = ratingTablesReady
-        ? `Stats saved. Ratings stay separate and remain open until ${formatLongDate(submissionState.ratingsCloseAt)}.`
+        ? `Stats saved. Ratings remain open in their own tab until ${formatLongDate(submissionState.ratingsCloseAt)}.`
         : "Stats saved. Ratings remain in view mode until live saving is switched on.";
       return;
     }
@@ -1525,10 +1936,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     ratingQuestionList.innerHTML = RATING_QUESTIONS.map((question) => {
-      const selectedValue = Number(draft.scores?.[question.key] || 0);
-      const selectedCopy = isValidRatingScore(selectedValue)
-        ? `${formatRatingScore(selectedValue)} / 5 stars selected`
-        : "Tap a star. Half stars work too.";
+      const selectedRawValue = draft.scores?.[question.key];
+      const selectedValue =
+        selectedRawValue === undefined || selectedRawValue === null || selectedRawValue === ""
+          ? null
+          : Number(selectedRawValue);
+      const selectedGrade = isValidClubRating(selectedValue) ? selectedValue : null;
+      const sliderValue = sliderDisplayValue(selectedValue);
 
       return `
         <section class="submission-rating-question">
@@ -1536,32 +1950,41 @@ document.addEventListener("DOMContentLoaded", () => {
             <strong>${escapeHtml(question.label)}</strong>
             <span>${escapeHtml(question.hint)}</span>
           </div>
-          <div class="submission-rating-scale" role="group" aria-label="${escapeHtml(question.label)}">
-            <div class="submission-star-interaction">
-              <div class="submission-star-strip" aria-hidden="true">
-                <span class="submission-star-track">★★★★★</span>
-                <span class="submission-star-fill" style="width: ${ratingFillPercent(selectedValue)};">★★★★★</span>
-              </div>
-              <div class="submission-star-hit-targets">
-              ${[0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]
-                .map(
-                  (value) => `
-                    <button
-                      class="submission-star-step ${sameRatingScore(selectedValue, value) ? "active" : ""}"
-                      type="button"
-                      data-rating-question="${escapeHtml(question.key)}"
-                      data-rating-score="${escapeHtml(value)}"
-                      aria-pressed="${sameRatingScore(selectedValue, value) ? "true" : "false"}"
-                      aria-label="${escapeHtml(`${formatRatingScore(value)} stars`)}"
-                      title="${escapeHtml(`${formatRatingScore(value)} stars`)}"
-                    ></button>
-                  `
-                )
-                .join("")}
-              </div>
+          <div class="submission-rating-slider-shell ${selectedGrade === null ? "is-pristine" : ""}" role="group" aria-label="${escapeHtml(question.label)}">
+            <div class="submission-rating-slider-header">
+              <strong data-rating-selection-copy>${escapeHtml(ratingSummaryText(selectedValue, selectedGrade))}</strong>
+              <span data-rating-selection-grade>${escapeHtml(ratingSummaryMeta(selectedValue, selectedGrade))}</span>
             </div>
-            <div class="submission-star-caption">${escapeHtml(selectedCopy)}</div>
+            <label class="submission-rating-slider-field">
+              <span class="sr-only">${escapeHtml(question.label)}</span>
+                <input
+                  class="submission-rating-slider-input"
+                  type="range"
+                  min="0"
+                  max="99"
+                  step="1"
+                  value="${escapeHtml(String(sliderValue))}"
+                  data-rating-slider="${escapeHtml(question.key)}"
+                  aria-label="${escapeHtml(question.label)}"
+                style="--rating-progress: ${escapeHtml(ratingSliderPercent(selectedValue))};"
+              />
+            </label>
+            <div class="submission-rating-slider-extremes" aria-hidden="true">
+              <span>0</span>
+              <span>99</span>
+            </div>
           </div>
+          ${
+            question.key === "club_rating"
+              ? `
+                <div class="submission-rating-grade-card">
+                  <span class="submission-grade-eyebrow">Game read</span>
+                  <strong data-rating-readout-label>${escapeHtml(matchGradeLabel(selectedGrade))}</strong>
+                  <span data-rating-readout-copy>${escapeHtml(matchGradeCopy(selectedGrade))}</span>
+                </div>
+              `
+              : ""
+          }
         </section>
       `;
     }).join("");
@@ -1582,10 +2005,14 @@ document.addEventListener("DOMContentLoaded", () => {
     ratingSavedCount.textContent = String(savedCount);
     ratingProgressPill.textContent = player ? `${savedCount} / ${targets.length}` : "0 / 0";
     ratingProgressCopy.textContent = !player
-      ? "Choose your name to open the queue."
+      ? "Choose your name to open the rating queue."
       : targets.length
-        ? `${savedCount} of ${targets.length} ratings saved.`
+        ? `${savedCount} of ${targets.length} teammate ratings saved.`
         : "No teammate queue is available yet.";
+    ratingLiveGrade.textContent = "--";
+    ratingLiveGradeCopy.textContent = "Slide to set the club rating.";
+    ratingGradeNumber.textContent = "--";
+    ratingGradeLabel.textContent = "Slide to preview the live game read.";
 
     if (!player || !matchday) {
       ratingTargets.innerHTML = '<div class="empty-state">Choose your name first.</div>';
@@ -1625,6 +2052,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const target = targets.find((entry) => Number(entry.id) === Number(selectedRateeId));
     const submissionState = matchdayWindowState(matchday);
     const saveEnabled = ratingTablesReady && submissionState.ratingsOpen && Boolean(target);
+    const draft = ratingDraftFor(selectedRateeId);
+    const selectedRawValue = draft?.scores?.club_rating;
+    const selectedValue =
+      selectedRawValue === undefined || selectedRawValue === null || selectedRawValue === ""
+        ? null
+        : Number(selectedRawValue);
+    const liveGrade = isValidClubRating(selectedValue) ? selectedValue : null;
 
     if (!target) {
       ratingForm.hidden = true;
@@ -1635,84 +2069,148 @@ document.addEventListener("DOMContentLoaded", () => {
 
     ratingsEmpty.hidden = true;
     ratingForm.hidden = false;
-    ratingRelationship.textContent = "Teammate";
     ratingName.textContent = playerDisplayName(target);
     ratingProgressLine.textContent = targets.length
-      ? `${savedCount} of ${targets.length} ratings saved.`
+      ? `${savedCount} of ${targets.length} ratings saved${liveGrade !== null ? ` · ${liveGrade} / 99 live` : ""}.`
       : "No queue yet.";
     ratingTeamPill.className = `team-badge ${escapeHtml(teamClassName(target.team_code))}`;
     ratingTeamPill.textContent = formatTeamLabel(target.team_code);
-    ratingsCopy.textContent = "Give each teammate one overall star rating from 0.5 to 5.";
+    ratingsCopy.textContent = "Hand out one overall rating per teammate. You can submit ratings even if you skipped stats, and they stay open for up to one week after kickoff.";
     saveRatingButton.disabled = !saveEnabled;
     nextRatingButton.disabled = !targets.length;
+    ratingLiveGrade.textContent = liveGrade !== null ? String(liveGrade) : "--";
+    ratingLiveGradeCopy.textContent = liveGrade !== null
+      ? `${formatClubRating(selectedValue)} / 99 · ${matchGradeLabel(liveGrade)}`
+      : "Slide to set the club rating.";
+    ratingGradeNumber.textContent = liveGrade !== null ? String(liveGrade) : "--";
+    ratingGradeLabel.textContent = liveGrade !== null ? matchGradeCopy(liveGrade) : "Slide to preview the live game read.";
     ratingNote.textContent = !ratingTablesReady
       ? "Live rating saving is not switched on yet."
       : previewMode
         ? "Open access is on right now so busses can test the full report flow."
         : submissionState.ratingsOpen
-          ? `Ratings stay open until ${formatLongDate(submissionState.ratingsCloseAt)}.`
+          ? `Ratings stay open until ${formatLongDate(submissionState.ratingsCloseAt)}, even if you never saved stats.`
           : "Ratings are not open for this matchday right now.";
 
     renderRatingQuestions();
+  }
+
+  function syncRatingScorePresentation(score) {
+    const liveGrade = isValidClubRating(score) ? score : null;
+    const questionNode = ratingQuestionList.querySelector(".submission-rating-question");
+    const sliderInput = questionNode?.querySelector("[data-rating-slider]");
+    const sliderShell = questionNode?.querySelector(".submission-rating-slider-shell");
+    const selectionCopy = questionNode?.querySelector("[data-rating-selection-copy]");
+    const selectionGrade = questionNode?.querySelector("[data-rating-selection-grade]");
+    const readoutLabel = questionNode?.querySelector("[data-rating-readout-label]");
+    const readoutCopy = questionNode?.querySelector("[data-rating-readout-copy]");
+    const player = selectedPlayer();
+    const targets = ratingTargetsForPlayer(player);
+    const savedCount = ratingRowsForPlayer(player?.id).length;
+
+    if (sliderInput) {
+      sliderInput.value = String(sliderDisplayValue(score));
+      sliderInput.style.setProperty("--rating-progress", ratingSliderPercent(score));
+    }
+
+    sliderShell?.classList.toggle("is-pristine", liveGrade === null);
+
+    if (selectionCopy) {
+      selectionCopy.textContent = ratingSummaryText(score, liveGrade);
+    }
+    if (selectionGrade) {
+      selectionGrade.textContent = ratingSummaryMeta(score, liveGrade);
+    }
+    if (readoutLabel) {
+      readoutLabel.textContent = matchGradeLabel(liveGrade);
+    }
+    if (readoutCopy) {
+      readoutCopy.textContent = matchGradeCopy(liveGrade);
+    }
+
+    ratingLiveGrade.textContent = liveGrade !== null ? String(liveGrade) : "--";
+    ratingLiveGradeCopy.textContent = liveGrade !== null
+      ? `${formatClubRating(score)} / 99 · ${matchGradeLabel(liveGrade)}`
+      : "Slide to set the club rating.";
+    ratingGradeNumber.textContent = liveGrade !== null ? String(liveGrade) : "--";
+    ratingGradeLabel.textContent = liveGrade !== null ? matchGradeCopy(liveGrade) : "Slide to preview the live game read.";
+    ratingProgressLine.textContent = targets.length
+      ? `${savedCount} of ${targets.length} ratings saved${liveGrade !== null ? ` · ${liveGrade} / 99 live` : ""}.`
+      : "No queue yet.";
   }
 
   function renderWindowState() {
     const matchday = selectedMatchday();
 
     if (!matchday) {
-      reportTitle.textContent = previewMode ? "Busses Report Preview" : "Matchday Report";
+      reportTitle.textContent = previewMode ? "Busses Night Desk Preview" : "Night Desk";
       windowNote.textContent = previewMode
         ? "Choose a completed night to inspect the report flow."
-        : "Open a matchday from Fixtures to enter a player report.";
+        : "Open a matchday from Fixtures to enter the night desk.";
       return;
     }
 
     const state = matchdayWindowState(matchday);
-    reportTitle.textContent = previewMode ? "Busses Report Preview" : "Matchday Report";
+    reportTitle.textContent = previewMode ? "Busses Night Desk Preview" : "Night Desk";
     windowNote.textContent = (!statTablesReady || !ratingTablesReady)
-      ? "Player reports are open in view mode while live saving is being switched on."
+      ? "The night desk is open in view mode while live saving is being switched on."
       : previewMode
-        ? "Open access is on right now so busses can test the full player report flow."
+        ? "Open access is on right now so busses can test the full night-report flow."
         : state.statsOpen && state.ratingsOpen
           ? `Stats and ratings are open right now. Stats close ${formatLongDate(state.statsCloseAt)} and ratings close ${formatLongDate(state.ratingsCloseAt)}.`
         : state.ratingsOpen
-          ? `Stat entry is closed. Ratings stay open until ${formatLongDate(state.ratingsCloseAt)}.`
+          ? `Stat entry is closed. Ratings stay open until ${formatLongDate(state.ratingsCloseAt)} whether or not stats were submitted.`
           : "This matchday is closed.";
   }
 
   function updateHeaderCopy() {
     const matchday = selectedMatchday();
     const viewingSuggestions = activeSubmissionView === "suggestions";
+    const viewingRatings = activeSubmissionView === "ratings";
 
     if (pageLabel) {
       pageLabel.textContent = viewingSuggestions
-        ? "Club · Suggestions"
-        : "Fixtures · Matchday report";
+        ? "Match Centre · Club board"
+        : viewingRatings
+          ? "Match Centre · Teammate ratings"
+          : "Match Centre · Night report";
     }
 
     if (pageTitle) {
-      pageTitle.textContent = viewingSuggestions ? "Suggestions" : "Player Report";
+      pageTitle.textContent = viewingSuggestions
+        ? "Club Board"
+        : viewingRatings
+          ? "Teammate Ratings"
+          : "Night Report";
     }
 
     document.title = viewingSuggestions
-      ? "Club · Suggestions"
-      : "Match Centre · Report";
+      ? "Match Centre · Club Board"
+      : viewingRatings
+        ? "Match Centre · Teammate Ratings"
+        : "Match Centre · Night Report";
 
     heroCopy.textContent = previewMode
       ? viewingSuggestions
         ? "Choose a completed night, pick your name first, then test suggestion posts, replies, and likes."
-        : "Choose a completed night, pick your name first, then test stats and ratings independently."
+        : viewingRatings
+          ? "Choose a completed night, pick your name first, then test teammate ratings with the live club rating."
+          : "Choose a completed night, pick your name first, then test a full night report with stats and teammate ratings."
       : matchday
         ? viewingSuggestions
           ? "Choose your name first, then use the suggestion board to raise ideas, reply to threads, or like the notes that matter."
-          : "Choose your name first. Your team and scores load automatically, then save stats or rate players in whichever order you need."
+          : viewingRatings
+            ? "Open your match card first, then move through teammate ratings with a live 0-to-99 club rating."
+            : "Open your match card first. Your team and scores load automatically, then lock your stat line or swing straight into teammate ratings."
         : viewingSuggestions
           ? "Open a matchday from Fixtures, then choose your name to post or reply on the suggestion board."
-          : "Open a matchday from Fixtures, then choose your name to submit stats or ratings.";
+          : viewingRatings
+            ? "Open a matchday from Fixtures, then choose your name to hand out teammate ratings."
+            : "Open a matchday from Fixtures, then choose your name to open the full night report.";
 
     playerCopy.textContent = previewMode
-      ? "Open the report by choosing your name from the players who appeared on this saved matchday."
-      : "Open the report by choosing your name from the players who were on the field for this matchday.";
+      ? "Open the desk by choosing your name from the players who appeared on this saved matchday."
+      : "Open the desk by choosing your name from the players who were on the field for this matchday.";
 
     seasonField.hidden = !previewMode;
     matchdayField.hidden = !previewMode;
@@ -1729,18 +2227,21 @@ document.addEventListener("DOMContentLoaded", () => {
     renderStatsForm();
     renderRatings();
     renderSuggestions();
+    renderCompletionCard();
     renderWindowState();
     updateHeaderCopy();
     setSubmissionView(activeSubmissionView, { updateHistory: false });
+    syncSubmissionWizard();
 
     const scheduleHref = activeSeasonId ? `./schedule.html?season_id=${activeSeasonId}` : "./schedule.html";
     scheduleLink.href = scheduleHref;
   }
 
   async function loadSeason() {
-    setStatus("Loading player report...");
+    setStatus("Loading night desk...");
 
     try {
+      playerSelectionFallbackNote = "";
       const bundle = await fetchSeasonBundle(activeSeasonId);
       matchdayWindowMap = await fetchMatchdayWindows(activeSeasonId);
       activeBundle = mergeMatchdayWindows(bundle);
@@ -1748,6 +2249,27 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!(activeBundle?.matchdays || []).some((row) => Number(row.id) === Number(selectedMatchdayId))) {
         const activeMatchday = newestLiveWindowMatchday(activeBundle?.matchdays || []);
         selectedMatchdayId = activeMatchday?.id || defaultMatchdayId(activeBundle);
+      }
+
+      if (!previewMode && !playersForMatchday(selectedMatchdayId).length) {
+        const fallbackMatchdayId = latestSelectableMatchdayId(activeBundle);
+        if (fallbackMatchdayId && Number(fallbackMatchdayId) !== Number(selectedMatchdayId)) {
+          selectedMatchdayId = fallbackMatchdayId;
+          playerSelectionFallbackNote =
+            "The report jumped to the latest matchday that is open for player selection.";
+        }
+      }
+
+      if (!previewMode && !playersForMatchday(selectedMatchdayId).length) {
+        const activeRef = await detectActiveMatchdayRef();
+        if (activeRef && (activeRef.seasonId !== activeSeasonId || activeRef.matchdayId !== selectedMatchdayId)) {
+          activeSeasonId = activeRef.seasonId;
+          selectedMatchdayId = activeRef.matchdayId;
+          renderSeasonOptions();
+          await loadSeason();
+          setStatus("The report jumped to the latest matchday that is open for player selection.", "warning");
+          return;
+        }
       }
 
       await Promise.all([loadSubmissionsForMatchday(), loadDiscussionForMatchday()]);
@@ -1771,7 +2293,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       selectedRateeId = null;
       renderAll();
-      {
+      if (playerSelectionFallbackNote) {
+        setStatus(playerSelectionFallbackNote, "warning");
+      } else {
         const statusState = loadedStatusState();
         setStatus(statusState.message, statusState.tone);
       }
@@ -1834,7 +2358,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const submissionState = matchdayWindowState(matchday);
     if (!submissionState.statsOpen) {
-      setStatus("The player report window is not open for this matchday right now.", "warning");
+      setStatus("The stat window is not open for this matchday right now.", "warning");
       return;
     }
 
@@ -1872,7 +2396,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       await loadSubmissionsForMatchday();
       renderAll();
-      setStatus("Your player report stats have been saved.", "success");
+      setStatus("Your stat line has been saved.", "success");
     } catch (error) {
       setStatus(readableSubmissionError(error), "error");
     } finally {
@@ -1906,8 +2430,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const missingQuestions = RATING_QUESTIONS.filter((question) => {
-      const value = Number(draft.scores?.[question.key] || 0);
-      return !isValidRatingScore(value);
+      const rawValue = draft.scores?.[question.key];
+      const value =
+        rawValue === undefined || rawValue === null || rawValue === ""
+          ? null
+          : Number(rawValue);
+      return !isValidClubRating(value);
     });
 
     if (missingQuestions.length) {
@@ -1917,7 +2445,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       saveRatingButton.disabled = true;
-      saveRatingButton.textContent = "Saving...";
+      saveRatingButton.textContent = "Saving rating...";
 
       const { error } = await supabaseClient
         .from("matchday_player_ratings")
@@ -2168,26 +2696,34 @@ document.addEventListener("DOMContentLoaded", () => {
     renderAll();
   });
 
-  ratingQuestionList.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-rating-question]");
-    if (!button || !selectedRateeId) {
+  function handleRatingScoreChange(input) {
+    if (!input || !selectedRateeId) {
       return;
     }
 
-    const question = button.dataset.ratingQuestion;
-    const score = Number(button.dataset.ratingScore);
+    const question = input.dataset.ratingSlider;
+    const score = Math.round(Number(input.value || 0));
     const draft = ratingDraftFor(selectedRateeId);
 
-    if (!draft) {
+    if (!draft || !question) {
       return;
     }
 
     draft.scores = {
       ...(draft.scores || {}),
       [question]: score,
+      overall: clubRatingToLegacyScore(score),
     };
     ratingDrafts.set(selectedRateeId, draft);
-    renderRatingQuestions();
+    syncRatingScorePresentation(score);
+  }
+
+  ratingQuestionList.addEventListener("input", (event) => {
+    handleRatingScoreChange(event.target.closest("[data-rating-slider]"));
+  });
+
+  ratingQuestionList.addEventListener("change", (event) => {
+    handleRatingScoreChange(event.target.closest("[data-rating-slider]"));
   });
 
   ratingCommentInput.addEventListener("input", () => {
@@ -2276,6 +2812,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     replyDrafts.set(Number(textarea.dataset.replyDraftId), textarea.value);
+  });
+
+  window.addEventListener("resize", () => {
+    syncSubmissionWizard();
   });
 
   async function init() {

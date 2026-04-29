@@ -38,7 +38,6 @@ const historyShell = document.getElementById("history-shell");
 let selectedRoles = [];
 let player = null;
 let historyRows = [];
-let historyExpanded = false;
 let isEditing = false;
 
 if (!window.MandarinasLogic) {
@@ -54,6 +53,7 @@ const {
   normalizeTeamDisplayConfig,
   teamDisplayLabel,
   normalizePlayerDesiredTier,
+  nationalityFlag,
 } = window.MandarinasLogic;
 
 function hasMissingDesiredTierColumn(error) {
@@ -143,12 +143,179 @@ function formatDate(value) {
   });
 }
 
+function formatBirthYear(value) {
+  if (!value) {
+    return "Not set";
+  }
+
+  const birthDate = new Date(value);
+  if (Number.isNaN(birthDate.getTime())) {
+    return "Not set";
+  }
+
+  return String(birthDate.getFullYear());
+}
+
 function formatFoot(value) {
   if (!value) {
     return "Right";
   }
 
   return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function calculateAge(value) {
+  if (!value) {
+    return null;
+  }
+
+  const birthDate = new Date(value);
+  if (Number.isNaN(birthDate.getTime())) {
+    return null;
+  }
+
+  const now = new Date();
+  let age = now.getFullYear() - birthDate.getFullYear();
+  const monthDelta = now.getMonth() - birthDate.getMonth();
+
+  if (monthDelta < 0 || (monthDelta === 0 && now.getDate() < birthDate.getDate())) {
+    age -= 1;
+  }
+
+  return age >= 0 ? age : null;
+}
+
+function playerFullName(playerRow) {
+  return normalizeText(`${playerRow?.first_name || ""} ${playerRow?.last_name || ""}`) || "Player";
+}
+
+function playerHeadlineName(playerRow) {
+  return normalizeText(playerRow?.nickname) || playerFullName(playerRow);
+}
+
+function getPositionCategory(positions) {
+  if (!positions || !positions.length) {
+    return "ATT";
+  }
+
+  const first = String(positions[0]).toUpperCase();
+  if (first.startsWith("GK")) {
+    return "GK";
+  }
+  if (first.startsWith("D")) {
+    return "DEF";
+  }
+  if (first.startsWith("M")) {
+    return "MID";
+  }
+  return "ATT";
+}
+
+function positionRoleLabel(position) {
+  const map = {
+    GK: "Goalkeeper",
+    DEF: "Defender",
+    MID: "Midfielder",
+    ATT: "Forward",
+  };
+
+  return map[position] || position || "Player";
+}
+
+function badgePositionCode(positions) {
+  const normalized = (Array.isArray(positions) ? positions : [])
+    .map((value) => normalizeText(value).toUpperCase())
+    .filter(Boolean);
+
+  if (!normalized.length) {
+    return "CM";
+  }
+
+  const codeSet = new Set(normalized);
+  if (codeSet.has("GK")) {
+    return "GK";
+  }
+  if (codeSet.has("MID") && codeSet.has("ATT")) {
+    return "AM";
+  }
+  if (codeSet.has("MID") && codeSet.has("DEF")) {
+    return "DM";
+  }
+  if (codeSet.has("ATT")) {
+    return "ST";
+  }
+  if (codeSet.has("MID")) {
+    return "CM";
+  }
+  if (codeSet.has("DEF")) {
+    return "CB";
+  }
+
+  return normalized[0];
+}
+
+function badgePositionPillsMarkup(positions) {
+  const normalized = (Array.isArray(positions) ? positions : [])
+    .map((value) => normalizeText(value).toUpperCase())
+    .filter(Boolean)
+    .slice(0, 3);
+
+  if (!normalized.length) {
+    return "";
+  }
+
+  return `
+    <div class="roster-orbit-position-row" aria-label="Player positions">
+      ${normalized
+        .map(
+          (position) =>
+            `<span class="roster-orbit-position-pill">${escapeHtml(position)}</span>`
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function badgeHeaderMarkup(playerRow) {
+  const badgeKey = `player-badge-${Number(playerRow?.id) || "player"}`;
+  const topArcId = `${badgeKey}-top-arc`;
+  const subArcId = `${badgeKey}-sub-arc`;
+
+  return `
+    <div class="roster-orbit-header" aria-hidden="true">
+      <svg class="roster-orbit-header-svg" viewBox="0 0 320 186" role="presentation">
+        <defs>
+          <path id="${topArcId}" d="M 40 134 A 120 120 0 0 1 280 134"></path>
+          <path id="${subArcId}" d="M 64 136 A 96 96 0 0 1 256 136"></path>
+        </defs>
+        <text class="roster-orbit-wordmark-svg">
+          <textPath href="#${topArcId}" startOffset="50%" text-anchor="middle">
+            MANDARINAS
+          </textPath>
+        </text>
+        <text class="roster-orbit-submark-svg">
+          <textPath href="#${subArcId}" startOffset="50%" text-anchor="middle">
+            CALIFORNIA CLUB DE FUTBOL
+          </textPath>
+        </text>
+      </svg>
+    </div>
+  `;
+}
+
+function buildHistoryBadgeStats() {
+  return (Array.isArray(historyRows) ? historyRows : []).reduce(
+    (totals, row) => ({
+      attendance: totals.attendance + (row.attendanceLabel === "IN" ? 1 : 0),
+      goals: totals.goals + Number(row.goals || 0),
+      goalKeeps: totals.goalKeeps + Number(row.goalKeeps || 0),
+    }),
+    {
+      attendance: 0,
+      goals: 0,
+      goalKeeps: 0,
+    }
+  );
 }
 
 function populateForm(playerRow) {
@@ -181,31 +348,94 @@ function renderDetail() {
 
   const positions = Array.isArray(player.positions) && player.positions.length
     ? player.positions
-    : ["MID"];
+    : [];
+  const fullName = playerFullName(player);
+  const headlineName = playerHeadlineName(player);
+  const tierLabel = formatTier(player.status);
+  const footLabel = formatFoot(player.dominant_foot);
+  const age = calculateAge(player.birth_date);
+  const birthYearLabel = formatBirthYear(player.birth_date);
+  const nationality = player.nationality || "";
+  const scoutNote = player.notes || "No scout note saved yet.";
+  const flag = nationalityFlag(player.nationality || "");
+  const badgeStats = buildHistoryBadgeStats();
+  const badgePlayer = {
+    name: headlineName || "Player",
+    nationality,
+    flag,
+    birth_date: player.birth_date,
+    age,
+    dominant_foot: player.dominant_foot,
+    overall_rating: Number.isFinite(Number(player.skill_rating)) ? Number(player.skill_rating) : 0,
+    rank: "--",
+    ppg: 0,
+    primary_position: positions[0] || normalizeText(player.primary_position || "", "N/A"),
+    position_label: positions.length
+      ? positions
+          .slice(0, 3)
+          .map((value) => normalizeText(value).toUpperCase())
+          .filter(Boolean)
+          .join(" · ")
+      : "N/A",
+    tier: player.status,
+    positions,
+  };
+  const badgeTotals = {
+    points: 0,
+    apps: badgeStats.attendance,
+    goals: badgeStats.goals,
+  };
+  const badgeMarkup = window.renderPlayerBadge
+    ? window.renderPlayerBadge(badgePlayer, badgeTotals).outerHTML
+    : "";
 
   playerViewBody.innerHTML = `
-    <div class="detail-card">
-      <div class="section-label">Identity</div>
-      <h3>${escapeHtml(`${player.first_name || ""} ${player.last_name || ""}`.trim())}</h3>
-      <ul>
-        <li>Nickname: <strong>${escapeHtml(player.nickname || "Not set")}</strong></li>
-        <li>Nationality: <strong>${escapeHtml(player.nationality || "Not set")}</strong></li>
-        <li>Birth date: <strong>${escapeHtml(formatDate(player.birth_date))}</strong></li>
-        <li>Phone: <strong>${escapeHtml(player.phone || "Not set")}</strong></li>
-      </ul>
-    </div>
-    <div class="detail-card">
-      <div class="section-label">Playing Profile</div>
-      <ul>
-        <li>Current / next-season tier: <strong>${escapeHtml(formatTier(player.status))}</strong></li>
-        <li>Preferred foot: <strong>${escapeHtml(formatFoot(player.dominant_foot))}</strong></li>
-        <li>Rating: <strong>${escapeHtml(player.skill_rating || 78)}</strong></li>
-        <li>Positions: <strong>${escapeHtml(positions.join(", "))}</strong></li>
-      </ul>
-    </div>
-    <div class="detail-card">
-      <div class="section-label">Notes</div>
-      <p>${escapeHtml(player.notes || "No notes saved.")}</p>
+    <div class="player-badge-showcase">
+      <div class="roster-player-badge player-roster-player-badge">
+        ${badgeMarkup}
+      </div>
+
+      <div class="detail-card player-badge-support">
+        <div class="section-label">Profile Breakdown</div>
+        <dl class="player-badge-fact-list">
+          <div>
+            <dt>Full name</dt>
+            <dd>${escapeHtml(fullName)}</dd>
+          </div>
+          <div>
+            <dt>Nickname</dt>
+            <dd>${escapeHtml(player.nickname || "Not set")}</dd>
+          </div>
+          <div>
+            <dt>Nationality</dt>
+            <dd>${escapeHtml(nationality)}</dd>
+          </div>
+          <div>
+            <dt>Birth year</dt>
+            <dd>${escapeHtml(birthYearLabel)}</dd>
+          </div>
+          <div>
+            <dt>Phone</dt>
+            <dd>${escapeHtml(player.phone || "Not set")}</dd>
+          </div>
+          <div>
+            <dt>Current / next-season tier</dt>
+            <dd>${escapeHtml(tierLabel)}</dd>
+          </div>
+          <div>
+            <dt>Dominant foot</dt>
+            <dd>${escapeHtml(footLabel)}</dd>
+          </div>
+          <div>
+            <dt>Positions</dt>
+            <dd>${escapeHtml(positions.join(", "))}</dd>
+          </div>
+        </dl>
+        <div class="player-crest-note">
+          <span class="player-crest-note-label">Scout Note</span>
+          <p>${escapeHtml(scoutNote)}</p>
+        </div>
+      </div>
     </div>
   `;
 }
@@ -247,6 +477,34 @@ function formatTeamBadge(teamCode, teamDisplayConfig) {
   return `<span class="team-badge ${escapeHtml(teamCode)}">${escapeHtml(label)}</span>`;
 }
 
+function historyRowMarkup(row) {
+  return `
+    <article class="timeline-item">
+      <div class="timeline-head">
+        <div>
+          <div class="timeline-title">${escapeHtml(row.seasonName)} · MD ${escapeHtml(
+            row.matchdayNumber
+          )}</div>
+          <div class="timeline-copy">${escapeHtml(row.kickoffLabel)}</div>
+        </div>
+        ${
+          row.teamCode
+            ? formatTeamBadge(row.teamCode, row.teamDisplayConfig)
+            : '<span class="timeline-copy">No team</span>'
+        }
+      </div>
+      <div class="timeline-main">
+        <div class="timeline-copy">${escapeHtml(row.attendanceLabel)}</div>
+        <div class="compact-badges">
+          ${row.goals > 0 ? `<span class="stat-pill">${escapeHtml(row.goals)} goals</span>` : ""}
+          ${row.goalKeeps > 0 ? `<span class="stat-pill">${escapeHtml(row.goalKeeps)} GK</span>` : ""}
+          ${row.cleanSheet ? '<span class="stat-pill">Clean sheet</span>' : ""}
+        </div>
+      </div>
+    </article>
+  `;
+}
+
 function renderHistory() {
   if (!historyRows.length) {
     historySummary.textContent = "0 entries";
@@ -256,64 +514,40 @@ function renderHistory() {
     return;
   }
 
-  const visibleRows = historyExpanded ? historyRows : historyRows.slice(0, 5);
+  const recentRows = historyRows.slice(0, 5);
+  const olderRows = historyRows.slice(5);
+  const olderLabel = `${olderRows.length} older entr${olderRows.length === 1 ? "y" : "ies"}`;
 
   historySummary.textContent = `${historyRows.length} entries`;
-  historyStatus.textContent = historyExpanded
-    ? "Showing full matchday history."
-    : "Showing the newest matchdays first.";
+  historyStatus.textContent = olderRows.length
+    ? "Newest matchdays stay visible. Older history opens on demand."
+    : "Showing full matchday history.";
   historyShell.innerHTML = `
     <div class="timeline-list">
-      ${visibleRows
-        .map(
-          (row) => `
-            <article class="timeline-item">
-              <div class="timeline-head">
-                <div>
-                  <div class="timeline-title">${escapeHtml(row.seasonName)} · MD ${escapeHtml(
-                    row.matchdayNumber
-                  )}</div>
-                  <div class="timeline-copy">${escapeHtml(row.kickoffLabel)}</div>
-                </div>
-                ${
-                  row.teamCode
-                    ? formatTeamBadge(row.teamCode, row.teamDisplayConfig)
-                    : '<span class="timeline-copy">No team</span>'
-                }
-              </div>
-              <div class="timeline-main">
-                <div class="timeline-copy">${escapeHtml(row.attendanceLabel)}</div>
-                <div class="compact-badges">
-                  ${row.goals > 0 ? `<span class="stat-pill">${escapeHtml(row.goals)} goals</span>` : ""}
-                  ${row.goalKeeps > 0 ? `<span class="stat-pill">${escapeHtml(row.goalKeeps)} GK</span>` : ""}
-                  ${row.cleanSheet ? '<span class="stat-pill">Clean sheet</span>' : ""}
-                </div>
-              </div>
-            </article>
-          `
-        )
-        .join("")}
+      ${recentRows.map((row) => historyRowMarkup(row)).join("")}
     </div>
     ${
-      historyRows.length > 5
+      olderRows.length
         ? `
-          <div class="actions">
-            <button class="secondary-button" type="button" id="history-toggle-button">
-              ${historyExpanded ? "Show recent only" : `Show all ${historyRows.length} entries`}
-            </button>
-          </div>
+          <details class="disclosure-card">
+            <summary class="disclosure-summary">
+              <div class="disclosure-copy">
+                <div class="disclosure-title">Older history</div>
+                <div class="manual-note">Open ${escapeHtml(
+                  olderLabel
+                )} only when you need the deeper archive.</div>
+              </div>
+            </summary>
+            <div class="disclosure-body">
+              <div class="timeline-list">
+                ${olderRows.map((row) => historyRowMarkup(row)).join("")}
+              </div>
+            </div>
+          </details>
         `
         : ""
     }
   `;
-
-  const toggleButton = document.getElementById("history-toggle-button");
-  if (toggleButton) {
-    toggleButton.addEventListener("click", () => {
-      historyExpanded = !historyExpanded;
-      renderHistory();
-    });
-  }
 }
 
 async function loadPlayerHistory() {
@@ -435,7 +669,6 @@ async function loadPlayerHistory() {
       return right.matchdayNumber - left.matchdayNumber;
     });
 
-  historyExpanded = false;
   renderHistory();
 }
 
@@ -472,6 +705,7 @@ async function loadPlayer() {
   populateForm(data);
   renderDetail();
   await loadPlayerHistory();
+  renderDetail();
   setEditMode(false);
   setStatus("Profile loaded.", "success");
 }

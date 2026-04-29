@@ -16,6 +16,7 @@ const ROTATION_LABELS = new Set([
 
 const CORE_LABELS = new Set([
   "ALEX",
+  "ALEX MENESES",
   "ANDRES",
   "ASDRUVAL",
   "CARLOS S",

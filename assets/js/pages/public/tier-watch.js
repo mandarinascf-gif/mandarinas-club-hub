@@ -10,6 +10,8 @@ document.addEventListener("DOMContentLoaded", () => {
     fullName,
     stripSubPrefix,
     formatStatusLabel,
+    tierIconMarkup,
+    trendIconMarkup,
     readableError,
     fetchSeasons,
     pickSeason,
@@ -122,13 +124,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function movementPill(trend) {
-    return `<span class="move-badge ${trendClass(trend)}">${escapeHtml(trendLabel(trend))}</span>`;
+    return `<span class="move-badge ${trendClass(trend)}">${trendIconMarkup(trend)}<span>${escapeHtml(
+      trendLabel(trend)
+    )}</span></span>`;
   }
 
   function tierPill(status) {
-    return `<span class="tier-pill ${escapeHtml(status)}">${escapeHtml(
+    return `<span class="tier-pill ${escapeHtml(status)}">${tierIconMarkup(status)}<span>${escapeHtml(
       formatStatusLabel(status)
-    )}</span>`;
+    )}</span></span>`;
   }
 
   function suggestionEvidenceText(row) {

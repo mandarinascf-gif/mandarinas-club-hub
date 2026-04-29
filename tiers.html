@@ -8,25 +8,27 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Mandarinas CF" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="manifest" href="./site.webmanifest" />
     <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png" />
-    <link rel="stylesheet" href="./assets/css/app.css?v=20260426f" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260428m" />
     <title>Busses · Planner</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/js/core/club_logic.js"></script>
     <script src="./assets/js/core/supabase_config.js"></script>
-    <script src="./assets/js/ui/shell.js?v=20260426h"></script>
+    <script src="./assets/js/core/runtime_config.js?v=20260427a"></script>
+    <script src="./assets/js/ui/shell.js?v=20260427a"></script>
   </head>
-  <body class="manager-touch">
+  <body class="manager-touch admin-app page-tiers">
     <nav class="site-nav">
       <div class="site-nav-inner">
         <a href="./squad.html" class="site-logo"><span class="logo-dot"></span><span>Mandarinas <span class="logo-accent">CF</span></span></a>
         <div class="nav-links">
-          <a class="nav-link" href="./squad.html">Directory</a>
-          <a class="nav-link" href="./seasons.html">Season</a>
+          <a class="nav-link" href="./seasons.html">Seasons</a>
           <a class="nav-link" href="./matchday.html">Matchday</a>
-          <a class="nav-link active" href="./tiers.html">Planner</a>
+          <a class="nav-link" href="./squad.html">Squad</a>
+          <a class="nav-link" href="./standings.html">Standings</a>
+          <a class="nav-link active" href="./tiers.html">Tiers</a>
+          <a class="nav-link nav-link-extra" href="./setup.html">Setup</a>
         </div>
         <a href="./home.html" class="nav-mode-badge">Club</a>
       </div>
@@ -35,7 +37,7 @@
       <section class="panel page-header">
         <div class="page-header-main">
           <div class="section-label">Busses · Planner</div>
-          <h1>Pathway Planner</h1>
+          <h1>Tier workspace</h1>
           <p id="hero-copy">
             This page keeps the live queue separate from the future recommendation plan. Read the queue
             first, then review recommended changes.

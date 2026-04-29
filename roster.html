@@ -8,18 +8,17 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Mandarinas CF" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="manifest" href="./site.webmanifest" />
     <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png" />
-    <link rel="stylesheet" href="./assets/css/app.css?v=20260426g" />
-    <title>Club · Squad</title>
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260428ai" />
+    <title>Club · Season Squad</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/js/core/club_logic.js"></script>
     <script src="./assets/js/core/supabase_config.js"></script>
     <script src="./assets/js/core/app.js?v=20260425b" defer></script>
     <script src="./assets/js/ui/shell.js?v=20260426h" defer></script>
   </head>
-  <body class="manager-touch">
+  <body class="manager-touch public-app page-roster">
     <nav class="site-nav">
       <div class="site-nav-inner">
         <a href="./home.html" class="site-logo">
@@ -40,16 +39,16 @@
     <main class="page">
       <section class="panel page-header">
         <div class="page-header-main">
-          <div class="section-label">Club · Squad</div>
-          <h1>Squad</h1>
-          <p>Start with the list. Select a player to open the full detail panel.</p>
+          <div class="section-label">Club · Season Squad</div>
+          <h1>Season Squad</h1>
+          <p>Start with the live season squad list. This page only shows the selected season's active season squad, not the full club register.</p>
           <div class="field">
             <label for="season-select">Season</label>
             <select id="season-select"></select>
           </div>
         </div>
         <div class="actions">
-          <a class="primary-button" href="#player-list-panel">Open squad</a>
+          <a class="primary-button" href="#player-list-panel">Open season squad</a>
           <a class="secondary-button" href="./tier_system.html">How tiers work</a>
           <a class="secondary-button" href="./public_standings.html">Open standings</a>
         </div>
@@ -57,12 +56,12 @@
 
       <section class="panel">
         <div class="section-label">Overview</div>
-        <h2>Squad Snapshot</h2>
+        <h2>Season Squad Snapshot</h2>
         <div class="summary-grid">
           <div class="summary-card">
             <span>Players</span>
             <strong id="total-players">0</strong>
-            <span class="summary-copy">Current active roster</span>
+            <span class="summary-copy">Selected season squad</span>
           </div>
           <div class="summary-card">
             <span>Rotation tier players</span>
@@ -77,7 +76,7 @@
           <div class="summary-card">
             <span>Season</span>
             <strong id="season-name">-</strong>
-            <span class="summary-copy">Selected live roster</span>
+            <span class="summary-copy">Selected live season squad</span>
           </div>
         </div>
       </section>
@@ -85,10 +84,10 @@
       <section class="master-detail">
         <section class="panel master-panel" id="player-list-panel">
           <div class="section-label">List</div>
-          <h2>Squad List</h2>
+          <h2>Season Squad List</h2>
 
           <div class="field">
-            <label for="roster-search">Search roster</label>
+            <label for="roster-search">Search season squad</label>
             <input
               id="roster-search"
               type="search"
@@ -117,7 +116,7 @@
           </div>
 
           <div class="status-line" id="status-line">
-            <span id="status-text">Loading the roster...</span>
+            <span id="status-text">Loading the season squad...</span>
           </div>
           <div id="player-list" class="roster-grid"></div>
         </section>
@@ -135,11 +134,11 @@
 
       <section class="panel">
         <div class="section-label">Join</div>
-        <h2>Need to join this squad?</h2>
+        <h2>Need to join this season squad?</h2>
         <p id="roster-request-copy">
-          If you are already in the main directory, send a season squad request here. If you are
-          not in the main directory yet, send a directory request first. A busses admin must
-          approve either request before you appear on the live squad.
+          If you are already in the full squad register, send a season squad request here. If you are
+          not in the full squad register yet, send a full squad request first. A busses admin must
+          approve either request before you appear on the live season squad.
         </p>
 
         <div class="status-line" id="roster-request-status" hidden></div>
@@ -147,11 +146,11 @@
         <div class="field-grid">
           <form id="roster-existing-request-form">
             <fieldset>
-              <legend>Already in the main directory</legend>
+              <legend>Already in the full squad register</legend>
               <div class="field">
-                <label for="roster-request-directory-player">Choose your directory profile</label>
+                <label for="roster-request-directory-player">Choose your full-squad profile</label>
                 <select id="roster-request-directory-player">
-                  <option value="">Select your name from the main directory</option>
+                  <option value="">Select your name from the full squad</option>
                 </select>
               </div>
               <div class="field">
@@ -189,7 +188,7 @@
 
           <form id="roster-new-request-form">
             <fieldset>
-              <legend>Not in the main directory yet</legend>
+              <legend>Not in the full squad register yet</legend>
               <div class="field-grid">
                 <div class="field">
                   <label for="roster-request-first-name">First name</label>
@@ -240,12 +239,12 @@
                 <textarea
                   id="roster-request-note"
                   maxlength="240"
-                  placeholder="Anything the admin should know before adding you to the directory"
+                  placeholder="Anything the admin should know before adding you to the full squad"
                 ></textarea>
               </div>
               <div class="actions">
                 <button class="primary-button" type="submit" id="roster-request-new-button">
-                  Request directory + season review
+                  Request full squad + season review
                 </button>
               </div>
             </fieldset>
@@ -258,6 +257,7 @@
       <div class="club-footer-copy">Club · Squad</div>
     </footer>
 
-    <script src="./assets/js/pages/public/roster.js?v=20260426f"></script>
+    <script src="./assets/js/ui/player_badge.js?v=20260428h"></script>
+    <script src="./assets/js/pages/public/roster.js?v=20260428m"></script>
   </body>
 </html>

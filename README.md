@@ -32,6 +32,11 @@ The browser app reads Supabase config from:
 
 For local env reference, see `.env.example`.
 
+The busses gate reads from `window.__MANDARINAS_APP_CONFIG__` first. For this static site, the
+default local source of truth is `assets/js/core/runtime_config.js`, where `adminCode` is defined
+in one place. `window.__MANDARINAS_SUPABASE_CONFIG__`, `ADMIN_CODE`, and `NEXT_PUBLIC_ADMIN_CODE`
+are still accepted as fallback override keys. If no override is present, it falls back to `1234`.
+
 ## Current caveats
 
 - Busses access is currently a client-side code gate, not real authentication.

@@ -13,6 +13,8 @@ document.addEventListener("DOMContentLoaded", () => {
     playerNameParts,
     formatDateTime,
     formatStatusLabel,
+    badgeIconMarkup,
+    tierIconMarkup,
     formatTeamLabel,
     teamClassName,
     readableError,
@@ -136,6 +138,12 @@ document.addEventListener("DOMContentLoaded", () => {
     mvpSubtitle.textContent = `${standing.total_points} pts · ${standing.goals} goals · ${standing.days_attended} attended`;
     mvpBody.innerHTML = `
       <div class="detail-card">
+        <div class="spotlight-badge-row">
+          <span class="champion-card-badge">${badgeIconMarkup("winner")}<span>Winner</span></span>
+          <span class="tier-pill ${escapeHtml(standing.player.status)}">${tierIconMarkup(standing.player.status)}<span>${escapeHtml(
+            formatStatusLabel(standing.player.status)
+          )}</span></span>
+        </div>
         <ul>
           <li>Points per game: <strong>${escapeHtml(Number(standing.points_per_game || 0).toFixed(2))}</strong></li>
           <li>Record: <strong>${escapeHtml(`${standing.wins}-${standing.draws}-${standing.losses}`)}</strong></li>
@@ -292,8 +300,8 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
             <div class="champion-card-body">
               <div class="champion-card-meta">
-                <span class="champion-card-badge">${escapeHtml(seasonBadgeLabel(season.name))}</span>
-                <span class="champion-card-season">${escapeHtml(art.label)}</span>
+                <span class="champion-card-badge">${badgeIconMarkup("winner")}<span>Winner</span></span>
+                <span class="champion-card-season">${escapeHtml(`${art.label} '${seasonBadgeLabel(season.name)}`)}</span>
               </div>
               <div class="champion-card-name">${escapeHtml(nameParts.primary || playerDisplayName(winner.player))}</div>
               <div class="champion-card-copy">${escapeHtml(season.name)}</div>

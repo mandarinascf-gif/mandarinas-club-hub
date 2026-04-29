@@ -56,6 +56,7 @@
       const openSeasonMatchdayButton = document.getElementById("open-season-matchday-button");
       const matchdayLauncherNote = document.getElementById("matchday-launcher-note");
       const playerSearch = document.getElementById("player-search");
+      const playerTierFilter = document.getElementById("player-tier-filter");
       const openPlayerStatsLink = document.getElementById("open-player-stats-link");
       const replacementPlayerSelect = document.getElementById("replacement-player-select");
       const replacementTierStatusSelect = document.getElementById("replacement-tier-status");
@@ -73,6 +74,8 @@
       const goalKeepPointsInput = document.getElementById("goal-keep-points");
       const teamGoalPointsInput = document.getElementById("team-goal-points");
       const saveScoringButton = document.getElementById("save-scoring-button");
+      const rosterViewTriggers = Array.from(document.querySelectorAll("[data-roster-view-trigger]"));
+      const rosterViewPanes = Array.from(document.querySelectorAll("[data-roster-view]"));
       const teamDisplayGrid = document.getElementById("team-display-grid");
       const resetTeamDisplayButton = document.getElementById("reset-team-display-button");
       const saveTeamDisplayButton = document.getElementById("save-team-display-button");
@@ -108,7 +111,10 @@
       let tierMetricsByPlayerId = new Map();
       let rotationStandingsByPlayerId = new Map();
       let activeRotationQueueMode = "regular";
+      let activeRosterView = "season";
+      let activeTeamWorkspaceView = "pool";
       let rosterPlan = null;
+      let rosterDisplayPlan = null;
       let draggedPlayerId = null;
       let draggedCard = null;
       let launcherSeasons = [];
@@ -331,8 +337,27 @@
 
       function showDashboardTabOnly() {}
 
+      function setRosterView(view) {
+        const nextView = view === "matchday" ? "matchday" : "season";
+        activeRosterView = nextView;
+
+        rosterViewPanes.forEach((pane) => {
+          const isActive = pane.dataset.rosterView === nextView;
+          pane.hidden = !isActive;
+        });
+
+        rosterViewTriggers.forEach((button) => {
+          const isActive = button.dataset.rosterViewTrigger === nextView;
+          button.classList.toggle("active", isActive);
+          button.setAttribute("aria-selected", String(isActive));
+        });
+      }
+
       function setMatchdayUiLocked(locked) {
         playerSearch.disabled = locked;
+        if (playerTierFilter) {
+          playerTierFilter.disabled = locked;
+        }
         replacementPlayerSelect.disabled = locked;
         replacementTierStatusSelect.disabled = locked;
         replacementAttendanceStatusSelect.disabled = locked;
@@ -345,6 +370,9 @@
         goalKeepPointsInput.disabled = locked;
         teamGoalPointsInput.disabled = locked;
         saveScoringButton.disabled = locked;
+        rosterViewTriggers.forEach((button) => {
+          button.disabled = locked;
+        });
         teamDisplayGrid.querySelectorAll("input").forEach((input) => {
           input.disabled = locked || !teamDisplaySupported;
         });
@@ -402,12 +430,12 @@
           ${
             inactiveSeasonPlayers.length
               ? `
-                <optgroup label="Inactive season roster">
+                <optgroup label="Inactive season squad">
                   ${inactiveSeasonPlayers
                     .map(
                       (row) =>
                         `<option value="season:${row.id}">${escapeHtml(displayName(row.player))} · ${escapeHtml(
-                          row.player.nationality || "Season roster"
+                          row.player.nationality || "Season squad"
                         )} · ${escapeHtml(formatStatusLabel(row.tier_status))} · Inactive</option>`
                     )
                     .join("")}
@@ -423,7 +451,7 @@
                     .map(
                       (player) =>
                         `<option value="directory:${player.id}">${escapeHtml(displayName(player))} · ${escapeHtml(
-                          player.nationality || "Squad player"
+                          player.nationality || "Full squad player"
                         )} · current/next-season ${escapeHtml(
                           player.status === "flex_sub" ? "Flex/Sub" : formatStatusLabel(player.status)
                         )}</option>`
@@ -443,15 +471,15 @@
         replacementAddButton.disabled = !hasChoices;
 
         if (!hasChoices) {
-          replacementNote.textContent = "Every squad player is already on this season roster and no inactive season player needs reactivation. Use the availability list below for late swaps.";
+          replacementNote.textContent = "Every full-squad player is already on this season squad and no inactive season player needs reactivation. Use the availability list below for late swaps.";
         } else if (inactiveSeasonPlayers.length && addablePlayers.length) {
-          replacementNote.textContent = "Choose an inactive season player to reactivate, or add a new squad player into this season before team assignment.";
+          replacementNote.textContent = "Choose an inactive season player to reactivate, or add a new full-squad player into this season before team assignment.";
         } else if (inactiveSeasonPlayers.length) {
           replacementNote.textContent = "Choose an inactive season player to reactivate for this matchday, then continue with attendance and team assignment.";
         } else if (!seasonRosterMetadataSupported) {
           replacementNote.textContent = "Late additions still work. Extra signup fields are still in basic mode on this club build.";
         } else {
-          replacementNote.textContent = "Add the replacement to this season. The default this season tier comes from the Squad page current / next-season tier.";
+          replacementNote.textContent = "Add the replacement to this season. The default this season tier comes from the Full Squad current / next-season tier.";
         }
 
         syncReplacementDefaults();
@@ -663,9 +691,9 @@
         matchdayLauncherBlock.hidden = false;
         setMatchdayUiLocked(true);
         heroCopy.textContent =
-          "Choose a campaign first. Match Centre opens the next incomplete night for that season and only uses that season's active squad.";
+          "Choose a campaign first. Match Centre opens the next incomplete night for that season and only uses that season's active season squad.";
         matchdayInfoCopy.textContent =
-          "Choose the campaign you want to run. If it already has matchdays, this page takes you directly to the right one. Only players already added to that season squad will load into Match Centre.";
+          "Choose the campaign you want to run. If it already has matchdays, this page takes you directly to the right one. Only players already added to that season squad, not just the full squad register, will load into Match Centre.";
         renderReplacementTools();
         void syncMatchdayWeather(null);
         if (openPlayerStatsLink) {
@@ -831,6 +859,60 @@
         return displayName(left).localeCompare(displayName(right));
       }
 
+      function playerOriginLabel(player) {
+        return normalizeText(player.nationality || "") || "Unknown";
+      }
+
+      function rosterPlanRow(playerId) {
+        return rosterPlan?.byPlayerId.get(playerId) || null;
+      }
+
+      function rosterDisplayRow(playerId) {
+        return rosterDisplayPlan?.byPlayerId.get(playerId) || null;
+      }
+
+      function formatPlanBadgeLabel(row) {
+        if (!row) {
+          return "";
+        }
+
+        if (row.bucket === "rotation") {
+          return `Rotation #${row.queuePosition}`;
+        }
+
+        if (row.bucket === "depth") {
+          return `${formatStatusLabel(row.player.status)} #${row.queuePosition}`;
+        }
+
+        return `Core #${row.queuePosition}`;
+      }
+
+      function formatPlanQueueState(row) {
+        if (!row) {
+          return "";
+        }
+
+        if (row.selected) {
+          return "Priority in";
+        }
+
+        return row.bucket === "rotation" ? "Next up" : "Waiting";
+      }
+
+      function priorityStatSummary(player, row = rosterPlanRow(player.id)) {
+        const metrics = priorityMetrics(player.id);
+        const standingMetrics = rotationStandingsMetrics(player.id);
+        const usesStandingsPoints =
+          (row?.bucket === "rotation" || player.status === "rotation") &&
+          activeRotationQueueMode === "final";
+
+        return {
+          label: usesStandingsPoints ? "Pts" : "Score",
+          value: usesStandingsPoints ? Number(standingMetrics.total_points || 0) : metrics.attendance_score,
+          metrics,
+        };
+      }
+
       function compareByRosterPlan(left, right) {
         const leftPlan = rosterPlan?.byPlayerId.get(left.id);
         const rightPlan = rosterPlan?.byPlayerId.get(right.id);
@@ -844,6 +926,29 @@
         }
 
         if (!leftPlan && rightPlan) {
+          return 1;
+        }
+
+        if (priorityWeight(left.status) !== priorityWeight(right.status)) {
+          return priorityWeight(left.status) - priorityWeight(right.status);
+        }
+
+        return compareNames(left, right);
+      }
+
+      function compareByRosterDisplay(left, right) {
+        const leftRow = rosterDisplayRow(left.id);
+        const rightRow = rosterDisplayRow(right.id);
+
+        if (leftRow && rightRow && leftRow.order !== rightRow.order) {
+          return leftRow.order - rightRow.order;
+        }
+
+        if (leftRow && !rightRow) {
+          return -1;
+        }
+
+        if (!leftRow && rightRow) {
           return 1;
         }
 
@@ -974,6 +1079,7 @@
             player,
             slotLabel: `Depth #${index + 1}`,
             bucket: "depth",
+            queuePosition: index + 1,
             selected,
             order: order++,
           });
@@ -998,17 +1104,58 @@
         };
       }
 
-      function planBadgeMarkup(playerId) {
-        if (!rosterPlan) {
-          return "";
-        }
+      function buildRosterDisplayPlan() {
+        const corePlayers = sortCoreCandidates(players.filter((player) => player.status === "core"));
+        const rotationPlayers = sortRotationCandidates(players.filter((player) => player.status === "rotation"));
+        const depthPlayers = sortDepthCandidates(
+          players.filter((player) => player.status !== "core" && player.status !== "rotation")
+        );
 
-        const row = rosterPlan.byPlayerId.get(playerId);
+        const planRows = [];
+        let order = 1;
+
+        corePlayers.forEach((player, index) => {
+          planRows.push({
+            player,
+            bucket: "core",
+            queuePosition: index + 1,
+            selected: false,
+            order: order++,
+          });
+        });
+
+        rotationPlayers.forEach((player, index) => {
+          planRows.push({
+            player,
+            bucket: "rotation",
+            queuePosition: index + 1,
+            selected: false,
+            order: order++,
+          });
+        });
+
+        depthPlayers.forEach((player, index) => {
+          planRows.push({
+            player,
+            bucket: "depth",
+            queuePosition: index + 1,
+            selected: false,
+            order: order++,
+          });
+        });
+
+        return {
+          byPlayerId: new Map(planRows.map((row) => [row.player.id, row])),
+        };
+      }
+
+      function planBadgeMarkup(playerId) {
+        const row = rosterPlanRow(playerId) || rosterDisplayRow(playerId);
         if (!row) {
           return "";
         }
 
-        return `<span class="tag-pill ${row.selected ? "plan-selected" : "plan-waiting"}">${escapeHtml(row.slotLabel)}</span>`;
+        return `<span class="tag-pill ${row.selected ? "plan-selected" : "plan-waiting"}">${escapeHtml(formatPlanBadgeLabel(row))}</span>`;
       }
 
       function formatDateTime(value) {
@@ -1037,11 +1184,11 @@
         }
 
         if (lowerMessage.includes("must belong to the season roster")) {
-          return "That player is not on this season roster yet. Add them on the Seasons page before saving matchday attendance, teams, or stats.";
+          return "That player is not on this season squad yet. Add them on the Seasons page before saving matchday attendance, teams, or stats.";
         }
 
         if (lowerMessage.includes("cannot move matchday")) {
-          return "This matchday already has players tied to its current season. Add those players to the destination season roster or clear the matchday activity before changing seasons.";
+          return "This matchday already has players tied to its current season. Add those players to the destination season squad or clear the matchday activity before changing seasons.";
         }
 
         return message;
@@ -1049,6 +1196,10 @@
 
       function getSearchValue() {
         return normalizeText(playerSearch.value).toLowerCase();
+      }
+
+      function getTierFilterValue() {
+        return normalizeText(playerTierFilter?.value || "all").toLowerCase();
       }
 
       function playerMatchesSearch(player) {
@@ -1070,6 +1221,20 @@
           .toLowerCase();
 
         return haystack.includes(searchValue);
+      }
+
+      function playerMatchesTierFilter(player) {
+        const tierFilterValue = getTierFilterValue();
+
+        if (!tierFilterValue || tierFilterValue === "all") {
+          return true;
+        }
+
+        return normalizeText(player.status || "").toLowerCase() === tierFilterValue;
+      }
+
+      function playerMatchesFilters(player) {
+        return playerMatchesSearch(player) && playerMatchesTierFilter(player);
       }
 
       function getPlayerStats(playerId) {
@@ -1119,7 +1284,7 @@
               return false;
             }
 
-            return playerMatchesSearch(player);
+            return playerMatchesFilters(player);
           })
           .sort(compareByRosterPlan);
       }
@@ -1135,7 +1300,7 @@
               return false;
             }
 
-            return playerMatchesSearch(player);
+            return playerMatchesFilters(player);
           })
           .sort(compareByRosterPlan);
       }
@@ -1200,27 +1365,13 @@
         }
 
         return `
-          <div class="summary-grid">
-            <div class="summary-card">
-              <span>Skill spread</span>
-              <strong>${escapeHtml(formatBalanceMetric(summary.skillSpread))}</strong>
-              <span class="summary-copy">Lower is better</span>
-            </div>
-            <div class="summary-card">
-              <span>Age spread</span>
-              <strong>${escapeHtml(formatBalanceMetric(summary.ageSpread, "y"))}</strong>
-              <span class="summary-copy">Known ages only</span>
-            </div>
-            <div class="summary-card">
-              <span>Repeat load</span>
-              <strong>${escapeHtml(formatBalanceMetric(summary.teammateRepeatLoad, "", 0))}</strong>
-              <span class="summary-copy">Same-team history carried forward</span>
-            </div>
-            <div class="summary-card">
-              <span>Position mismatch</span>
-              <strong>${escapeHtml(formatBalanceMetric(summary.positionMismatch))}</strong>
-              <span class="summary-copy">Primary-role spread across teams</span>
-            </div>
+          <div class="compact-badges team-balance-metrics">
+            <span class="tag-pill">Skill spread ${escapeHtml(formatBalanceMetric(summary.skillSpread))}</span>
+            <span class="tag-pill">Age spread ${escapeHtml(formatBalanceMetric(summary.ageSpread, "y"))}</span>
+            <span class="tag-pill">Repeat load ${escapeHtml(
+              formatBalanceMetric(summary.teammateRepeatLoad, "", 0)
+            )}</span>
+            <span class="tag-pill">Position mismatch ${escapeHtml(formatBalanceMetric(summary.positionMismatch))}</span>
           </div>
           ${
             summary.unassignedPlayerCount
@@ -1233,6 +1384,139 @@
               `
               : ""
           }
+        `;
+      }
+
+      function teamBalanceBannerMarkup(summary) {
+        const attendingCount = getAttendingPlayers().length;
+
+        return `
+          <div class="team-balance-banner ${attendingCount ? "" : "is-locked"}">
+            <div class="team-balance-banner-head">
+              <div class="team-balance-banner-copy">
+                <strong>Auto-balance the current IN pool</strong>
+                <p class="micro-note">
+                  ${
+                    attendingCount
+                      ? `${escapeHtml(attendingCount)} player${
+                          attendingCount === 1 ? "" : "s"
+                        } are marked IN. Run this once the matchday pool looks right, then fine-tune any cards manually.`
+                      : "Mark players IN on Season squad first. Auto-balance unlocks once the matchday pool is ready."
+                  }
+                </p>
+              </div>
+              <div class="team-balance-banner-actions">
+                <div class="count-badge team-balance-ready">
+                  <span>IN ready</span>
+                  <strong>${escapeHtml(attendingCount)}</strong>
+                </div>
+                <button class="primary-button" type="button" data-auto-balance-button ${
+                  attendingCount ? "" : "disabled"
+                }>Auto-balance teams</button>
+              </div>
+            </div>
+            ${attendingCount ? autoBalanceSummaryMarkup(summary) : ""}
+            <p class="micro-note">
+              Use the team tabs to switch views. Open All teams if you want drag-and-drop across panels;
+              otherwise use the team buttons inside each player card.
+            </p>
+          </div>
+        `;
+      }
+
+      function assignmentActionsMarkup(playerId, currentTeamCode) {
+        return `
+          ${TEAM_CONFIG.map(
+            (team) => `
+              <button
+                class="assign-button ${team.code} ${currentTeamCode === team.code ? "active" : ""}"
+                type="button"
+                data-player-id="${playerId}"
+                data-team-code="${team.code}"
+              >
+                ${team.label.slice(0, 1)}
+              </button>
+            `
+          ).join("")}
+          <button
+            class="assign-button none ${currentTeamCode === null ? "active" : ""}"
+            type="button"
+            data-player-id="${playerId}"
+            data-team-code="none"
+          >
+            Pool
+          </button>
+        `;
+      }
+
+      function playerStatsFormMarkup(playerId, scope = "matchday") {
+        const stats = getPlayerStats(playerId);
+        const idPrefix = `${scope}-${playerId}`;
+
+        return `
+          <form class="stats-form" data-player-stats-form="${playerId}">
+            <div class="stats-grid">
+              <div class="mini-field">
+                <label for="goals-${idPrefix}">Goals</label>
+                <input id="goals-${idPrefix}" name="goals" type="number" min="0" value="${escapeHtml(
+                  stats.goals
+                )}" />
+              </div>
+              <div class="mini-field">
+                <label for="goal-keeps-${idPrefix}">Goalkeeper points</label>
+                <input id="goal-keeps-${idPrefix}" name="goal_keeps" type="number" min="0" value="${escapeHtml(
+                  stats.goal_keeps
+                )}" />
+              </div>
+            </div>
+            <label class="mini-field checkbox" for="clean-sheet-${idPrefix}">
+              <input id="clean-sheet-${idPrefix}" name="clean_sheet" type="checkbox" ${
+                stats.clean_sheet ? "checked" : ""
+              } />
+              Clean sheet
+            </label>
+            <button class="mini-button" type="submit">Save stats</button>
+          </form>
+        `;
+      }
+
+      function normalizeTeamWorkspaceView(value) {
+        const normalized = normalizeText(value || "").toLowerCase();
+
+        if (normalized === "pool" || normalized === "all") {
+          return normalized;
+        }
+
+        return TEAM_CONFIG.some((team) => team.code === normalized) ? normalized : "pool";
+      }
+
+      function teamWorkspaceTabsMarkup() {
+        const activeView = normalizeTeamWorkspaceView(activeTeamWorkspaceView);
+        const views = [
+          { value: "pool", label: "Pool" },
+          ...TEAM_CONFIG.map((team) => ({ value: team.code, label: team.label })),
+          { value: "all", label: "All teams" },
+        ];
+
+        return `
+          <div class="workspace-switcher team-workspace-switcher" role="tablist" aria-label="Team workspace">
+            ${views
+              .map((view) => {
+                const isActive = view.value === activeView;
+                return `
+                  <button
+                    class="workspace-btn ${isActive ? "active" : ""}"
+                    type="button"
+                    role="tab"
+                    aria-selected="${isActive ? "true" : "false"}"
+                    data-team-view-trigger="${escapeHtml(view.value)}"
+                  >
+                    ${escapeHtml(view.label)}
+                  </button>
+                `;
+              })
+              .join("")}
+          </div>
         `;
       }
 
@@ -1766,8 +2050,8 @@
             openPlayerStatsLink.href = `./submissions.html?season_id=${season.id}&matchday_id=${matchday.id}&preview=1`;
           }
           matchdayInfoCopy.textContent = players.length
-            ? `${season.name} is using ${players.length} active roster players. Set attendance, assign IN players to teams, and enter stats for matchday ${matchday.matchday_number}.`
-            : `No active squad exists yet for ${season.name}. Add players from Season Centre before running this matchday.`;
+            ? `${season.name} is using ${players.length} active season-squad players. Set attendance, assign IN players to teams, and enter stats for matchday ${matchday.matchday_number}.`
+            : `No active season squad exists yet for ${season.name}. Add players from Season Centre before running this matchday.`;
           syncScoringSettingsFields();
           syncGoalsPointsToggle();
           priorityFillButton.disabled = false;
@@ -1826,6 +2110,9 @@
           ? "in"
           : (ATTENDANCE_STATUS_LABELS[nextStatus] ? nextStatus : "out");
         const nextAttended = normalizedStatus === "in";
+        const currentAssignment = getAssignment(playerId);
+        const player = players.find((entry) => entry.id === playerId);
+        const playerLabel = player ? displayName(player) : "Player";
 
         try {
           await savePlayerStats(playerId, {
@@ -1837,13 +2124,11 @@
           });
 
           if (!nextAttended) {
-            const assignment = getAssignment(playerId);
-
-            if (assignment) {
+            if (currentAssignment) {
               const { error } = await supabaseClient
                 .from("matchday_assignments")
                 .delete()
-                .eq("id", assignment.id);
+                .eq("id", currentAssignment.id);
 
               if (error) {
                 throw error;
@@ -1852,6 +2137,22 @@
           }
 
           await loadMatchdayEngine();
+          if (normalizedStatus === "in") {
+            setStatus(`${playerLabel} moved into tonight's pool.`, "success");
+          } else if (normalizedStatus === "available") {
+            setStatus(`${playerLabel} is available but not selected in tonight's pool.`, "success");
+          } else {
+            const clearedTeamCopy = currentAssignment
+              ? ` ${teamLabel(currentAssignment.team_code)} was cleared at the same time.`
+              : "";
+            const statusCopy =
+              normalizedStatus === "late_cancel"
+                ? `${playerLabel} was marked late cancel and removed from tonight's pool.`
+                : normalizedStatus === "no_show"
+                  ? `${playerLabel} was marked no-show and removed from tonight's pool.`
+                  : `${playerLabel} was marked OUT and removed from tonight's pool.`;
+            setStatus(`${statusCopy}${clearedTeamCopy}`, "warning");
+          }
         } catch (error) {
           setStatus(readableError(error), "error");
         }
@@ -2037,7 +2338,7 @@
         }
       }
 
-      async function autoBalanceTeams() {
+      async function autoBalanceTeams(button = null) {
         if (!matchday) {
           return;
         }
@@ -2053,8 +2354,6 @@
           setStatus(`The current IN pool is above the ${ROSTER_CAP}-player team cap. Use the queue tools first.`, "warning");
           return;
         }
-
-        const button = teamGrid.querySelector("#auto-balance-button");
 
         try {
           if (button) {
@@ -2146,17 +2445,18 @@
       function renderRosterPriority() {
         rosterPlan = buildRosterPlan();
         priorityFillButton.disabled = !rosterPlan.planRows.length;
+        priorityBoardWrap.hidden = false;
 
         if (!players.length) {
           prioritySummaryGrid.innerHTML = `
             <div class="summary-card">
-              <span>Season roster</span>
+              <span>Season squad</span>
               <strong>0</strong>
             </div>
           `;
           priorityBoardWrap.innerHTML = `
             <div class="table-empty">
-              No active squad yet. Add players to this season from Season Centre first.
+              No active season squad yet. Add players to this season from Season Centre first.
             </div>
           `;
           return;
@@ -2184,61 +2484,14 @@
         if (!rosterPlan.planRows.length) {
           priorityBoardWrap.innerHTML = `
             <div class="table-empty">
-              The season roster is empty or every player is marked out of the pool right now.
+              The season squad is empty or every player is marked out of the pool right now.
             </div>
           `;
           return;
         }
 
-        priorityBoardWrap.innerHTML = `
-          <div class="compact-list">
-            ${rosterPlan.planRows
-              .map((row) => {
-                const metrics = priorityMetrics(row.player.id);
-                const standingMetrics = rotationStandingsMetrics(row.player.id);
-                const currentStatus = getAttendanceStatus(row.player.id);
-                const queueCopy =
-                  row.bucket === "core"
-                    ? `Core priority #${row.queuePosition} · ${row.selected ? "In now" : "Waiting"}`
-                    : row.bucket === "rotation"
-                      ? `${
-                          activeRotationQueueMode === "final" ? "Final-day queue" : "Rotation queue"
-                        } #${row.queuePosition} · ${row.selected ? "In now" : "Next up"}`
-                      : `${formatStatusLabel(row.player.status)} depth · ${row.selected ? "In now" : "Waiting"}`;
-                const priorityStatLabel =
-                  row.bucket === "rotation" && activeRotationQueueMode === "final" ? "Pts" : "Score";
-                const priorityStatValue =
-                  row.bucket === "rotation" && activeRotationQueueMode === "final"
-                    ? Number(standingMetrics.total_points || 0)
-                    : metrics.attendance_score;
-
-                return `
-                  <article class="compact-row">
-                    <div class="compact-row-main">
-                      <div>
-                        <div class="compact-row-title">${escapeHtml(displayName(row.player))}</div>
-                        <p class="compact-row-copy">${escapeHtml(
-                          `${queueCopy} · ${formatAttendanceStatusLabel(currentStatus)}`
-                        )}</p>
-                      </div>
-                      <div class="score-badge compact-score">
-                        <strong>${escapeHtml(priorityStatValue)}</strong>
-                        <span>${escapeHtml(priorityStatLabel)}</span>
-                      </div>
-                    </div>
-                    <div class="compact-badges">
-                      <span class="tag-pill ${row.selected ? "plan-selected" : "plan-waiting"}">${escapeHtml(
-                        row.slotLabel
-                      )}</span>
-                      <span class="tag-pill">Games ${escapeHtml(metrics.games_attended)}</span>
-                      <span class="tag-pill">No-shows ${escapeHtml(metrics.no_shows)}</span>
-                    </div>
-                  </article>
-                `;
-              })
-              .join("")}
-          </div>
-        `;
+        priorityBoardWrap.innerHTML = "";
+        priorityBoardWrap.hidden = true;
       }
 
       async function applyPriorityRoster() {
@@ -2317,18 +2570,21 @@
         if (!players.length) {
           attendanceGrid.innerHTML = `
             <div class="empty-state">
-              No active squad yet. Add players to this season in Season Centre before running availability.
+              No active season squad yet. Add players to this season in Season Centre before running availability.
             </div>
           `;
           return;
         }
 
+        rosterDisplayPlan = buildRosterDisplayPlan();
+
         const filtered = [...players]
-          .filter((player) => playerMatchesSearch(player))
-          .sort(compareByRosterPlan);
+          .filter((player) => playerMatchesFilters(player))
+          .sort(compareByRosterDisplay);
 
         if (!filtered.length) {
           attendanceGrid.innerHTML = `
+            ${teamBalanceBannerMarkup(currentTeamBalanceSummary())}
             <div class="empty-state">
               No players match the current search.
             </div>
@@ -2336,120 +2592,135 @@
           return;
         }
 
-        attendanceGrid.innerHTML = filtered
+        const cardsMarkup = filtered
           .map((player) => {
             const attendanceStatus = getAttendanceStatus(player.id);
+            const row = rosterPlanRow(player.id) || rosterDisplayRow(player.id);
+            const prioritySummary = priorityStatSummary(player, row);
+            const subtitleParts = [playerOriginLabel(player)];
+            const queueState =
+              attendanceStatus === "in" || attendanceStatus === "available"
+                ? formatPlanQueueState(row)
+                : "";
+            const assignment = attendanceStatus === "in" ? getAssignment(player.id) : null;
+            const currentTeamCode = assignment?.team_code || null;
+
+            if (queueState) {
+              subtitleParts.push(queueState);
+            }
+            subtitleParts.push(formatAttendanceStatusLabel(attendanceStatus));
 
             return `
-              <article class="player-card">
-                <h3 class="player-name">${escapeHtml(displayName(player))}</h3>
-                <p class="player-subtitle">${escapeHtml(player.nationality)} - ${escapeHtml(formatStatusLabel(player.status))}</p>
+              <article class="player-card team-player-card season-roster-card" data-player-card="${player.id}">
+                <div class="player-card-header">
+                  <div class="player-meta">
+                    <h3 class="player-name">${escapeHtml(displayName(player))}</h3>
+                    <p class="compact-row-copy">${escapeHtml(subtitleParts.join(" · "))}</p>
+                    <div class="player-tags">
+                      ${planBadgeMarkup(player.id) || `<span class="tag-pill">${escapeHtml(formatStatusLabel(player.status))}</span>`}
+                      <span class="tag-pill">${escapeHtml(prioritySummary.label)} ${escapeHtml(prioritySummary.value)}</span>
+                      <span class="tag-pill">Games ${escapeHtml(prioritySummary.metrics.games_attended)}</span>
+                      <span class="tag-pill">No-shows ${escapeHtml(prioritySummary.metrics.no_shows)}</span>
+                      ${(player.positions || [])
+                        .map((position) => `<span class="tag-pill">${escapeHtml(position)}</span>`)
+                        .join("")}
+                    </div>
+                  </div>
 
+                  <div class="field inline-select-field">
+                    <label for="attendance-status-${player.id}">Attendance</label>
+                    <select id="attendance-status-${player.id}" data-attendance-player-id="${player.id}">
+                      ${Object.entries(ATTENDANCE_STATUS_LABELS)
+                        .map(
+                          ([value, label]) => `
+                            <option value="${escapeHtml(value)}" ${attendanceStatus === value ? "selected" : ""}>
+                              ${escapeHtml(label)}
+                            </option>
+                          `
+                        )
+                        .join("")}
+                    </select>
+                  </div>
+                </div>
+
+                ${
+                  attendanceStatus === "in"
+                    ? `
+                      <div class="roster-inline-detail">
+                        <div class="field">
+                          <label>Team</label>
+                          <div class="assignment-actions">
+                            ${assignmentActionsMarkup(player.id, currentTeamCode)}
+                          </div>
+                        </div>
+                        ${
+                          currentTeamCode
+                            ? playerStatsFormMarkup(player.id, "season")
+                            : `<p class="micro-note">Choose a team on this card, or run auto-balance above the roster.</p>`
+                        }
+                      </div>
+                    `
+                    : ""
+                }
+                ${
+                  attendanceStatus === "out"
+                    ? `<p class="micro-note roster-state-note is-warning">Out of tonight's pool.</p>`
+                    : attendanceStatus === "late_cancel"
+                      ? `<p class="micro-note roster-state-note is-warning">Late cancel. Removed from tonight's pool.</p>`
+                      : attendanceStatus === "no_show"
+                        ? `<p class="micro-note roster-state-note is-warning">No-show. Removed from tonight's pool.</p>`
+                        : ""
+                }
+              </article>
+            `;
+          })
+          .join("");
+
+        attendanceGrid.innerHTML = `
+          ${teamBalanceBannerMarkup(currentTeamBalanceSummary())}
+          ${cardsMarkup}
+        `;
+      }
+
+      function playerCardMarkup(player, currentTeamCode) {
+        const showDragHandle = normalizeTeamWorkspaceView(activeTeamWorkspaceView) === "all";
+
+        return `
+          <article class="player-card team-player-card" data-player-card="${player.id}">
+            <div class="team-player-card-head">
+              <div class="player-meta">
+                <h3 class="player-name">${escapeHtml(displayName(player))}</h3>
+                <p class="compact-row-copy">${escapeHtml(playerOriginLabel(player))}</p>
                 <div class="player-tags">
                   ${planBadgeMarkup(player.id)}
                   ${(player.positions || [])
                     .map((position) => `<span class="tag-pill">${escapeHtml(position)}</span>`)
                     .join("")}
                 </div>
-
-                <div class="field">
-                  <label for="attendance-status-${player.id}">Attendance status</label>
-                  <select id="attendance-status-${player.id}" data-attendance-player-id="${player.id}">
-                    ${Object.entries(ATTENDANCE_STATUS_LABELS)
-                      .map(
-                        ([value, label]) => `
-                          <option value="${escapeHtml(value)}" ${attendanceStatus === value ? "selected" : ""}>
-                            ${escapeHtml(label)}
-                          </option>
-                        `
-                      )
-                      .join("")}
-                  </select>
-                </div>
-              </article>
-            `;
-          })
-          .join("");
-      }
-
-      function playerCardMarkup(player, currentTeamCode) {
-        const stats = getPlayerStats(player.id);
-
-        return `
-          <article class="player-card" data-player-card="${player.id}">
-            <div class="player-topline">
-              <div>
-                <h3 class="player-name">${escapeHtml(displayName(player))}</h3>
-                <p class="player-subtitle">${escapeHtml(player.nationality)} - ${escapeHtml(formatStatusLabel(player.status))}</p>
               </div>
-              <span
-                class="drag-handle"
-                draggable="true"
-                data-drag-player-id="${player.id}"
-                aria-label="Move ${escapeHtml(displayName(player))} to another team"
-                title="Drag on desktop or use the team buttons on mobile"
-              >
-                Move
-              </span>
-            </div>
-
-            <div class="player-tags">
-              ${planBadgeMarkup(player.id)}
-              ${(player.positions || [])
-                .map((position) => `<span class="tag-pill">${escapeHtml(position)}</span>`)
-                .join("")}
-            </div>
-
-            <div class="assignment-actions">
-              ${TEAM_CONFIG.map(
-                (team) => `
-                  <button
-                    class="assign-button ${team.code} ${currentTeamCode === team.code ? "active" : ""}"
-                    type="button"
-                    data-player-id="${player.id}"
-                    data-team-code="${team.code}"
-                  >
-                    ${team.label.slice(0, 1)}
-                  </button>
-                `
-              ).join("")}
-              <button
-                class="assign-button none ${currentTeamCode === null ? "active" : ""}"
-                type="button"
-                data-player-id="${player.id}"
-                data-team-code="none"
-              >
-                Pool
-              </button>
+              <div class="team-player-controls">
+                <div class="assignment-actions">${assignmentActionsMarkup(player.id, currentTeamCode)}</div>
+                ${
+                  showDragHandle
+                    ? `
+                      <span
+                        class="drag-handle"
+                        draggable="true"
+                        data-drag-player-id="${player.id}"
+                        aria-label="Move ${escapeHtml(displayName(player))} to another team"
+                        title="Drag on desktop or use the team buttons on mobile"
+                      >
+                        Drag card
+                      </span>
+                    `
+                    : ""
+                }
+              </div>
             </div>
 
             ${
               currentTeamCode
-                ? `
-                  <form class="stats-form" data-player-stats-form="${player.id}">
-                    <div class="stats-grid">
-                      <div class="mini-field">
-                        <label for="goals-${player.id}">Goals</label>
-                        <input id="goals-${player.id}" name="goals" type="number" min="0" value="${escapeHtml(
-                          stats.goals
-                        )}" />
-                      </div>
-                      <div class="mini-field">
-                        <label for="goal-keeps-${player.id}">Goalkeeper points</label>
-                        <input id="goal-keeps-${player.id}" name="goal_keeps" type="number" min="0" value="${escapeHtml(
-                          stats.goal_keeps
-                        )}" />
-                      </div>
-                    </div>
-                    <label class="mini-field checkbox" for="clean-sheet-${player.id}">
-                      <input id="clean-sheet-${player.id}" name="clean_sheet" type="checkbox" ${
-                        stats.clean_sheet ? "checked" : ""
-                      } />
-                      Clean sheet
-                    </label>
-                    <button class="mini-button" type="submit">Save stats</button>
-                  </form>
-                `
+                ? playerStatsFormMarkup(player.id, "matchday")
                 : ""
             }
           </article>
@@ -2457,26 +2728,11 @@
       }
 
       function renderTeams() {
+        clearDragState();
         const unassignedPlayers = getUnassignedPlayers();
         const balanceSummary = currentTeamBalanceSummary();
-
-        teamGrid.innerHTML = `
-          <div class="resolution-box team-guide">
-            <strong>Balance teams for tonight</strong>
-            <p class="micro-note">
-              Auto-balance uses player skill rating, birth date, primary position, and same-team history
-              from earlier matchdays in this season. You can still drag cards after it runs.
-            </p>
-            <div class="actions">
-              <button class="secondary-button" type="button" id="auto-balance-button" ${
-                getAttendingPlayers().length ? "" : "disabled"
-              }>Auto-balance teams</button>
-            </div>
-            ${autoBalanceSummaryMarkup(balanceSummary)}
-            <p class="micro-note">
-              Drag cards between team panels on desktop. On mobile, use the team buttons inside each player card.
-            </p>
-          </div>
+        const activeView = normalizeTeamWorkspaceView(activeTeamWorkspaceView);
+        const unassignedSectionMarkup = `
           <section class="group-panel unassigned" data-drop-team-code="none">
             <div class="group-head">
               <div>
@@ -2496,11 +2752,15 @@
               }
             </div>
           </section>
-          ${TEAM_CONFIG.map((team) => {
-            const teamPlayers = getTeamPlayers(team.code);
-            const teamCount = getTeamCount(team.code);
+        `;
 
-            return `
+        const teamSections = TEAM_CONFIG.map((team) => {
+          const teamPlayers = getTeamPlayers(team.code);
+          const teamCount = getTeamCount(team.code);
+
+          return {
+            code: team.code,
+            markup: `
               <section class="group-panel ${team.code}" data-drop-team-code="${team.code}">
                 <div class="group-head">
                   <div>
@@ -2521,8 +2781,21 @@
                   }
                 </div>
               </section>
-            `;
-          }).join("")}
+            `,
+          };
+        });
+
+        const visibleSectionMarkup =
+          activeView === "all"
+            ? [unassignedSectionMarkup, ...teamSections.map((section) => section.markup)].join("")
+            : activeView === "pool"
+              ? unassignedSectionMarkup
+              : teamSections.find((section) => section.code === activeView)?.markup || unassignedSectionMarkup;
+
+        teamGrid.innerHTML = `
+          ${teamBalanceBannerMarkup(balanceSummary)}
+          ${teamWorkspaceTabsMarkup()}
+          ${visibleSectionMarkup}
         `;
       }
 
@@ -2766,6 +3039,32 @@
         await setAttendanceStatus(Number(select.dataset.attendancePlayerId), select.value);
       });
 
+      attendanceGrid.addEventListener("click", async (event) => {
+        const autoBalanceButton = event.target.closest("[data-auto-balance-button]");
+
+        if (autoBalanceButton) {
+          await autoBalanceTeams(autoBalanceButton);
+          return;
+        }
+
+        const assignButton = event.target.closest("[data-player-id][data-team-code]");
+
+        if (assignButton) {
+          await assignPlayer(Number(assignButton.dataset.playerId), assignButton.dataset.teamCode);
+        }
+      });
+
+      attendanceGrid.addEventListener("submit", async (event) => {
+        const form = event.target.closest("[data-player-stats-form]");
+
+        if (!form) {
+          return;
+        }
+
+        event.preventDefault();
+        await saveStatForm(Number(form.dataset.playerStatsForm), form);
+      });
+
       teamGrid.addEventListener("dragstart", (event) => {
         const handle = event.target.closest("[data-drag-player-id]");
 
@@ -2832,10 +3131,18 @@
       });
 
       teamGrid.addEventListener("click", async (event) => {
-        const autoBalanceButton = event.target.closest("#auto-balance-button");
+        const teamViewTrigger = event.target.closest("[data-team-view-trigger]");
+
+        if (teamViewTrigger) {
+          activeTeamWorkspaceView = normalizeTeamWorkspaceView(teamViewTrigger.dataset.teamViewTrigger);
+          renderTeams();
+          return;
+        }
+
+        const autoBalanceButton = event.target.closest("[data-auto-balance-button]");
 
         if (autoBalanceButton) {
-          await autoBalanceTeams();
+          await autoBalanceTeams(autoBalanceButton);
           return;
         }
 
@@ -2911,9 +3218,16 @@
       });
       replacementPlayerSelect.addEventListener("change", syncReplacementDefaults);
       replacementAddButton.addEventListener("click", addReplacementToSeason);
-      playerSearch.addEventListener("input", () => {
+      const rerenderFilteredPlayers = () => {
         renderAttendance();
         renderTeams();
+      };
+      playerSearch.addEventListener("input", rerenderFilteredPlayers);
+      playerTierFilter?.addEventListener("change", rerenderFilteredPlayers);
+      rosterViewTriggers.forEach((button) => {
+        button.addEventListener("click", () => {
+          setRosterView(button.dataset.rosterViewTrigger);
+        });
       });
       teamDisplayGrid.addEventListener("input", (event) => {
         const colorInput = event.target.closest("[data-team-display-color]");
@@ -2939,5 +3253,6 @@
       priorityFillButton.addEventListener("click", applyPriorityRoster);
       goalsPointsToggle.addEventListener("click", toggleGoalsCountAsPoints);
 
+      setRosterView(activeRosterView);
       loadMatchdayEngine();
     

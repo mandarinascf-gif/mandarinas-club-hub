@@ -1,0 +1,2219 @@
+{
+  "generated_at": "2026-04-28T18:12:10.774Z",
+  "csv_path": "/Users/andresaguayo/Downloads/Mandarinas CF Player Profile and Ratings - MOB.csv",
+  "profile_csv_path": "/Users/andresaguayo/Downloads/Mandarinas CF Player Profile and Ratings - PLAYER_PROFILE.csv",
+  "dry_run": false,
+  "summary": {
+    "csv_rows": 47,
+    "profile_csv_rows": 54,
+    "matched_player_rows": 52,
+    "updates_needed": 45,
+    "no_op_rows": 7,
+    "unresolved_profile_rows": 2,
+    "updated_rows": 45
+  },
+  "unresolved_profile_rows": [
+    {
+      "csv_name": "Iury",
+      "row_number": 21,
+      "canonical_name": null,
+      "candidates": {
+        "manualMatches": [],
+        "exactFullMatches": [],
+        "exactNicknameMatches": [],
+        "canonicalFullMatches": [],
+        "canonicalNicknameMatches": [],
+        "exactFirstNameMatches": []
+      }
+    },
+    {
+      "csv_name": "Jeff Arce",
+      "row_number": 23,
+      "canonical_name": null,
+      "candidates": {
+        "manualMatches": [],
+        "exactFullMatches": [],
+        "exactNicknameMatches": [],
+        "canonicalFullMatches": [],
+        "canonicalNicknameMatches": [],
+        "exactFirstNameMatches": []
+      }
+    }
+  ],
+  "matched_rows": [
+    {
+      "matched_player_id": 226,
+      "matched_player_name": "Mike Player",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "Mike",
+          "row_number": 31,
+          "match_method": "unique-first"
+        },
+        {
+          "csv_name": "Mike",
+          "row_number": 35,
+          "match_method": "unique-first"
+        }
+      ],
+      "current_values": {
+        "nationality": "El Salvador",
+        "birth_date": "1989-11-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "DEF",
+            "GK",
+            "MID"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "El Salvador",
+        "birth_date": "1989-11-01",
+        "positions": [
+          "DEF",
+          "GK",
+          "MID"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 227,
+      "matched_player_name": "Fabian Player",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "Fabián",
+          "row_number": 15,
+          "match_method": "unique-first"
+        },
+        {
+          "csv_name": "Fabián",
+          "row_number": 14,
+          "match_method": "unique-first"
+        }
+      ],
+      "current_values": {
+        "nationality": "Mexico",
+        "birth_date": "1977-05-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "GK",
+            "DEF",
+            "MID"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Mexico",
+        "birth_date": "1977-05-01",
+        "positions": [
+          "GK",
+          "DEF",
+          "MID"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 228,
+      "matched_player_name": "Joaquin Player",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "Joaquin",
+          "row_number": 54,
+          "match_method": "unique-first"
+        }
+      ],
+      "current_values": {
+        "nationality": "Unknown",
+        "birth_date": null,
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {},
+      "source_values": {
+        "positions": []
+      }
+    },
+    {
+      "matched_player_id": 229,
+      "matched_player_name": "José Núñez",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "José Núñez",
+          "row_number": 25,
+          "match_method": "exact-full"
+        },
+        {
+          "csv_name": "José Núñez",
+          "row_number": 53,
+          "match_method": "exact-full"
+        }
+      ],
+      "current_values": {
+        "nationality": "Unknown",
+        "birth_date": "1986-06-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {},
+      "source_values": {
+        "nationality": null,
+        "birth_date": "1986-06-01",
+        "positions": []
+      }
+    },
+    {
+      "matched_player_id": 230,
+      "matched_player_name": "Crisanto Valencia",
+      "matched_player_nickname": "Valencia",
+      "match_sources": [
+        {
+          "csv_name": "Valencia",
+          "row_number": 43,
+          "match_method": "exact-nickname"
+        },
+        {
+          "csv_name": "Valencia",
+          "row_number": 46,
+          "match_method": "exact-nickname"
+        }
+      ],
+      "current_values": {
+        "nationality": "Mexico",
+        "birth_date": "1992-12-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "MID",
+            "ATT",
+            "DEF"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Mexico",
+        "birth_date": "1992-12-01",
+        "positions": [
+          "MID",
+          "ATT",
+          "DEF"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 231,
+      "matched_player_name": "Rodolfo Toledo",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "Rodolfo",
+          "row_number": 38,
+          "match_method": "identity-full"
+        },
+        {
+          "csv_name": "Rodolfo",
+          "row_number": 41,
+          "match_method": "identity-full"
+        }
+      ],
+      "current_values": {
+        "nationality": "Mexico",
+        "birth_date": "1978-11-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "GK",
+            "DEF",
+            "MID"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Mexico",
+        "birth_date": "1978-11-01",
+        "positions": [
+          "GK",
+          "DEF",
+          "MID"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 232,
+      "matched_player_name": "Luis Enrique Martinez",
+      "matched_player_nickname": "Cuñis",
+      "match_sources": [
+        {
+          "csv_name": "Cuñis",
+          "row_number": 11,
+          "match_method": "exact-nickname"
+        },
+        {
+          "csv_name": "Cuñis",
+          "row_number": 34,
+          "match_method": "exact-nickname"
+        }
+      ],
+      "current_values": {
+        "nationality": "Mexico",
+        "birth_date": "1989-07-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "DEF",
+            "ATT",
+            "GK"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Mexico",
+        "birth_date": "1989-07-01",
+        "positions": [
+          "DEF",
+          "ATT",
+          "GK"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 233,
+      "matched_player_name": "Jamie Player",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "Jamie",
+          "row_number": 48,
+          "match_method": "unique-first"
+        },
+        {
+          "csv_name": "Jamie",
+          "row_number": 55,
+          "match_method": "unique-first"
+        }
+      ],
+      "current_values": {
+        "nationality": "Unknown",
+        "birth_date": null,
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {},
+      "source_values": {
+        "nationality": null,
+        "birth_date": null,
+        "positions": []
+      }
+    },
+    {
+      "matched_player_id": 234,
+      "matched_player_name": "Jesus David",
+      "matched_player_nickname": "Chuchin",
+      "match_sources": [
+        {
+          "csv_name": "Jesús",
+          "row_number": 22,
+          "match_method": "identity-full"
+        },
+        {
+          "csv_name": "Jesús",
+          "row_number": 24,
+          "match_method": "identity-full"
+        }
+      ],
+      "current_values": {
+        "nationality": "Unknown",
+        "birth_date": "2000-02-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "MID",
+            "ATT"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": null,
+        "birth_date": "2000-02-01",
+        "positions": [
+          "MID",
+          "ATT"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 235,
+      "matched_player_name": "Chilas Player",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "Chilas",
+          "row_number": 9,
+          "match_method": "unique-first"
+        },
+        {
+          "csv_name": "Chilas",
+          "row_number": 8,
+          "match_method": "unique-first"
+        }
+      ],
+      "current_values": {
+        "nationality": "Mexico",
+        "birth_date": "1982-04-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "MID",
+            "ATT"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Mexico",
+        "birth_date": "1982-04-01",
+        "positions": [
+          "MID",
+          "ATT"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 236,
+      "matched_player_name": "Enerson Player",
+      "matched_player_nickname": "J Enerson",
+      "match_sources": [
+        {
+          "csv_name": "Enerson",
+          "row_number": 13,
+          "match_method": "unique-first"
+        }
+      ],
+      "current_values": {
+        "nationality": "Unknown",
+        "birth_date": null,
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "GK",
+            "ATT"
+          ]
+        }
+      },
+      "source_values": {
+        "positions": [
+          "GK",
+          "ATT"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 240,
+      "matched_player_name": "Jose Sarza",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "José Sarza",
+          "row_number": 26,
+          "match_method": "exact-full"
+        },
+        {
+          "csv_name": "José Sarza",
+          "row_number": 29,
+          "match_method": "exact-full"
+        }
+      ],
+      "current_values": {
+        "nationality": "Mexico",
+        "birth_date": "1986-04-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "DEF"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Mexico",
+        "birth_date": "1986-04-01",
+        "positions": [
+          "DEF"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 241,
+      "matched_player_name": "Oscar Rosales",
+      "matched_player_nickname": "Pirlo",
+      "match_sources": [
+        {
+          "csv_name": "Pirlo",
+          "row_number": 36,
+          "match_method": "exact-nickname"
+        },
+        {
+          "csv_name": "Pirlo",
+          "row_number": 39,
+          "match_method": "exact-nickname"
+        }
+      ],
+      "current_values": {
+        "nationality": "El Salvador",
+        "birth_date": "1968-11-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {},
+      "source_values": {
+        "nationality": "El Salvador",
+        "birth_date": "1968-11-01",
+        "positions": [
+          "MID"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 242,
+      "matched_player_name": "Victor Nizama",
+      "matched_player_nickname": "Victor N",
+      "match_sources": [
+        {
+          "csv_name": "Nizama",
+          "row_number": 44,
+          "match_method": "identity-full"
+        },
+        {
+          "csv_name": "Nizama",
+          "row_number": 48,
+          "match_method": "identity-full"
+        }
+      ],
+      "current_values": {
+        "nationality": "Peru",
+        "birth_date": "1965-05-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "DEF",
+            "GK",
+            "ATT"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Peru",
+        "birth_date": "1965-05-01",
+        "positions": [
+          "DEF",
+          "GK",
+          "ATT"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 243,
+      "matched_player_name": "Efrain Jauregui",
+      "matched_player_nickname": "Poli",
+      "match_sources": [
+        {
+          "csv_name": "Efraín",
+          "row_number": 14,
+          "match_method": "identity-full"
+        },
+        {
+          "csv_name": "Efraín",
+          "row_number": 12,
+          "match_method": "identity-full"
+        }
+      ],
+      "current_values": {
+        "nationality": "Mexico",
+        "birth_date": "1988-04-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "DEF",
+            "MID"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Mexico",
+        "birth_date": "1988-04-01",
+        "positions": [
+          "DEF",
+          "MID"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 247,
+      "matched_player_name": "Sergio Player",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "Sergio",
+          "row_number": 42,
+          "match_method": "unique-first"
+        },
+        {
+          "csv_name": "Sergio",
+          "row_number": 45,
+          "match_method": "unique-first"
+        }
+      ],
+      "current_values": {
+        "nationality": "Chile",
+        "birth_date": "1988-11-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "ATT",
+            "MID",
+            "DEF"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Chile",
+        "birth_date": "1988-11-01",
+        "positions": [
+          "ATT",
+          "MID",
+          "DEF"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 248,
+      "matched_player_name": "Carlos Silva",
+      "matched_player_nickname": "Carlos S",
+      "match_sources": [
+        {
+          "csv_name": "Carlos S",
+          "row_number": 6,
+          "match_method": "exact-nickname"
+        },
+        {
+          "csv_name": "Carlos S",
+          "row_number": 6,
+          "match_method": "exact-nickname"
+        }
+      ],
+      "current_values": {
+        "nationality": "Peru",
+        "birth_date": "1980-09-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "MID",
+            "ATT",
+            "DEF"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Peru",
+        "birth_date": "1980-09-01",
+        "positions": [
+          "MID",
+          "ATT",
+          "DEF"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 251,
+      "matched_player_name": "Juan Pablo Valladares",
+      "matched_player_nickname": "Juanpi",
+      "match_sources": [
+        {
+          "csv_name": "Juan Pablo",
+          "row_number": 27,
+          "match_method": "identity-full"
+        },
+        {
+          "csv_name": "Juan Pablo",
+          "row_number": 31,
+          "match_method": "identity-full"
+        }
+      ],
+      "current_values": {
+        "nationality": "Chile",
+        "birth_date": "1992-12-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "ATT",
+            "MID",
+            "DEF"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Chile",
+        "birth_date": "1992-12-01",
+        "positions": [
+          "ATT",
+          "MID",
+          "DEF"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 252,
+      "matched_player_name": "Joseph Muro",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "Joseph",
+          "row_number": 30,
+          "match_method": "identity-full"
+        }
+      ],
+      "current_values": {
+        "nationality": "Unknown",
+        "birth_date": null,
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "MID",
+            "ATT",
+            "DEF"
+          ]
+        }
+      },
+      "source_values": {
+        "positions": [
+          "MID",
+          "ATT",
+          "DEF"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 254,
+      "matched_player_name": "Gabriel Alava",
+      "matched_player_nickname": "Gabo",
+      "match_sources": [
+        {
+          "csv_name": "Gabo",
+          "row_number": 17,
+          "match_method": "exact-nickname"
+        },
+        {
+          "csv_name": "Gabo",
+          "row_number": 16,
+          "match_method": "exact-nickname"
+        }
+      ],
+      "current_values": {
+        "nationality": "Ecuador",
+        "birth_date": "1985-09-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "DEF",
+            "MID"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Ecuador",
+        "birth_date": "1985-09-01",
+        "positions": [
+          "DEF",
+          "MID"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 255,
+      "matched_player_name": "Michael Enriquez",
+      "matched_player_nickname": "Mikey",
+      "match_sources": [
+        {
+          "csv_name": "Mikey",
+          "row_number": 32,
+          "match_method": "exact-nickname"
+        },
+        {
+          "csv_name": "Mikey",
+          "row_number": 36,
+          "match_method": "exact-nickname"
+        }
+      ],
+      "current_values": {
+        "nationality": "Mexico",
+        "birth_date": "2000-07-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "MID",
+            "ATT",
+            "DEF"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Mexico",
+        "birth_date": "2000-07-01",
+        "positions": [
+          "MID",
+          "ATT",
+          "DEF"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 257,
+      "matched_player_name": "Ruben Player",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "Rubén",
+          "row_number": 40,
+          "match_method": "unique-first"
+        },
+        {
+          "csv_name": "Rubén",
+          "row_number": 43,
+          "match_method": "unique-first"
+        }
+      ],
+      "current_values": {
+        "nationality": "Peru",
+        "birth_date": "1985-08-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "ATT",
+            "MID",
+            "DEF"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Peru",
+        "birth_date": "1985-08-01",
+        "positions": [
+          "ATT",
+          "MID",
+          "DEF"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 260,
+      "matched_player_name": "Gerardo Mendizabal",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "Gerardo",
+          "row_number": 18,
+          "match_method": "identity-full"
+        },
+        {
+          "csv_name": "Gerardo",
+          "row_number": 17,
+          "match_method": "identity-full"
+        }
+      ],
+      "current_values": {
+        "nationality": "Mexico",
+        "birth_date": "1992-05-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "MID",
+            "DEF",
+            "ATT"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Mexico",
+        "birth_date": "1992-05-01",
+        "positions": [
+          "MID",
+          "DEF",
+          "ATT"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 261,
+      "matched_player_name": "Fernando Urbano",
+      "matched_player_nickname": "Fer",
+      "match_sources": [
+        {
+          "csv_name": "Fer",
+          "row_number": 16,
+          "match_method": "exact-nickname"
+        },
+        {
+          "csv_name": "Fer",
+          "row_number": 15,
+          "match_method": "exact-nickname"
+        }
+      ],
+      "current_values": {
+        "nationality": "Mexico",
+        "birth_date": "1979-07-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "GK"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Mexico",
+        "birth_date": "1979-07-01",
+        "positions": [
+          "GK"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 262,
+      "matched_player_name": "Eder Martinez",
+      "matched_player_nickname": "Eder",
+      "match_sources": [
+        {
+          "csv_name": "Eder",
+          "row_number": 13,
+          "match_method": "exact-nickname"
+        },
+        {
+          "csv_name": "Eder",
+          "row_number": 11,
+          "match_method": "exact-nickname"
+        }
+      ],
+      "current_values": {
+        "nationality": "Mexico",
+        "birth_date": "1982-12-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "MID",
+            "ATT",
+            "GK"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Mexico",
+        "birth_date": "1982-12-01",
+        "positions": [
+          "MID",
+          "ATT",
+          "GK"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 264,
+      "matched_player_name": "Honorio Hernandez",
+      "matched_player_nickname": "Honorio",
+      "match_sources": [
+        {
+          "csv_name": "Honorio",
+          "row_number": 47,
+          "match_method": "exact-nickname"
+        },
+        {
+          "csv_name": "Honorio",
+          "row_number": 20,
+          "match_method": "exact-nickname"
+        }
+      ],
+      "current_values": {
+        "nationality": "Unknown",
+        "birth_date": null,
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "ATT",
+            "MID",
+            "DEF"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": null,
+        "birth_date": null,
+        "positions": [
+          "ATT",
+          "MID",
+          "DEF"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 266,
+      "matched_player_name": "David Toro",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "David",
+          "row_number": 12,
+          "match_method": "identity-full"
+        },
+        {
+          "csv_name": "David",
+          "row_number": 10,
+          "match_method": "identity-full"
+        }
+      ],
+      "current_values": {
+        "nationality": "Ecuador",
+        "birth_date": "1976-11-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {},
+      "source_values": {
+        "nationality": "Ecuador",
+        "birth_date": "1976-11-01",
+        "positions": [
+          "MID"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 267,
+      "matched_player_name": "Jhony Sanchez",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "Jhony",
+          "row_number": 25,
+          "match_method": "identity-full"
+        }
+      ],
+      "current_values": {
+        "nationality": "Unknown",
+        "birth_date": null,
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "MID",
+            "ATT",
+            "DEF"
+          ]
+        }
+      },
+      "source_values": {
+        "positions": [
+          "MID",
+          "ATT",
+          "DEF"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 269,
+      "matched_player_name": "Nicolás Galviz",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "Nicolás",
+          "row_number": 34,
+          "match_method": "identity-full"
+        },
+        {
+          "csv_name": "Nicolás",
+          "row_number": 51,
+          "match_method": "identity-full"
+        }
+      ],
+      "current_values": {
+        "nationality": "Unknown",
+        "birth_date": "2003-08-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {},
+      "source_values": {
+        "nationality": null,
+        "birth_date": "2003-08-01",
+        "positions": []
+      }
+    },
+    {
+      "matched_player_id": 270,
+      "matched_player_name": "Rodrigo Mena",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "Rodrigo",
+          "row_number": 39,
+          "match_method": "identity-full"
+        },
+        {
+          "csv_name": "Rodrigo",
+          "row_number": 42,
+          "match_method": "identity-full"
+        }
+      ],
+      "current_values": {
+        "nationality": "Nicaragua",
+        "birth_date": "1990-03-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "MID",
+            "DEF",
+            "GK"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Nicaragua",
+        "birth_date": "1990-03-01",
+        "positions": [
+          "MID",
+          "DEF",
+          "GK"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 272,
+      "matched_player_name": "José Blanco",
+      "matched_player_nickname": "Isco",
+      "match_sources": [
+        {
+          "csv_name": "José Blanco",
+          "row_number": 24,
+          "match_method": "exact-full"
+        },
+        {
+          "csv_name": "José Blanco",
+          "row_number": 28,
+          "match_method": "exact-full"
+        }
+      ],
+      "current_values": {
+        "nationality": "Mexico",
+        "birth_date": "1996-06-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "ATT",
+            "DEF",
+            "GK"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Mexico",
+        "birth_date": "1996-06-01",
+        "positions": [
+          "ATT",
+          "DEF",
+          "GK"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 273,
+      "matched_player_name": "Cesar Lopez",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "López",
+          "row_number": 30,
+          "match_method": "identity-full"
+        },
+        {
+          "csv_name": "López",
+          "row_number": 7,
+          "match_method": "identity-full"
+        }
+      ],
+      "current_values": {
+        "nationality": "Mexico",
+        "birth_date": "1982-11-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "DEF",
+            "GK"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Mexico",
+        "birth_date": "1982-11-01",
+        "positions": [
+          "DEF",
+          "GK"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 274,
+      "matched_player_name": "Luis de la Rosa",
+      "matched_player_nickname": "Chavito/Taliban",
+      "match_sources": [
+        {
+          "csv_name": "Chavito",
+          "row_number": 8,
+          "match_method": "exact-nickname"
+        },
+        {
+          "csv_name": "Chavito",
+          "row_number": 33,
+          "match_method": "exact-nickname"
+        }
+      ],
+      "current_values": {
+        "nationality": "Mexico",
+        "birth_date": "1982-09-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "DEF",
+            "MID",
+            "GK"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Mexico",
+        "birth_date": "1982-09-01",
+        "positions": [
+          "DEF",
+          "MID",
+          "GK"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 275,
+      "matched_player_name": "Carlos Haro",
+      "matched_player_nickname": "Calin",
+      "match_sources": [
+        {
+          "csv_name": "Calin",
+          "row_number": 5,
+          "match_method": "exact-nickname"
+        },
+        {
+          "csv_name": "Calin",
+          "row_number": 5,
+          "match_method": "exact-nickname"
+        }
+      ],
+      "current_values": {
+        "nationality": "Peru",
+        "birth_date": "1984-02-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "MID",
+            "DEF",
+            "ATT"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Peru",
+        "birth_date": "1984-02-01",
+        "positions": [
+          "MID",
+          "DEF",
+          "ATT"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 276,
+      "matched_player_name": "Nicky Diaz",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "Nicky",
+          "row_number": 33,
+          "match_method": "identity-full"
+        },
+        {
+          "csv_name": "Nicky",
+          "row_number": 37,
+          "match_method": "identity-full"
+        }
+      ],
+      "current_values": {
+        "nationality": "Peru",
+        "birth_date": "1984-04-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "MID",
+            "ATT",
+            "DEF"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Peru",
+        "birth_date": "1984-04-01",
+        "positions": [
+          "MID",
+          "ATT",
+          "DEF"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 278,
+      "matched_player_name": "Jose Cerf",
+      "matched_player_nickname": "Chato",
+      "match_sources": [
+        {
+          "csv_name": "Chato",
+          "row_number": 7,
+          "match_method": "exact-nickname"
+        },
+        {
+          "csv_name": "Chato",
+          "row_number": 27,
+          "match_method": "exact-nickname"
+        }
+      ],
+      "current_values": {
+        "nationality": "Chile",
+        "birth_date": "1978-01-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "MID",
+            "ATT",
+            "DEF"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Chile",
+        "birth_date": "1978-01-01",
+        "positions": [
+          "MID",
+          "ATT",
+          "DEF"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 279,
+      "matched_player_name": "Walter Acero",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "Walter Acero",
+          "row_number": 46,
+          "match_method": "exact-full"
+        },
+        {
+          "csv_name": "Walter Acero",
+          "row_number": 50,
+          "match_method": "exact-full"
+        }
+      ],
+      "current_values": {
+        "nationality": "Unknown",
+        "birth_date": "1989-07-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "MID",
+            "DEF",
+            "GK"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": null,
+        "birth_date": "1989-07-01",
+        "positions": [
+          "MID",
+          "DEF",
+          "GK"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 280,
+      "matched_player_name": "Gus Player",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "Gus",
+          "row_number": 20,
+          "match_method": "unique-first"
+        },
+        {
+          "csv_name": "Gus",
+          "row_number": 19,
+          "match_method": "unique-first"
+        }
+      ],
+      "current_values": {
+        "nationality": "El Salvador",
+        "birth_date": "1990-03-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "ATT",
+            "DEF",
+            "MID"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "El Salvador",
+        "birth_date": "1990-03-01",
+        "positions": [
+          "ATT",
+          "DEF",
+          "MID"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 281,
+      "matched_player_name": "Asdruval Villanueva",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "Asdruval",
+          "row_number": 4,
+          "match_method": "identity-full"
+        },
+        {
+          "csv_name": "Asdruval",
+          "row_number": 4,
+          "match_method": "identity-full"
+        }
+      ],
+      "current_values": {
+        "nationality": "Mexico",
+        "birth_date": "1980-05-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "DEF",
+            "ATT",
+            "GK"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Mexico",
+        "birth_date": "1980-05-01",
+        "positions": [
+          "DEF",
+          "ATT",
+          "GK"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 282,
+      "matched_player_name": "Kevin Player",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "Kevin",
+          "row_number": 29,
+          "match_method": "unique-first"
+        },
+        {
+          "csv_name": "Kevin",
+          "row_number": 32,
+          "match_method": "unique-first"
+        }
+      ],
+      "current_values": {
+        "nationality": "El Salvador",
+        "birth_date": "1992-03-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "ATT",
+            "DEF",
+            "MID"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "El Salvador",
+        "birth_date": "1992-03-01",
+        "positions": [
+          "ATT",
+          "DEF",
+          "MID"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 283,
+      "matched_player_name": "Guillermo Lenz",
+      "matched_player_nickname": "Bolivia",
+      "match_sources": [
+        {
+          "csv_name": "Guille",
+          "row_number": 19,
+          "match_method": "identity-full"
+        },
+        {
+          "csv_name": "Guille",
+          "row_number": 18,
+          "match_method": "identity-full"
+        }
+      ],
+      "current_values": {
+        "nationality": "Bolivia",
+        "birth_date": "1983-12-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "DEF",
+            "MID",
+            "ATT"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Bolivia",
+        "birth_date": "1983-12-01",
+        "positions": [
+          "DEF",
+          "MID",
+          "ATT"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 284,
+      "matched_player_name": "Jhonatan Ochoa",
+      "matched_player_nickname": "Coti",
+      "match_sources": [
+        {
+          "csv_name": "Coti",
+          "row_number": 10,
+          "match_method": "exact-nickname"
+        },
+        {
+          "csv_name": "Coti",
+          "row_number": 9,
+          "match_method": "exact-nickname"
+        }
+      ],
+      "current_values": {
+        "nationality": "Peru",
+        "birth_date": "1987-05-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "DEF",
+            "GK"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Peru",
+        "birth_date": "1987-05-01",
+        "positions": [
+          "DEF",
+          "GK"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 285,
+      "matched_player_name": "Rudy Ramirez",
+      "matched_player_nickname": "Rudy",
+      "match_sources": [
+        {
+          "csv_name": "Rudy",
+          "row_number": 41,
+          "match_method": "exact-nickname"
+        },
+        {
+          "csv_name": "Rudy",
+          "row_number": 44,
+          "match_method": "exact-nickname"
+        }
+      ],
+      "current_values": {
+        "nationality": "Unknown",
+        "birth_date": "1986-11-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "MID",
+            "DEF",
+            "ATT"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": null,
+        "birth_date": "1986-11-01",
+        "positions": [
+          "MID",
+          "DEF",
+          "ATT"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 286,
+      "matched_player_name": "Valverde Player",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "Valverde",
+          "row_number": 47,
+          "match_method": "unique-first"
+        }
+      ],
+      "current_values": {
+        "nationality": "Unknown",
+        "birth_date": null,
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "ATT",
+            "MID"
+          ]
+        }
+      },
+      "source_values": {
+        "positions": [
+          "ATT",
+          "MID"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 288,
+      "matched_player_name": "Rob Player",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "Rob",
+          "row_number": 37,
+          "match_method": "unique-first"
+        },
+        {
+          "csv_name": "Rob",
+          "row_number": 40,
+          "match_method": "unique-first"
+        }
+      ],
+      "current_values": {
+        "nationality": "El Salvador",
+        "birth_date": "1979-04-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "DEF",
+            "GK"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "El Salvador",
+        "birth_date": "1979-04-01",
+        "positions": [
+          "DEF",
+          "GK"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 289,
+      "matched_player_name": "Osmin Player",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "Osmin",
+          "row_number": 35,
+          "match_method": "unique-first"
+        },
+        {
+          "csv_name": "Osmin",
+          "row_number": 38,
+          "match_method": "unique-first"
+        }
+      ],
+      "current_values": {
+        "nationality": "Nicaragua",
+        "birth_date": "1989-08-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "DEF",
+            "MID",
+            "ATT"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Nicaragua",
+        "birth_date": "1989-08-01",
+        "positions": [
+          "DEF",
+          "MID",
+          "ATT"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 290,
+      "matched_player_name": "Jordan Toledo",
+      "matched_player_nickname": "Jordan",
+      "match_sources": [
+        {
+          "csv_name": "Jordan",
+          "row_number": 23,
+          "match_method": "exact-nickname"
+        },
+        {
+          "csv_name": "Jordan",
+          "row_number": 26,
+          "match_method": "exact-nickname"
+        }
+      ],
+      "current_values": {
+        "nationality": "Mexico",
+        "birth_date": "1988-07-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "DEF",
+            "MID",
+            "ATT"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Mexico",
+        "birth_date": "1988-07-01",
+        "positions": [
+          "DEF",
+          "MID",
+          "ATT"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 291,
+      "matched_player_name": "Alex Meneses",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "Alex",
+          "row_number": 2,
+          "match_method": "manual-override"
+        },
+        {
+          "csv_name": "Alex",
+          "row_number": 2,
+          "match_method": "manual-override"
+        }
+      ],
+      "current_values": {
+        "nationality": "Peru",
+        "birth_date": "1982-12-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "MID",
+            "DEF",
+            "ATT"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Peru",
+        "birth_date": "1982-12-01",
+        "positions": [
+          "MID",
+          "DEF",
+          "ATT"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 292,
+      "matched_player_name": "Andres Aguayo",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "Andrés",
+          "row_number": 3,
+          "match_method": "identity-full"
+        },
+        {
+          "csv_name": "Andrés",
+          "row_number": 3,
+          "match_method": "identity-full"
+        }
+      ],
+      "current_values": {
+        "nationality": "Ecuador",
+        "birth_date": "1985-06-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "DEF",
+            "ATT"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Ecuador",
+        "birth_date": "1985-06-01",
+        "positions": [
+          "DEF",
+          "ATT"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 293,
+      "matched_player_name": "Karter Player",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "Karter",
+          "row_number": 28,
+          "match_method": "unique-first"
+        },
+        {
+          "csv_name": "Karter",
+          "row_number": 52,
+          "match_method": "unique-first"
+        }
+      ],
+      "current_values": {
+        "nationality": "USA",
+        "birth_date": null,
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {},
+      "source_values": {
+        "nationality": "USA",
+        "birth_date": null,
+        "positions": []
+      }
+    },
+    {
+      "matched_player_id": 294,
+      "matched_player_name": "Luis Urueta",
+      "matched_player_nickname": "Javier",
+      "match_sources": [
+        {
+          "csv_name": "Javier",
+          "row_number": 21,
+          "match_method": "exact-nickname"
+        },
+        {
+          "csv_name": "Javier",
+          "row_number": 22,
+          "match_method": "exact-nickname"
+        }
+      ],
+      "current_values": {
+        "nationality": "Mexico",
+        "birth_date": "1989-12-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "ATT",
+            "DEF"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Mexico",
+        "birth_date": "1989-12-01",
+        "positions": [
+          "ATT",
+          "DEF"
+        ]
+      }
+    },
+    {
+      "matched_player_id": 299,
+      "matched_player_name": "Victor S",
+      "matched_player_nickname": null,
+      "match_sources": [
+        {
+          "csv_name": "Víctor S",
+          "row_number": 45,
+          "match_method": "exact-full"
+        },
+        {
+          "csv_name": "Víctor S",
+          "row_number": 49,
+          "match_method": "exact-full"
+        }
+      ],
+      "current_values": {
+        "nationality": "Chile",
+        "birth_date": "1995-07-01",
+        "positions": [
+          "MID"
+        ]
+      },
+      "changes": {
+        "positions": {
+          "from": [
+            "MID"
+          ],
+          "to": [
+            "MID",
+            "DEF",
+            "ATT"
+          ]
+        }
+      },
+      "source_values": {
+        "nationality": "Chile",
+        "birth_date": "1995-07-01",
+        "positions": [
+          "MID",
+          "DEF",
+          "ATT"
+        ]
+      }
+    }
+  ]
+}

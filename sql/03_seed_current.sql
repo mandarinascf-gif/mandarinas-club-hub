@@ -3,7 +3,7 @@
 -- Run this AFTER 01_schema.sql.
 -- IMPORTANT: Set the dropdown to "No limit" before running.
 -- Included workbooks:
--- 1. 2026 Spring: /Users/andresaguayo/MCF_PickUpLeague copy/data/reseed_source/2026_spring/workbook.xlsx
+-- 1. 2026 Spring: /Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2026_spring/workbook.xlsx
 -- Canonical rebuild rules applied:
 -- 1. Player identities come from data/reseed_config/identity_map.csv and approved workbook sources.
 -- 2. Slash/buddy rows are duplicated into each real player.

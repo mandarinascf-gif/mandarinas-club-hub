@@ -8,14 +8,14 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Mandarinas CF" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="manifest" href="./site.webmanifest" />
     <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png" />
-    <link rel="stylesheet" href="./assets/css/app.css?v=20260426f" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260428m" />
     <title>Busses Access · Mandarinas CF</title>
-    <script src="./assets/js/ui/shell.js?v=20260426h" defer></script>
+    <script src="./assets/js/core/runtime_config.js?v=20260427a"></script>
+    <script src="./assets/js/ui/shell.js?v=20260427a" defer></script>
   </head>
-  <body class="manager-touch">
+  <body class="manager-touch admin-app page-busses">
     <nav class="site-nav">
       <div class="site-nav-inner">
         <a href="./home.html" class="site-logo">
@@ -26,8 +26,10 @@
           <a class="nav-link" href="./home.html">Home</a>
           <a class="nav-link" href="./schedule.html">Season</a>
           <a class="nav-link" href="./roster.html">Squad</a>
-          <a class="nav-link" href="./videos.html">Match Videos</a>
-          <a class="nav-link" href="./submissions.html?view=suggestions">Suggestions</a>
+          <a class="nav-link" href="./public_standings.html">Standings</a>
+          <a class="nav-link" href="./submissions.html">Report</a>
+          <a class="nav-link nav-link-extra" href="./tier_watch.html">Queue</a>
+          <a class="nav-link nav-link-extra" href="./videos.html">Videos</a>
         </div>
         <a href="./busses.html" class="nav-mode-badge">Busses</a>
       </div>
@@ -81,6 +83,55 @@
         </p>
         <p class="status-line" id="busses-access-status">Busses tools stay separate from the public club pages.</p>
       </section>
+
+      <section class="panel" id="busses-quick-actions" hidden>
+        <div class="section-label">Workspace</div>
+        <h2>Busses quick actions</h2>
+        <div class="quick-action-grid">
+          <a class="list-item" href="./seasons.html">
+            <div class="list-item-main">
+              <div class="list-item-title">Seasons</div>
+              <div class="compact-row-copy">Choose or launch the live campaign.</div>
+            </div>
+            <strong>Open</strong>
+          </a>
+          <a class="list-item" href="./matchday.html">
+            <div class="list-item-main">
+              <div class="list-item-title">Matchday</div>
+              <div class="compact-row-copy">Run attendance, teams, and scores.</div>
+            </div>
+            <strong>Open</strong>
+          </a>
+          <a class="list-item" href="./squad.html">
+            <div class="list-item-main">
+              <div class="list-item-title">Squad</div>
+              <div class="compact-row-copy">Manage player records and season prep.</div>
+            </div>
+            <strong>Open</strong>
+          </a>
+          <a class="list-item" href="./standings.html">
+            <div class="list-item-main">
+              <div class="list-item-title">Standings</div>
+              <div class="compact-row-copy">Review the live ranking board.</div>
+            </div>
+            <strong>Open</strong>
+          </a>
+          <a class="list-item" href="./tiers.html">
+            <div class="list-item-main">
+              <div class="list-item-title">Tiers</div>
+              <div class="compact-row-copy">Review live queue and recommendations.</div>
+            </div>
+            <strong>Open</strong>
+          </a>
+          <a class="list-item" href="./setup.html">
+            <div class="list-item-main">
+              <div class="list-item-title">Setup</div>
+              <div class="compact-row-copy">Open admin help and workflow notes.</div>
+            </div>
+            <strong>Open</strong>
+          </a>
+        </div>
+      </section>
     </main>
 
     <footer class="club-footer">
@@ -92,6 +143,15 @@
         const shell = window.MandarinasShell;
         const enterButton = document.getElementById("busses-enter-button");
         const statusLine = document.getElementById("busses-access-status");
+        const quickActions = document.getElementById("busses-quick-actions");
+
+        function syncUnlockedState(isUnlocked) {
+          if (quickActions) {
+            quickActions.hidden = !isUnlocked;
+          }
+
+          enterButton.textContent = isUnlocked ? "Continue to busses workspace" : "Enter busses workspace";
+        }
 
         function safeNextHref() {
           const params = new URLSearchParams(window.location.search);
@@ -124,6 +184,9 @@
         if (shell.hasAdminAccess()) {
           statusLine.textContent = "Busses access is already open in this tab.";
           statusLine.className = "status-line success";
+          syncUnlockedState(true);
+        } else {
+          syncUnlockedState(false);
         }
 
         enterButton.addEventListener("click", () => {
@@ -131,9 +194,11 @@
           statusLine.className = "status-line";
           shell.requestAdminAccess(
             () => {
+              syncUnlockedState(true);
               window.location.href = safeNextHref();
             },
             () => {
+              syncUnlockedState(shell.hasAdminAccess());
               statusLine.textContent = "Busses access stays separate until you choose to open it.";
               statusLine.className = "status-line";
             }

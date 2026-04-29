@@ -9,15 +9,15 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Mandarinas CF" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="manifest" href="./site.webmanifest" />
     <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png" />
-    <link rel="stylesheet" href="./assets/css/app.css?v=20260426f" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260428n" />
     <title>Club · Match Videos</title>
-    <script src="./assets/js/ui/shell.js?v=20260426h" defer></script>
-    <script src="./assets/js/pages/public/videos.js?v=20260426a" defer></script>
+    <script src="./assets/js/core/runtime_config.js?v=20260427a"></script>
+    <script src="./assets/js/ui/shell.js?v=20260427a" defer></script>
+    <script src="./assets/js/pages/public/videos.js?v=20260428b" defer></script>
   </head>
-  <body class="manager-touch">
+  <body class="manager-touch public-app page-videos">
     <nav class="site-nav">
       <div class="site-nav-inner">
         <a href="./home.html" class="site-logo">
@@ -28,8 +28,10 @@
           <a class="nav-link" href="./home.html">Home</a>
           <a class="nav-link" href="./schedule.html">Season</a>
           <a class="nav-link" href="./roster.html">Squad</a>
-          <a class="nav-link active" href="./videos.html">Match Videos</a>
-          <a class="nav-link" href="./submissions.html?view=suggestions">Suggestions</a>
+          <a class="nav-link" href="./public_standings.html">Standings</a>
+          <a class="nav-link" href="./submissions.html">Report</a>
+          <a class="nav-link nav-link-extra" href="./tier_watch.html">Queue</a>
+          <a class="nav-link nav-link-extra active" href="./videos.html">Videos</a>
         </div>
         <a href="./busses.html" class="nav-mode-badge">Busses</a>
       </div>
@@ -41,8 +43,8 @@
           <div class="section-label">Club · Match Videos</div>
           <h1>Match Videos</h1>
           <p>
-            Every public upload from the Mandarinas CF YouTube channel, with the player set to the
-            channel uploads playlist so the newest match videos stay at the front.
+            Every public upload from the Mandarinas CF YouTube channel, with the newest clips kept
+            in view first and the deeper archive opened only when needed.
           </p>
         </div>
         <div class="actions">
@@ -56,7 +58,7 @@
             Open on YouTube
           </a>
           <a class="secondary-button" href="./schedule.html">Open season</a>
-          <a class="secondary-button" href="./submissions.html?view=suggestions">Open suggestions</a>
+          <a class="secondary-button" href="./submissions.html">Open report</a>
         </div>
       </section>
 
@@ -72,7 +74,7 @@
           <div class="summary-card">
             <span>Order</span>
             <strong>Newest first</strong>
-            <span class="summary-copy">The page lists the latest public uploads from newest to oldest.</span>
+            <span class="summary-copy">Recent uploads stay visible first, while older archive clips stay tucked away.</span>
           </div>
           <div class="summary-card">
             <span>Content</span>
@@ -87,11 +89,19 @@
         </div>
       </section>
 
+      <section class="panel">
+        <div class="section-label">Latest Match Video</div>
+        <h2>Watch the newest upload</h2>
+        <div id="videos-featured" class="video-featured-shell">
+          <div class="empty-state">Loading the latest club video...</div>
+        </div>
+      </section>
+
       <section class="video-page-grid">
         <section class="panel">
-          <div class="section-label">Latest</div>
-          <h2>Latest Uploads</h2>
-          <div id="videos-list" class="video-card-list">
+          <div class="section-label">Archive</div>
+          <h2>Video archive</h2>
+          <div id="videos-list" class="history-stack">
             <div class="empty-state">Loading the club videos...</div>
           </div>
         </section>
@@ -102,7 +112,7 @@
             <h2>How It Works</h2>
             <div class="detail-card">
               <ul class="video-note-list">
-                <li>The page shows the club uploads in newest-to-oldest order.</li>
+                <li>The page keeps recent uploads visible and tucks older clips behind a disclosure.</li>
                 <li>Each card opens the exact video directly on YouTube.</li>
                 <li>Use the channel button for the full archive and any uploads not shown on this page.</li>
               </ul>

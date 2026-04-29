@@ -8,19 +8,19 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Mandarinas CF" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="manifest" href="./site.webmanifest" />
     <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png" />
-    <link rel="stylesheet" href="./assets/css/app.css?v=20260426f" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260428m" />
     <title>Club · Home</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/js/core/club_logic.js"></script>
     <script src="./assets/js/core/supabase_config.js"></script>
     <script src="./assets/js/core/weather.js"></script>
     <script src="./assets/js/core/app.js?v=20260425b" defer></script>
-    <script src="./assets/js/ui/shell.js?v=20260426h" defer></script>
+    <script src="./assets/js/core/runtime_config.js?v=20260427a"></script>
+    <script src="./assets/js/ui/shell.js?v=20260427a" defer></script>
   </head>
-  <body class="manager-touch">
+  <body class="manager-touch public-app page-home">
     <nav class="site-nav">
       <div class="site-nav-inner">
         <a href="./home.html" class="site-logo">
@@ -31,36 +31,32 @@
           <a class="nav-link active" href="./home.html">Home</a>
           <a class="nav-link" href="./schedule.html">Season</a>
           <a class="nav-link" href="./roster.html">Squad</a>
-          <a class="nav-link" href="./videos.html">Match Videos</a>
-          <a class="nav-link" href="./submissions.html?view=suggestions">Suggestions</a>
+          <a class="nav-link" href="./public_standings.html">Standings</a>
+          <a class="nav-link" href="./submissions.html">Report</a>
+          <a class="nav-link nav-link-extra" href="./tier_watch.html">Queue</a>
+          <a class="nav-link nav-link-extra" href="./videos.html">Videos</a>
         </div>
         <a href="./busses.html" class="nav-mode-badge">Busses</a>
       </div>
     </nav>
 
-    <main class="page">
+    <main class="page page-flow">
       <section class="panel page-header home-hero">
         <div class="home-hero-copy">
           <div class="page-header-main">
             <div class="section-label">Club · Home</div>
-            <h1>Home</h1>
+            <h1>What is happening now?</h1>
             <p id="hero-copy">
               Loading the current season, next kickoff, latest results, and standings leaders.
             </p>
           </div>
           <div class="actions home-hero-actions">
             <a class="primary-button" href="./schedule.html">Open season</a>
+            <a class="secondary-button" href="./submissions.html">Open report</a>
             <a class="secondary-button" href="./public_standings.html">Open standings</a>
-            <a class="secondary-button" href="./roster.html">Open squad</a>
+            <a class="secondary-button" href="./roster.html">Open season squad</a>
           </div>
-        </div>
-      </section>
-
-      <section class="master-detail">
-        <section class="panel master-panel">
-          <div class="section-label">Overview</div>
-          <h2>Live Season</h2>
-          <div class="summary-grid">
+          <div class="summary-grid home-summary-grid">
             <div class="summary-card">
               <span>Season</span>
               <strong id="season-name">-</strong>
@@ -89,53 +85,89 @@
               <span class="summary-copy">Active table entries</span>
             </div>
           </div>
-
-          <div class="detail-card">
-            <div class="section-label">Shortcuts</div>
-            <ul>
-              <li><a href="./schedule.html">Season</a></li>
-              <li><a href="./roster.html">Squad</a></li>
-              <li><a href="./videos.html">Match Videos</a></li>
-              <li><a href="./submissions.html?view=suggestions">Suggestions</a></li>
-              <li><a href="./public_standings.html">Standings</a></li>
-              <li><a href="./tier_watch.html">Queue</a></li>
-            </ul>
-          </div>
-        </section>
-
-        <div class="detail-stack">
-          <section class="panel detail-panel" id="latest-results-card" hidden>
-            <div class="section-label">Latest</div>
-            <h2 id="latest-results-title">Results coming soon</h2>
-            <p id="latest-results-copy">Completed matchdays appear here with scores and scorers.</p>
-            <div id="latest-results-body"></div>
-          </section>
-
-          <section class="panel detail-panel">
-            <div class="section-label">Leaders</div>
-            <h2>Current Leaders</h2>
-            <h3>Points</h3>
-            <div class="leader-list" id="leaders-points"></div>
-            <h3>Goals</h3>
-            <div class="leader-list" id="leaders-goals"></div>
-            <h3>Attendance</h3>
-            <div class="leader-list" id="leaders-attendance"></div>
-          </section>
-
-          <section class="panel detail-panel" id="mvp-card" hidden>
-            <div class="section-label">Detail</div>
-            <h2 id="mvp-name">Loading season leader</h2>
-            <p id="mvp-subtitle">Top-ranked player this season.</p>
-            <div id="mvp-body"></div>
-          </section>
-
-          <section class="panel detail-panel" id="past-winners-card" hidden>
-            <div class="section-label">History</div>
-            <h2>Past Champions</h2>
-            <p class="section-copy">A look back at the players who finished previous seasons on top.</p>
-            <div class="leader-list champion-card-list" id="past-winners-list"></div>
-          </section>
         </div>
+      </section>
+
+      <section class="panel detail-panel" id="latest-results-card" hidden>
+        <div class="section-label">Latest</div>
+        <h2 id="latest-results-title">Results coming soon</h2>
+        <p id="latest-results-copy">Completed matchdays appear here with scores and scorers.</p>
+        <div id="latest-results-body"></div>
+      </section>
+
+      <section class="panel">
+        <div class="section-label">Leaders</div>
+        <h2>Current leaders</h2>
+        <div class="feature-grid feature-grid-wide">
+          <div class="detail-card">
+            <div class="section-label">Points</div>
+            <div class="leader-list" id="leaders-points"></div>
+          </div>
+          <div class="detail-card">
+            <div class="section-label">Goals</div>
+            <div class="leader-list" id="leaders-goals"></div>
+          </div>
+          <div class="detail-card">
+            <div class="section-label">Attendance</div>
+            <div class="leader-list" id="leaders-attendance"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-label">Quick Actions</div>
+        <h2>What should I tap next?</h2>
+        <div class="quick-action-grid">
+          <a class="list-item" href="./roster.html">
+            <div class="list-item-main">
+              <div class="list-item-title">Squad</div>
+              <div class="compact-row-copy">Browse the current club players.</div>
+            </div>
+            <strong>Open</strong>
+          </a>
+          <a class="list-item" href="./public_standings.html">
+            <div class="list-item-main">
+              <div class="list-item-title">Standings</div>
+              <div class="compact-row-copy">See who is performing best.</div>
+            </div>
+            <strong>Open</strong>
+          </a>
+          <a class="list-item" href="./submissions.html">
+            <div class="list-item-main">
+              <div class="list-item-title">Report</div>
+              <div class="compact-row-copy">Submit your matchday report.</div>
+            </div>
+            <strong>Open</strong>
+          </a>
+          <a class="list-item" href="./videos.html">
+            <div class="list-item-main">
+              <div class="list-item-title">Videos</div>
+              <div class="compact-row-copy">Watch the latest uploads.</div>
+            </div>
+            <strong>Watch</strong>
+          </a>
+          <a class="list-item" href="./tier_watch.html">
+            <div class="list-item-main">
+              <div class="list-item-title">Queue</div>
+              <div class="compact-row-copy">Check who gets the next chance.</div>
+            </div>
+            <strong>Open</strong>
+          </a>
+        </div>
+      </section>
+
+      <section class="panel detail-panel" id="mvp-card" hidden>
+        <div class="section-label">Spotlight</div>
+        <h2 id="mvp-name">Loading season leader</h2>
+        <p id="mvp-subtitle">Top-ranked player this season.</p>
+        <div id="mvp-body"></div>
+      </section>
+
+      <section class="panel detail-panel" id="past-winners-card" hidden>
+        <div class="section-label">History</div>
+        <h2>Past champions</h2>
+        <p class="section-copy">A look back at the players who finished previous seasons on top.</p>
+        <div class="leader-list champion-card-list" id="past-winners-list"></div>
       </section>
     </main>
 

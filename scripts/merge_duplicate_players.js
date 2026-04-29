@@ -188,6 +188,23 @@ function mergeAttendanceStatus(left, right) {
   return rightPriority > leftPriority ? right : left;
 }
 
+function normalizeTier(value) {
+  return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
+function bestKnownTier(player) {
+  return [player?.desired_tier, player?.status, targetTierForPlayer(player)].reduce(
+    (best, candidate) => {
+      const normalized = normalizeTier(candidate);
+      if ((TIER_PRIORITY[normalized] || 0) > (TIER_PRIORITY[best] || 0)) {
+        return normalized;
+      }
+      return best;
+    },
+    "flex_sub"
+  );
+}
+
 function mergePlayerRecord(target, source, nextTier) {
   return {
     first_name: target.first_name || source.first_name,
@@ -255,7 +272,7 @@ async function loadLinkedRowsForPlayer(playerId) {
   const id = toId(playerId);
   const [seasonRows, statRows, assignmentRows] = await Promise.all([
     supabaseRequest(
-      `season_players?select=id,season_id,player_id,tier_status,tier_reason,movement_note,is_eligible&player_id=eq.${id}&limit=5000`
+      `season_players?select=id,season_id,player_id,tier_status,registration_tier,payment_status,tier_reason,movement_note,is_eligible&player_id=eq.${id}&limit=5000`
     ),
     supabaseRequest(
       `matchday_player_stats?select=id,matchday_id,player_id,attended,attendance_status,goals,goal_keeps,clean_sheet&player_id=eq.${id}&limit=5000`
@@ -284,7 +301,7 @@ async function loadState() {
       "matchdays?select=id,season_id,matchday_number&limit=5000"
     ),
     supabaseRequest(
-      "season_players?select=id,season_id,player_id,tier_status,tier_reason,movement_note,is_eligible&limit=5000"
+      "season_players?select=id,season_id,player_id,tier_status,registration_tier,payment_status,tier_reason,movement_note,is_eligible&limit=5000"
     ),
     supabaseRequest(
       "matchday_player_stats?select=id,matchday_id,player_id,attended,attendance_status,goals,goal_keeps,clean_sheet&limit=5000"
@@ -327,6 +344,40 @@ function validateMergeTargets(playersById, mergeMap) {
   return { missingSources, missingTargets };
 }
 
+async function ensureTargetSeasonRows(targetId, sourceSeasonRows, targetSeasonRows, dryRun) {
+  const originalSeasonIds = new Set(targetSeasonRows.map((row) => toId(row.season_id)));
+
+  for (const sourceRow of sourceSeasonRows) {
+    const seasonId = toId(sourceRow.season_id);
+    if (originalSeasonIds.has(seasonId)) {
+      continue;
+    }
+
+    const payload = {
+      season_id: seasonId,
+      player_id: targetId,
+      tier_status: sourceRow.tier_status,
+      registration_tier: sourceRow.registration_tier,
+      payment_status: sourceRow.payment_status,
+      tier_reason: sourceRow.tier_reason,
+      movement_note: sourceRow.movement_note,
+      is_eligible: sourceRow.is_eligible,
+    };
+
+    let createdRow = { ...sourceRow, ...payload, id: -Math.abs(toId(sourceRow.id)) };
+    if (!dryRun) {
+      const created = await supabaseRequest("season_players", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      createdRow = Array.isArray(created) ? created[0] : created;
+    }
+
+    targetSeasonRows.push(createdRow);
+    originalSeasonIds.add(seasonId);
+  }
+}
+
 async function mergeGroup(targetId, sourceIds, state, dryRun, summary) {
   const playersById = new Map(state.players.map((row) => [toId(row.id), row]));
 
@@ -337,7 +388,7 @@ async function mergeGroup(targetId, sourceIds, state, dryRun, summary) {
 
   const groupPlayers = [targetPlayer, ...sourceIds.map((id) => playersById.get(id))];
   const groupTier = groupPlayers
-    .map((player) => targetTierForPlayer(player))
+    .map((player) => bestKnownTier(player))
     .sort((left, right) => (TIER_PRIORITY[right] || 0) - (TIER_PRIORITY[left] || 0))[0];
 
   for (const sourceId of sourceIds) {
@@ -364,35 +415,9 @@ async function mergeGroup(targetId, sourceIds, state, dryRun, summary) {
       loadLinkedRowsForPlayer(sourceId),
     ]);
 
-    for (const sourceRow of sourceSeasonRows) {
-      const targetRow = targetSeasonRows.find(
-        (row) => toId(row.season_id) === toId(sourceRow.season_id)
-      );
-      if (targetRow) {
-        const mergedSeason = mergeSeasonPlayerRecord(targetRow, sourceRow);
-        if (!dryRun) {
-          await supabaseRequest(`season_players?id=eq.${targetRow.id}`, {
-            method: "PATCH",
-            body: JSON.stringify(mergedSeason),
-          });
-          await supabaseRequest(`season_players?id=eq.${sourceRow.id}`, {
-            method: "DELETE",
-          });
-        }
-        summary.seasonPlayerCollisions += 1;
-        Object.assign(targetRow, mergedSeason);
-      } else if (!dryRun) {
-        await supabaseRequest(`season_players?id=eq.${sourceRow.id}`, {
-          method: "PATCH",
-          body: JSON.stringify({ player_id: targetId }),
-        });
-      }
-      if (!targetRow) {
-        const movedRow = { ...sourceRow, player_id: targetId };
-        targetSeasonRows.push(movedRow);
-      }
-      summary.seasonPlayersMoved += 1;
-    }
+    const originalTargetSeasonIds = new Set(targetSeasonRows.map((row) => toId(row.season_id)));
+    await ensureTargetSeasonRows(targetId, sourceSeasonRows, targetSeasonRows, dryRun);
+
     for (const sourceRow of sourceStatRows) {
       const targetRow = targetStatRows.find(
         (row) => toId(row.matchday_id) === toId(sourceRow.matchday_id)
@@ -450,6 +475,31 @@ async function mergeGroup(targetId, sourceIds, state, dryRun, summary) {
         targetAssignments.push(movedRow);
       }
       summary.assignmentsMoved += 1;
+    }
+    for (const sourceRow of sourceSeasonRows) {
+      const seasonId = toId(sourceRow.season_id);
+      const targetRow = targetSeasonRows.find(
+        (row) => toId(row.season_id) === seasonId && toId(row.id) !== toId(sourceRow.id)
+      );
+
+      if (originalTargetSeasonIds.has(seasonId) && targetRow) {
+        const mergedSeason = mergeSeasonPlayerRecord(targetRow, sourceRow);
+        if (!dryRun) {
+          await supabaseRequest(`season_players?id=eq.${targetRow.id}`, {
+            method: "PATCH",
+            body: JSON.stringify(mergedSeason),
+          });
+        }
+        summary.seasonPlayerCollisions += 1;
+        Object.assign(targetRow, mergedSeason);
+      }
+
+      if (!dryRun) {
+        await supabaseRequest(`season_players?id=eq.${sourceRow.id}`, {
+          method: "DELETE",
+        });
+      }
+      summary.seasonPlayersMoved += 1;
     }
 
     if (!dryRun) {

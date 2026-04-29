@@ -41,6 +41,9 @@
     calculateAge,
     formatStatusLabel,
     formatTrendLabel,
+    badgeIconMarkup,
+    tierIconMarkup,
+    trendIconMarkup,
     normalizePlayerDesiredTier,
     historicalSeasonIds,
     attendanceStatus,
@@ -620,6 +623,7 @@
 
   window.MandarinasPublic = {
     supabaseClient,
+    TEAM_ORDER,
     normalizeText,
     nationalityFlag,
     escapeHtml,
@@ -630,6 +634,9 @@
     calculateAge,
     formatStatusLabel,
     formatTrendLabel,
+    badgeIconMarkup,
+    tierIconMarkup,
+    trendIconMarkup,
     formatDateTime,
     formatDay,
     formatLongDate,

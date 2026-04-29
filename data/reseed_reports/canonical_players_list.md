@@ -1,7 +1,6 @@
 # Canonical Players
 
 - A. Espinoza
-- Alex
 - Alex Meneses
 - Alexis
 - Andres Aguayo

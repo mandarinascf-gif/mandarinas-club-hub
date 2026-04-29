@@ -8,7 +8,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Mandarinas CF" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="manifest" href="./site.webmanifest" />
     <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png" />
     <script>
@@ -35,15 +34,16 @@
         }
       })();
     </script>
-    <link rel="stylesheet" href="./assets/css/app.css?v=20260426f" />
-    <title>Match Centre · Report</title>
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260428m" />
+    <title>Match Centre · Night Report</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./assets/js/core/club_logic.js"></script>
+    <script src="./assets/js/core/club_logic.js?v=20260428b"></script>
     <script src="./assets/js/core/supabase_config.js"></script>
     <script src="./assets/js/core/app.js?v=20260425b" defer></script>
-    <script src="./assets/js/ui/shell.js?v=20260426h"></script>
+    <script src="./assets/js/core/runtime_config.js?v=20260427a"></script>
+    <script src="./assets/js/ui/shell.js?v=20260427a"></script>
   </head>
-  <body class="manager-touch">
+  <body class="manager-touch public-app page-submissions">
     <nav class="site-nav">
       <div class="site-nav-inner">
         <a href="./home.html" class="site-logo">
@@ -52,10 +52,12 @@
         </a>
         <div class="nav-links">
           <a class="nav-link" data-submission-nav="home" href="./home.html">Home</a>
-          <a class="nav-link active" data-submission-nav="season" href="./schedule.html">Season</a>
+          <a class="nav-link" data-submission-nav="season" href="./schedule.html">Season</a>
           <a class="nav-link" data-submission-nav="squad" href="./roster.html">Squad</a>
-          <a class="nav-link" href="./videos.html">Match Videos</a>
-          <a class="nav-link" data-submission-nav="suggestions" href="./submissions.html?view=suggestions">Suggestions</a>
+          <a class="nav-link" data-submission-nav="standings" href="./public_standings.html">Standings</a>
+          <a class="nav-link active" data-submission-nav="report" href="./submissions.html">Report</a>
+          <a class="nav-link nav-link-extra" data-submission-nav="suggestions" href="./submissions.html?view=suggestions">Ideas</a>
+          <a class="nav-link nav-link-extra" href="./videos.html">Videos</a>
         </div>
         <a href="./busses.html" class="nav-mode-badge">Busses</a>
       </div>
@@ -64,25 +66,25 @@
     <main class="page manager-page">
       <section class="panel page-header manager-header-card">
         <div class="page-header-main">
-          <div class="section-label" id="submission-page-label">Fixtures · Matchday report</div>
-          <h1 id="submission-page-title">Player Report</h1>
+          <div class="section-label" id="submission-page-label">Match Centre · Night report</div>
+          <h1 id="submission-page-title">Night Report</h1>
           <p id="submission-hero-copy">
-            Pick your name first. Your team and scores load automatically, then submit stats or
-            ratings in whichever order fits the matchday.
+            Open your match card, lock in your stat line, then hand out teammate ratings that feel
+            like part of the club, not a generic form.
           </p>
         </div>
         <div class="actions">
-          <a class="primary-button" href="#submission-player-select">Choose your name</a>
+          <a class="primary-button" href="#submission-player-select">Open my card</a>
           <a class="secondary-button" id="submission-schedule-link" href="./schedule.html">Back to season</a>
         </div>
       </section>
 
       <section class="panel manager-panel">
         <div class="section-label">Step 1</div>
-        <h2>Choose Your Name</h2>
+        <h2>Open Your Match Card</h2>
         <p id="submission-player-copy">
-          Open the report by choosing your name from the players who were on the field for this
-          matchday.
+          Choose your name from the players who were on the field, then the desk reshapes around
+          your night.
         </p>
 
         <div class="field">
@@ -97,22 +99,64 @@
         </div>
       </section>
 
+      <section class="panel manager-panel submission-progress-panel">
+        <div class="section-label">Progress</div>
+        <h2>Report flow</h2>
+        <div class="wizard-progress" id="submission-progress">
+          <div class="wizard-step is-active" data-submission-step="1">
+            <span class="wizard-step-number">1</span>
+            <span class="wizard-step-label">Card</span>
+          </div>
+          <div class="wizard-step" data-submission-step="2">
+            <span class="wizard-step-number">2</span>
+            <span class="wizard-step-label">Desk</span>
+          </div>
+          <div class="wizard-step" data-submission-step="3">
+            <span class="wizard-step-number">3</span>
+            <span class="wizard-step-label">Stats</span>
+          </div>
+          <div class="wizard-step" data-submission-step="4">
+            <span class="wizard-step-number">4</span>
+            <span class="wizard-step-label">Ratings</span>
+          </div>
+          <div class="wizard-step" data-submission-step="5">
+            <span class="wizard-step-number">5</span>
+            <span class="wizard-step-label">Board</span>
+          </div>
+          <div class="wizard-step" data-submission-step="6">
+            <span class="wizard-step-number">6</span>
+            <span class="wizard-step-label">Done</span>
+          </div>
+        </div>
+      </section>
+
       <section class="workspace-shell" id="submission-workspace">
         <div class="workspace-toolbar">
           <div class="workspace-toolbar-copy">
             <div class="section-label">Work Mode</div>
-            <h2>Matchday Desk</h2>
-            <p>Keep the report flow focused, or switch into the suggestion board for discussion.</p>
+            <h2>Night Desk</h2>
+            <p>Move through your stat line, teammate ratings, and the club board without leaving the match context.</p>
           </div>
           <div class="workspace-switcher" role="tablist" aria-label="Matchday workspace">
             <button
               class="workspace-btn active"
               type="button"
-              data-submission-view-trigger="report"
+              data-submission-view-trigger="stats"
               role="tab"
               aria-selected="true"
+              aria-controls="submission-report-pane"
             >
-              Report
+              Stats
+            </button>
+            <button
+              class="workspace-btn"
+              type="button"
+              data-submission-view-trigger="ratings"
+              role="tab"
+              aria-selected="false"
+              aria-controls="submission-report-pane"
+            >
+              Ratings
             </button>
             <button
               class="workspace-btn"
@@ -120,18 +164,19 @@
               data-submission-view-trigger="suggestions"
               role="tab"
               aria-selected="false"
+              aria-controls="submission-suggestions-pane"
             >
-              Suggestions
+              Board
             </button>
           </div>
         </div>
 
-        <div class="workspace-frame" id="submission-workspace-frame" data-submission-view-mode="report">
-          <div class="workspace-pane" id="submission-report-pane" data-submission-view="report">
+        <div class="workspace-frame" id="submission-workspace-frame" data-submission-view-mode="stats">
+          <div class="workspace-pane" id="submission-report-pane">
             <section class="panel manager-panel">
-              <div class="section-label">Match Hub</div>
-              <h2 id="submission-report-title">Current Player Report</h2>
-              <p id="submission-status-line" class="status-line">Loading player report...</p>
+              <div class="section-label">Step 2</div>
+              <h2 id="submission-report-title">Current Night Desk</h2>
+              <p id="submission-status-line" class="status-line">Loading night desk...</p>
               <p class="micro-note" id="submission-window-note">
                 Busses confirm the official records after the match. Player reports stay separate until
                 they are checked.
@@ -148,13 +193,13 @@
               </div>
 
               <div class="detail-card" id="submission-report-card">
-                <div class="empty-state">Waiting for the current player report.</div>
+                <div class="empty-state">Waiting for the current night desk.</div>
               </div>
             </section>
 
             <section class="panel detail-panel manager-panel">
-              <div class="section-label">Step 2</div>
-              <h2>Stats Console</h2>
+              <div class="section-label">Step 3</div>
+              <h2>Your Stat Line</h2>
               <p id="submission-stats-copy">
                 Review the scores you played in, then enter your own goals, goalkeeper points, and clean
                 sheet if you have stats to report.
@@ -207,10 +252,10 @@
             </section>
 
             <section class="panel detail-panel manager-panel" id="submission-ratings-panel">
-              <div class="section-label">Step 3</div>
-              <h2>Ratings Console</h2>
+              <div class="section-label">Step 4</div>
+              <h2>Rate the Night</h2>
               <p id="submission-ratings-copy">
-                Give each teammate one overall star rating for that day.
+                Give each teammate one overall rating for the night with a direct club-rating slider.
               </p>
 
               <div id="submission-rating-summary" class="summary-grid manager-summary-grid">
@@ -229,23 +274,45 @@
                   <strong id="submission-rating-progress-pill">0 / 0</strong>
                   <span class="summary-copy" id="submission-rating-progress-copy">Choose your name to open the queue.</span>
                 </div>
+                <div class="summary-card">
+                  <span>Live rating</span>
+                  <strong id="submission-rating-live-grade">--</strong>
+                  <span class="summary-copy" id="submission-rating-live-grade-copy">Slide to set the club rating.</span>
+                </div>
               </div>
 
-              <div id="submission-rating-targets" class="submission-target-strip">
-                <div class="empty-state">Choose your name first.</div>
+              <div class="submission-target-picker">
+                <div class="submission-target-picker-copy">
+                  <div class="section-label">Teammate queue</div>
+                  <p class="micro-note">Tap a teammate below to open their rating card.</p>
+                </div>
+                <div id="submission-rating-targets" class="submission-target-strip">
+                  <div class="empty-state">Choose your name first.</div>
+                </div>
               </div>
 
               <form id="submission-rating-form" hidden>
                 <div class="detail-card submission-rating-card">
                   <div class="submission-rating-head">
-                    <div>
-                      <div class="section-label" id="submission-rating-relationship">Teammate</div>
+                    <div class="submission-rating-title">
                       <h3 id="submission-rating-name">Choose a player to rate</h3>
                       <p class="section-copy" id="submission-rating-progress-line">
                         Saved ratings appear as you move through the teammate queue.
                       </p>
                     </div>
-                    <span class="tag-pill" id="submission-rating-team-pill">-</span>
+                    <div class="submission-rating-preview">
+                      <span class="tag-pill" id="submission-rating-team-pill">-</span>
+                      <div class="submission-grade-orbit">
+                        <span class="submission-grade-eyebrow">Current club rating</span>
+                        <div class="submission-grade-score">
+                          <strong id="submission-rating-grade-number">--</strong>
+                          <span>/ 99</span>
+                        </div>
+                        <p class="submission-grade-copy" id="submission-rating-grade-label">
+                          Slide to preview the live game read.
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
                   <div id="submission-rating-question-list" class="submission-rating-list"></div>
@@ -262,7 +329,7 @@
 
                   <div class="actions">
                     <button class="primary-button" type="submit" id="submission-save-rating-button">Save rating</button>
-                    <button class="secondary-button" type="button" id="submission-next-rating-button">Next player</button>
+                    <button class="secondary-button" type="button" id="submission-next-rating-button">Next teammate</button>
                   </div>
                   <p class="micro-note" id="submission-rating-note">
                     Each teammate gets one saved rating per matchday from you.
@@ -274,12 +341,20 @@
                 Choose your name first.
               </div>
             </section>
+
+            <section class="panel detail-panel manager-panel" id="submission-complete-panel">
+              <div class="section-label">Step 6</div>
+              <h2>Finish Line</h2>
+              <div id="submission-complete-card" class="detail-card">
+                <div class="empty-state">Choose your name first to unlock the report flow.</div>
+              </div>
+            </section>
           </div>
 
           <div class="workspace-pane" id="submission-suggestions-pane" data-submission-view="suggestions" hidden>
             <section class="panel manager-panel">
-              <div class="section-label">Discussion</div>
-              <h2>Suggestions Board</h2>
+              <div class="section-label">Step 5</div>
+              <h2>Club Board</h2>
               <p id="submission-suggestions-copy">
                 Share an idea for this matchday, reply to other players, and like the notes that should rise to the top.
               </p>
@@ -306,7 +381,7 @@
 
             <section class="panel detail-panel manager-panel">
               <div class="section-label">Post</div>
-              <h2>Start a Suggestion</h2>
+              <h2>Start a Thread</h2>
               <p class="section-copy">
                 Choose your name first, then leave one clear idea per post so replies can stay focused.
               </p>
@@ -347,7 +422,7 @@
               <div class="panel-header">
                 <div>
                   <div class="section-label">Board</div>
-                  <h2>Current Matchday Thread</h2>
+                  <h2>Current Matchday Board</h2>
                   <p class="section-copy" id="submission-suggestion-board-copy">
                     Replies and likes appear on the current matchday board.
                   </p>
@@ -367,9 +442,9 @@
     </main>
 
     <footer class="club-footer">
-      <div class="club-footer-copy">Match Centre · Report</div>
+      <div class="club-footer-copy">Match Centre · Night Report</div>
     </footer>
 
-    <script src="./assets/js/pages/public/submissions.js?v=20260426b"></script>
+    <script src="./assets/js/pages/public/submissions.js?v=20260428a"></script>
   </body>
 </html>

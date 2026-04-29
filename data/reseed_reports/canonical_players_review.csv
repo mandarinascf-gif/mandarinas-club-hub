@@ -1,7 +1,6 @@
 full_name,nickname,public_name,first_name,last_name,player_key,nationality,positions,status,source,seasons
 A. Espinoza,,A. Espinoza,A.,Espinoza,A.|ESPINOZA,Unknown,MID,core,auto,2025 Winter
-Alex,,Alex,Alex,Player,ALEX|PLAYER,Unknown,MID,core,auto,2025 Solstice; 2025 Spring; 2025 Summer; 2025 Winter
-Alex Meneses,,Alex Meneses,Alex,Meneses,ALEX|MENESES,Unknown,MID,rotation,split_shared_row,2025 Fall; 2025 Holiday; 2026 Spring; 2026 Winter
+Alex Meneses,,Alex Meneses,Alex,Meneses,ALEX|MENESES,Unknown,MID,core,identity_map,2025 Fall; 2025 Holiday; 2025 Solstice; 2025 Spring; 2025 Summer; 2025 Winter; 2026 Spring; 2026 Winter
 Alexis,,Alexis,Alexis,Player,ALEXIS|PLAYER,Unknown,MID,rotation,split_shared_row,2025 Solstice; 2025 Spring; 2025 Summer; 2025 Winter; 2026 Spring
 Andres Aguayo,,Andres Aguayo,Andres,Aguayo,ANDRES|AGUAYO,Unknown,MID,rotation,identity_map,2025 Fall; 2025 Holiday; 2025 Solstice; 2025 Spring; 2025 Summer; 2025 Winter; 2026 Spring; 2026 Winter
 Antonio Puente,,Antonio Puente,Antonio,Puente,ANTONIO|PUENTE,Unknown,MID,core,auto,2026 Winter

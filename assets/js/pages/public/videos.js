@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const channelHomeUrl = "https://www.youtube.com/@MandarinasCF";
   const openChannelLink = document.getElementById("videos-open-channel");
   const videosCount = document.getElementById("videos-count");
+  const videosFeatured = document.getElementById("videos-featured");
   const videosList = document.getElementById("videos-list");
   const uploads = [
     {
@@ -204,6 +205,56 @@ document.addEventListener("DOMContentLoaded", () => {
     return `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg`;
   }
 
+  function videoMatchdayLabel(video) {
+    const title = String(video?.title || "");
+    const matchdayMatch = title.match(/\b(MD|Match ?Day)\s*([0-9]+)/i);
+    if (matchdayMatch) {
+      return `Matchday ${matchdayMatch[2]}`;
+    }
+
+    if (/final/i.test(title)) {
+      return "Season final";
+    }
+
+    if (/spring/i.test(title)) {
+      return "Spring season";
+    }
+
+    if (/winter/i.test(title)) {
+      return "Winter season";
+    }
+
+    return "Club archive";
+  }
+
+  function videoCardMarkup(video) {
+    return `
+      <a
+        class="video-card"
+        href="${videoUrl(video.videoId)}"
+        target="_blank"
+        rel="noreferrer"
+      >
+        <div class="video-card-media">
+          <img
+            src="${videoThumbnailUrl(video.videoId)}"
+            alt="${escapeHtml(video.title)} thumbnail"
+            loading="lazy"
+          />
+        </div>
+        <div class="video-card-body">
+          <div class="section-label">${escapeHtml(videoMatchdayLabel(video))}</div>
+          <div class="video-card-title">${escapeHtml(video.title)}</div>
+          <div class="video-card-meta">
+            <span>${escapeHtml(video.published)}</span>
+            <span>${escapeHtml(video.views)}</span>
+          </div>
+          <span class="video-card-cta">Open on YouTube</span>
+        </div>
+      </a>
+    `;
+  }
+
   if (openChannelLink) {
     openChannelLink.href = channelVideosUrl;
   }
@@ -229,6 +280,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (!uploads.length) {
+    if (videosFeatured) {
+      videosFeatured.innerHTML = `
+        <div class="empty-state">
+          The latest match video is not available right now. Use
+          <a href="${channelVideosUrl}" target="_blank" rel="noreferrer">YouTube</a>
+          to open the channel directly.
+        </div>
+      `;
+    }
     videosList.innerHTML = `
       <div class="empty-state">
         The video list is not available right now. Use
@@ -239,32 +299,87 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  videosList.innerHTML = uploads
-    .map(
-      (video) => `
-        <a
-          class="video-card"
-          href="${videoUrl(video.videoId)}"
-          target="_blank"
-          rel="noreferrer"
-        >
-          <div class="video-card-media">
-            <img
-              src="${videoThumbnailUrl(video.videoId)}"
-              alt="${escapeHtml(video.title)} thumbnail"
-              loading="lazy"
-            />
+  const [featuredVideo, ...archiveVideos] = uploads;
+  const visibleArchiveVideos = archiveVideos.slice(0, 4);
+  const olderArchiveVideos = archiveVideos.slice(4);
+
+  if (videosFeatured && featuredVideo) {
+    videosFeatured.innerHTML = `
+      <a
+        class="video-featured-card"
+        href="${videoUrl(featuredVideo.videoId)}"
+        target="_blank"
+        rel="noreferrer"
+      >
+        <div class="video-featured-media">
+          <img
+            src="${videoThumbnailUrl(featuredVideo.videoId)}"
+            alt="${escapeHtml(featuredVideo.title)} thumbnail"
+            loading="lazy"
+          />
+        </div>
+        <div class="video-featured-body">
+          <div class="section-label">${escapeHtml(videoMatchdayLabel(featuredVideo))}</div>
+          <div class="video-featured-title">${escapeHtml(featuredVideo.title)}</div>
+          <div class="video-featured-meta">
+            <span>${escapeHtml(featuredVideo.published)}</span>
+            <span>${escapeHtml(featuredVideo.views)}</span>
           </div>
-          <div class="video-card-body">
-            <div class="video-card-title">${escapeHtml(video.title)}</div>
-            <div class="video-card-meta">
-              <span>${escapeHtml(video.published)}</span>
-              <span>${escapeHtml(video.views)}</span>
+          <span class="video-card-cta">Open latest video</span>
+        </div>
+      </a>
+    `;
+  }
+
+  if (!visibleArchiveVideos.length && !olderArchiveVideos.length) {
+    videosList.innerHTML = `
+      <div class="empty-state">
+        No older uploads yet. Use
+        <a href="${channelVideosUrl}" target="_blank" rel="noreferrer">YouTube</a>
+        to follow the full channel feed.
+      </div>
+    `;
+    return;
+  }
+
+  videosList.innerHTML = `
+    ${
+      visibleArchiveVideos.length
+        ? `
+          <section class="history-stack">
+            <div class="subtable-head">
+              <div>
+                <h3>Recent uploads</h3>
+                <p>Keep the latest clips in view. Older uploads stay tucked away until you need the archive.</p>
+              </div>
             </div>
-            <span class="video-card-cta">Open on YouTube</span>
-          </div>
-        </a>
-      `
-    )
-    .join("");
+            <div class="video-card-list">
+              ${visibleArchiveVideos.map((video) => videoCardMarkup(video)).join("")}
+            </div>
+          </section>
+        `
+        : ""
+    }
+    ${
+      olderArchiveVideos.length
+        ? `
+          <details class="disclosure-card">
+            <summary class="disclosure-summary">
+              <div class="disclosure-copy">
+                <div class="disclosure-title">Older uploads</div>
+                <div class="manual-note">Open the remaining ${escapeHtml(
+                  olderArchiveVideos.length
+                )} videos only when you need the deeper backlog.</div>
+              </div>
+            </summary>
+            <div class="disclosure-body">
+              <div class="video-card-list">
+                ${olderArchiveVideos.map((video) => videoCardMarkup(video)).join("")}
+              </div>
+            </div>
+          </details>
+        `
+        : ""
+    }
+  `;
 });

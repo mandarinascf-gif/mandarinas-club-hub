@@ -8,18 +8,18 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Mandarinas CF" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="manifest" href="./site.webmanifest" />
     <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png" />
-    <link rel="stylesheet" href="./assets/css/app.css?v=20260426f" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260428m" />
     <title>Club · Rotation Tier Queue</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./assets/js/core/club_logic.js"></script>
+    <script src="./assets/js/core/club_logic.js?v=20260428b"></script>
     <script src="./assets/js/core/supabase_config.js"></script>
     <script src="./assets/js/core/app.js?v=20260425b" defer></script>
-    <script src="./assets/js/ui/shell.js?v=20260426h" defer></script>
+    <script src="./assets/js/core/runtime_config.js?v=20260427a"></script>
+    <script src="./assets/js/ui/shell.js?v=20260427a" defer></script>
   </head>
-  <body class="manager-touch">
+  <body class="manager-touch public-app page-queue">
     <nav class="site-nav">
       <div class="site-nav-inner">
         <a href="./home.html" class="site-logo">
@@ -28,10 +28,12 @@
         </a>
         <div class="nav-links">
           <a class="nav-link" href="./home.html">Home</a>
-          <a class="nav-link active" href="./schedule.html">Season</a>
+          <a class="nav-link" href="./schedule.html">Season</a>
           <a class="nav-link" href="./roster.html">Squad</a>
-          <a class="nav-link" href="./videos.html">Match Videos</a>
-          <a class="nav-link" href="./submissions.html?view=suggestions">Suggestions</a>
+          <a class="nav-link" href="./public_standings.html">Standings</a>
+          <a class="nav-link" href="./submissions.html">Report</a>
+          <a class="nav-link nav-link-extra active" href="./tier_watch.html">Queue</a>
+          <a class="nav-link nav-link-extra" href="./videos.html">Videos</a>
         </div>
         <a href="./busses.html" class="nav-mode-badge">Busses</a>
       </div>
@@ -41,7 +43,7 @@
       <section class="panel page-header">
         <div class="page-header-main">
           <div class="section-label">Club · Rotation Tier Queue</div>
-          <h1>Rotation Tier Queue</h1>
+          <h1>Who is next?</h1>
           <p id="hero-copy">
             This is the live line for rotation-tier players. If you remember the old buddy system, this is the updated version of that line.
           </p>
@@ -105,6 +107,24 @@
         <button class="secondary-button" type="button" id="open-tier-suggestion-modal">
           View recommendations
         </button>
+      </section>
+
+      <section class="panel">
+        <div class="section-label">Why This Order Exists</div>
+        <h2>Queue rules</h2>
+        <details class="disclosure-card" open>
+          <summary class="disclosure-summary">
+            <div class="disclosure-copy">
+              <div class="disclosure-title">Open the queue explanation</div>
+              <div class="micro-note">See how attendance, recent form, and balance shape the line.</div>
+            </div>
+          </summary>
+          <div class="disclosure-body">
+            <p class="section-copy">
+              The live queue stays public and readable on purpose. Rotation players move through the line based on season availability, current points context, and balance rules from the current tier system. Recommendations stay separate so the live answer stays clear.
+            </p>
+          </div>
+        </details>
       </section>
     </main>
 

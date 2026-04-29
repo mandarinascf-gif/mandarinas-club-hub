@@ -8,17 +8,17 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Mandarinas CF" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="manifest" href="./site.webmanifest" />
     <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png" />
-    <link rel="stylesheet" href="./assets/css/app.css?v=20260426f" />
-    <title>Busses · Squad</title>
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260428m" />
+    <title>Busses · Full Squad</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./assets/js/core/club_logic.js"></script>
+    <script src="./assets/js/core/club_logic.js?v=20260428b"></script>
     <script src="./assets/js/core/supabase_config.js"></script>
-    <script src="./assets/js/ui/shell.js?v=20260426h"></script>
+    <script src="./assets/js/core/runtime_config.js?v=20260427a"></script>
+    <script src="./assets/js/ui/shell.js?v=20260427a"></script>
   </head>
-  <body class="manager-touch">
+  <body class="manager-touch admin-app page-squad">
     <nav class="site-nav">
       <div class="site-nav-inner">
         <a href="./squad.html" class="site-logo">
@@ -26,10 +26,12 @@
           <span>Mandarinas <span class="logo-accent">CF</span></span>
         </a>
         <div class="nav-links">
-          <a class="nav-link active" href="./squad.html">Directory</a>
-          <a class="nav-link" href="./seasons.html">Season</a>
+          <a class="nav-link" href="./seasons.html">Seasons</a>
           <a class="nav-link" href="./matchday.html">Matchday</a>
-          <a class="nav-link" href="./tiers.html">Planner</a>
+          <a class="nav-link active" href="./squad.html">Squad</a>
+          <a class="nav-link" href="./standings.html">Standings</a>
+          <a class="nav-link" href="./tiers.html">Tiers</a>
+          <a class="nav-link nav-link-extra" href="./setup.html">Setup</a>
         </div>
         <a href="./home.html" class="nav-mode-badge">Club</a>
       </div>
@@ -38,38 +40,39 @@
     <main class="page">
       <section class="panel page-header">
         <div class="page-header-main">
-          <div class="section-label">Busses · Squad</div>
-          <h1>Squad Register</h1>
+          <div class="section-label">Busses · Full Squad</div>
+          <h1>Full Squad workspace</h1>
           <p>
-            Use the list first. Open an existing player to review details or edit that profile. Use
-            the form to add a new player record.
+            Use the full squad list first. This is the club-wide player register, even for people
+            who are not active in the current season. Open an existing player to review details or
+            edit that profile. Use the form to add a new player record.
           </p>
         </div>
         <div class="actions hero-actions">
-          <button class="primary-button" type="button" data-player-view-trigger="browse">Squad list</button>
+          <button class="primary-button" type="button" data-player-view-trigger="browse">Full squad list</button>
           <button class="secondary-button" type="button" data-player-view-trigger="add">Add player</button>
-          <a class="secondary-button" href="./seasons.html">Next: season setup</a>
+          <a class="secondary-button" href="./seasons.html">Next: season squad setup</a>
         </div>
       </section>
 
       <section class="panel">
         <div class="section-label">Overview</div>
-        <h2>Squad Register</h2>
+        <h2>Full Squad Register</h2>
         <div class="summary-grid">
           <div class="summary-card">
             <span>Registered players</span>
             <strong id="hero-player-count">0</strong>
-            <span class="summary-copy">Directory records</span>
+            <span class="summary-copy">Full club register</span>
           </div>
           <div class="summary-card">
             <span>Average rating</span>
             <strong id="hero-average-rating">0</strong>
-            <span class="summary-copy">Current squad baseline</span>
+            <span class="summary-copy">Full squad baseline</span>
           </div>
           <div class="summary-card">
             <span>Current / next-season Core</span>
             <strong id="hero-active-count">0</strong>
-            <span class="summary-copy">Current / next-season tier used for bulk season setup</span>
+            <span class="summary-copy">Full squad tier plan used for season seeding</span>
           </div>
         </div>
       </section>
@@ -78,8 +81,8 @@
         <div class="workspace-toolbar">
           <div class="workspace-toolbar-copy">
             <div class="section-label">Work Mode</div>
-            <h2>Squad Desk</h2>
-            <p>Keep one task open at a time: review the squad register or jump straight into player creation.</p>
+            <h2>Full Squad Desk</h2>
+            <p>Keep one task open at a time: review the full squad register or jump straight into player creation.</p>
           </div>
           <div class="workspace-switcher" role="tablist" aria-label="Players workspace">
             <button
@@ -106,8 +109,8 @@
         <div class="workspace-frame" id="player-workspace-frame" data-player-view-mode="browse">
           <section class="panel master-panel workspace-pane" id="player-list-panel" data-player-view="browse">
           <div class="section-label">List</div>
-          <h2>Squad List</h2>
-          <p>Search and filter the squad register. Use the quick tier picker here to prep the next campaign, then bulk-load the season squad from Season Centre.</p>
+          <h2>Full Squad List</h2>
+          <p>Search and filter the full squad register. This page holds every club profile, while Season Centre decides who is active in a specific campaign.</p>
 
           <div class="field">
             <label for="search-input">Search players</label>
@@ -234,7 +237,7 @@
 
               <p id="status-line" class="status-line">Loading club data...</p>
               <p class="micro-note">
-                Next step after squad prep: open Season Centre and use <strong>Add current Core + Rotation</strong>.
+                Next step after full squad prep: open Season Centre and use <strong>Add current Core + Rotation</strong>.
               </p>
             </form>
           </section>
@@ -243,9 +246,9 @@
     </main>
 
     <footer class="club-footer">
-      <div class="club-footer-copy">Busses · Squad</div>
+      <div class="club-footer-copy">Busses · Full Squad</div>
     </footer>
 
-    <script src="./assets/js/pages/admin/players.js?v=20260426b"></script>
+    <script src="./assets/js/pages/admin/players.js?v=20260428c"></script>
   </body>
 </html>

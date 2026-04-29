@@ -138,15 +138,15 @@ function readableError(error) {
     lowerMessage.includes("relation") &&
     (lowerMessage.includes("players") || lowerMessage.includes("season_players"))
   ) {
-    return "Squad Register cannot open until live club data is ready.";
+    return "Full Squad cannot open until live club data is ready.";
   }
 
   if (lowerMessage.includes("column") || lowerMessage.includes("schema cache")) {
-    return "Squad Register is waiting for the latest live club update.";
+    return "Full Squad is waiting for the latest live club update.";
   }
 
   if (error?.code === "23505") {
-    return "That player already exists in the squad register.";
+    return "That player already exists in the full squad register.";
   }
 
   return message;
@@ -247,7 +247,7 @@ function updateHeroStats() {
   heroAverageRating.textContent = String(averageRating);
 
   if (seasonPrepCopy) {
-    seasonPrepCopy.textContent = `${preferredCoreCount} players are currently marked Core and ${preferredRotationCount} are marked Rotation. Season Centre uses those current squad tiers when you bulk-load the next campaign.`;
+    seasonPrepCopy.textContent = `${preferredCoreCount} full-squad players are currently marked Core and ${preferredRotationCount} are marked Rotation. Season Centre uses those full-squad current / next-season tiers when you bulk-load the next campaign.`;
   }
 }
 
@@ -282,7 +282,7 @@ function renderRoster() {
   const filteredPlayers = getFilteredPlayers();
 
   if (!players.length) {
-    rosterGrid.innerHTML = `<div class="empty-state">No player records exist yet.</div>`;
+    rosterGrid.innerHTML = `<div class="empty-state">No full squad player records exist yet.</div>`;
     return;
   }
 
@@ -313,7 +313,7 @@ function renderRoster() {
           <div class="list-actions">
             <span class="tier-pill ${escapeHtml(player.status)}">${escapeHtml(formatStatusLabel(player.status))}</span>
             <div class="inline-select-field">
-              <label for="player-tier-${player.id}">Current / next season tier</label>
+              <label for="player-tier-${player.id}">Full squad current / next-season tier</label>
               <select
                 id="player-tier-${player.id}"
                 data-player-tier-id="${player.id}"
@@ -442,7 +442,7 @@ async function addPlayer(event) {
 async function savePlayerTier(playerId, nextTier, select) {
   const player = players.find((entry) => entry.id === playerId);
   if (!player) {
-    setStatus("Player not found. Reload the squad register and try again.", "error");
+    setStatus("Player not found. Reload the full squad register and try again.", "error");
     renderRoster();
     return;
   }
@@ -492,7 +492,7 @@ async function savePlayerTier(playerId, nextTier, select) {
   updateHeroStats();
   renderRoster();
   setStatus(
-    `${displayName(player)} is now marked ${formatStatusLabel(nextTier)} for current / next-season roster planning.`,
+    `${displayName(player)} is now marked ${formatStatusLabel(nextTier)} for full-squad current / next-season planning.`,
     "success"
   );
 }

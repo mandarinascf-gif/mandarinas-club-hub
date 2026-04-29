@@ -27,6 +27,7 @@
       const syncSeasonTierButton = document.getElementById("sync-season-tier-button");
       const openTiersLink = document.getElementById("open-tiers-link");
       const rosterBulkNote = document.getElementById("roster-bulk-note");
+      const seasonRosterFlowRow = document.getElementById("season-roster-flow-row");
       const selectedCoreSpotsInput = document.getElementById("selected-core-spots");
       const selectedRotationSpotsInput = document.getElementById("selected-rotation-spots");
       const selectedModelStartMatchdayInput = document.getElementById("selected-model-start-matchday");
@@ -47,6 +48,8 @@
       const seasonRosterRequestWrap = document.getElementById("season-roster-request-wrap");
       const seasonDirectoryPrepSummary = document.getElementById("season-directory-prep-summary");
       const seasonDirectoryPrepWrap = document.getElementById("season-directory-prep-wrap");
+      const seasonRosterFilterRow = document.getElementById("season-roster-filter-row");
+      const seasonRosterResultsNote = document.getElementById("season-roster-results-note");
       const rosterSummaryGrid = document.getElementById("roster-summary-grid");
       const seasonRosterWrap = document.getElementById("season-roster-wrap");
       const matchdayGrid = document.getElementById("matchday-grid");
@@ -70,6 +73,8 @@
       let seasonRosterRequests = [];
       let selectedSeasonId = Number(params.get("season_id")) || null;
       let activeSeasonView = "list";
+      let activeSeasonRosterFilter = "all";
+      let editingSeasonPlayerId = null;
       let seasonScheduleDefaultsSupported = true;
       let seasonRosterMetadataSupported = true;
       let seasonRosterRequestsSupported = true;
@@ -202,6 +207,13 @@
 
         if (tone) {
           seasonStatusLine.classList.add(tone);
+        }
+      }
+
+      function showSeasonActionFailure(message) {
+        setStatus(message, "error");
+        if (message) {
+          window.alert(message);
         }
       }
 
@@ -367,6 +379,26 @@
         return "#season-list-panel";
       }
 
+      function seasonViewRequiresSeason(view) {
+        return view === "roster" || view === "schedule";
+      }
+
+      function updateSeasonViewAvailability() {
+        const hasSelectedSeason = Boolean(selectedSeasonId);
+
+        seasonViewTriggers.forEach((button) => {
+          const unavailable = seasonViewRequiresSeason(button.dataset.seasonViewTrigger) && !hasSelectedSeason;
+          button.disabled = unavailable;
+          button.setAttribute("aria-disabled", String(unavailable));
+
+          if (unavailable) {
+            button.title = "Select a season to unlock this view.";
+          } else if (button.title === "Select a season to unlock this view.") {
+            button.removeAttribute("title");
+          }
+        });
+      }
+
       function resolveSeasonView(hash = window.location.hash) {
         const normalizedHash = String(hash || "").toLowerCase();
 
@@ -400,8 +432,10 @@
       }
 
       function setSeasonView(view, options = {}) {
-        const nextView =
+        const requestedView =
           view === "create" || view === "roster" || view === "schedule" ? view : "list";
+        const nextView =
+          seasonViewRequiresSeason(requestedView) && !selectedSeasonId ? "list" : requestedView;
         const {
           focus = false,
           scroll = false,
@@ -409,6 +443,7 @@
         } = options;
 
         activeSeasonView = nextView;
+        updateSeasonViewAvailability();
 
         if (seasonWorkspaceFrame) {
           seasonWorkspaceFrame.dataset.seasonViewMode = nextView;
@@ -437,6 +472,7 @@
           if (nextView === "create") {
             seasonNameInput.focus();
           } else if (nextView === "roster") {
+            openRosterDisclosure("players");
             seasonRosterSearch.focus();
           }
         }
@@ -458,6 +494,285 @@
 
           disclosure.open = key === name;
         });
+
+        syncRosterFlowRow();
+      }
+
+      function activeRosterDisclosureName() {
+        if (seasonSettingsDisclosure?.open) {
+          return "settings";
+        }
+
+        if (seasonRosterToolsDisclosure?.open) {
+          return "tools";
+        }
+
+        if (seasonRosterRequestsDisclosure?.open) {
+          return "requests";
+        }
+
+        if (seasonDirectoryPrepDisclosure?.open) {
+          return "prep";
+        }
+
+        if (seasonRosterListDisclosure?.open) {
+          return "players";
+        }
+
+        return "";
+      }
+
+      function syncRosterFlowRow() {
+        if (!seasonRosterFlowRow) {
+          return;
+        }
+
+        const activeDisclosure = activeRosterDisclosureName();
+        seasonRosterFlowRow.querySelectorAll("[data-open-roster-disclosure]").forEach((button) => {
+          button.classList.toggle(
+            "active",
+            button.dataset.openRosterDisclosure === activeDisclosure
+          );
+        });
+      }
+
+      function rosterFlowButtonLabel(label, count) {
+        if (!Number.isFinite(count)) {
+          return label;
+        }
+
+        return `${label} · ${count}`;
+      }
+
+      function renderRosterFlowRow(options = {}) {
+        if (!seasonRosterFlowRow) {
+          return;
+        }
+
+        const {
+          disabled = false,
+          pendingRequests = 0,
+          addablePlayers = 0,
+          rosterPlayers = 0,
+        } = options;
+
+        seasonRosterFlowRow.innerHTML = [
+          {
+            key: "requests",
+            label: rosterFlowButtonLabel("Requests", pendingRequests),
+          },
+          {
+            key: "prep",
+            label: rosterFlowButtonLabel("Full squad prep", addablePlayers),
+          },
+          {
+            key: "tools",
+            label: "Add player",
+          },
+          {
+            key: "players",
+            label: rosterFlowButtonLabel("Season squad", rosterPlayers),
+          },
+          {
+            key: "settings",
+            label: "Settings",
+          },
+        ]
+          .map(
+            ({ key, label }) => `
+              <button
+                class="chip-button ${activeRosterDisclosureName() === key ? "active" : ""}"
+                type="button"
+                data-open-roster-disclosure="${key}"
+                ${disabled ? "disabled" : ""}
+              >
+                ${escapeHtml(label)}
+              </button>
+            `
+          )
+          .join("");
+
+        syncRosterFlowRow();
+      }
+
+      function seasonRosterFilterOptions(rows) {
+        const options = [
+          {
+            key: "all",
+            label: "All",
+            count: rows.length,
+          },
+          {
+            key: "core",
+            label: "Core",
+            count: rows.filter((row) => row.tier_status === "core").length,
+          },
+          {
+            key: "rotation",
+            label: "Rotation",
+            count: rows.filter((row) => row.tier_status === "rotation").length,
+          },
+          {
+            key: "flex_sub",
+            label: "Flex/Sub",
+            count: rows.filter((row) => row.tier_status === "flex_sub").length,
+          },
+          {
+            key: "inactive",
+            label: "Inactive",
+            count: rows.filter((row) => row.is_eligible === false).length,
+          },
+          {
+            key: "tier_mismatch",
+            label: "Tier mismatch",
+            count: rows.filter((row) => row.player?.status !== row.tier_status).length,
+          },
+        ];
+
+        if (seasonRosterMetadataSupported) {
+          options.splice(4, 0, {
+            key: "payment_check",
+            label: "Payment check",
+            count: rows.filter(
+              (row) => row.payment_status !== "paid" && row.payment_status !== "comped"
+            ).length,
+          });
+        }
+
+        return options;
+      }
+
+      function rowMatchesSeasonRosterFilter(row) {
+        if (activeSeasonRosterFilter === "core") {
+          return row.tier_status === "core";
+        }
+
+        if (activeSeasonRosterFilter === "rotation") {
+          return row.tier_status === "rotation";
+        }
+
+        if (activeSeasonRosterFilter === "flex_sub") {
+          return row.tier_status === "flex_sub";
+        }
+
+        if (activeSeasonRosterFilter === "payment_check") {
+          return row.payment_status !== "paid" && row.payment_status !== "comped";
+        }
+
+        if (activeSeasonRosterFilter === "inactive") {
+          return row.is_eligible === false;
+        }
+
+        if (activeSeasonRosterFilter === "tier_mismatch") {
+          return row.player?.status !== row.tier_status;
+        }
+
+        return true;
+      }
+
+      function renderSeasonRosterFilterRow(rows) {
+        if (!seasonRosterFilterRow) {
+          return;
+        }
+
+        const options = seasonRosterFilterOptions(rows);
+        if (!options.some((option) => option.key === activeSeasonRosterFilter)) {
+          activeSeasonRosterFilter = "all";
+        }
+
+        seasonRosterFilterRow.innerHTML = options
+          .map(
+            (option) => `
+              <button
+                class="filter-chip ${activeSeasonRosterFilter === option.key ? "active" : ""}"
+                type="button"
+                data-season-roster-filter="${option.key}"
+              >
+                ${escapeHtml(`${option.label} · ${option.count}`)}
+              </button>
+            `
+          )
+          .join("");
+      }
+
+      function updateSeasonRosterResultsNote(filteredCount, totalCount, searchValue, filterLabel) {
+        if (!seasonRosterResultsNote) {
+          return;
+        }
+
+        if (!totalCount) {
+          seasonRosterResultsNote.textContent =
+            "Add players to the season to start managing the season squad.";
+          return;
+        }
+
+        if (!searchValue && activeSeasonRosterFilter === "all") {
+          seasonRosterResultsNote.textContent = `Showing all ${totalCount} season squad players.`;
+          return;
+        }
+
+        const detailParts = [];
+        if (activeSeasonRosterFilter !== "all") {
+          detailParts.push(filterLabel.toLowerCase());
+        }
+        if (searchValue) {
+          detailParts.push(`search "${searchValue}"`);
+        }
+
+        seasonRosterResultsNote.textContent = `Showing ${filteredCount} of ${totalCount} season squad players for ${detailParts.join(" + ")}.`;
+      }
+
+      function summaryPillMarkup(label, value) {
+        return `
+          <div class="summary-pill">
+            <strong>${escapeHtml(value)}</strong>
+            <span>${escapeHtml(label)}</span>
+          </div>
+        `;
+      }
+
+      function renderSummaryPillGroup(items) {
+        return (items || [])
+          .map((item) => summaryPillMarkup(item.label, item.value))
+          .join("");
+      }
+
+      function renderRosterSummaryMarkup({
+        fullSquadCount = 0,
+        seasonRosterCount = 0,
+        notAddedCount = 0,
+        coreTarget = 0,
+        rotationTarget = 0,
+      } = {}) {
+        return `
+          <p class="roster-summary-line">
+            <strong>${escapeHtml(fullSquadCount)}</strong> full squad
+            <span aria-hidden="true">·</span>
+            <strong>${escapeHtml(seasonRosterCount)}</strong> season squad
+            <span aria-hidden="true">·</span>
+            <strong>${escapeHtml(notAddedCount)}</strong> not added
+            <span aria-hidden="true">·</span>
+            targets <strong>${escapeHtml(coreTarget)}</strong> core / <strong>${escapeHtml(rotationTarget)}</strong> rotation
+          </p>
+        `;
+      }
+
+      function isSeasonPlayerEditing(seasonPlayerId) {
+        return Number(editingSeasonPlayerId) === Number(seasonPlayerId);
+      }
+
+      function startEditingSeasonPlayer(seasonPlayerId) {
+        editingSeasonPlayerId = Number(seasonPlayerId);
+        renderSeasonRoster();
+      }
+
+      function stopEditingSeasonPlayer(seasonPlayerId = editingSeasonPlayerId) {
+        if (Number(editingSeasonPlayerId) !== Number(seasonPlayerId)) {
+          return;
+        }
+
+        editingSeasonPlayerId = null;
+        renderSeasonRoster();
       }
 
       function normalizeSeasonConfig(season) {
@@ -567,10 +882,49 @@
         }
 
         if (lowerMessage.includes("cannot remove player") && lowerMessage.includes("matchday activity")) {
-          return "That player already has matchday assignments or stats in this season. Clear or reassign their matchday activity before removing them from the season roster.";
+          return "That player already has matchday assignments or stats in this season. Clear or reassign their matchday activity before removing them from the season squad.";
         }
 
         return message;
+      }
+
+      function formatCountLabel(count, singularLabel, pluralLabel = `${singularLabel}s`) {
+        return `${count} ${count === 1 ? singularLabel : pluralLabel}`;
+      }
+
+      async function getSeasonPlayerActivityCounts(season, playerId) {
+        const matchdayIds = Array.from(
+          new Set((season?.matchdays || []).map((matchday) => Number(matchday?.id)).filter(Boolean))
+        );
+
+        if (!matchdayIds.length || !playerId) {
+          return { assignmentCount: 0, statCount: 0 };
+        }
+
+        const [
+          { count: assignmentCount, error: assignmentError },
+          { count: statCount, error: statError },
+        ] = await Promise.all([
+          supabaseClient
+            .from("matchday_assignments")
+            .select("id", { count: "exact", head: true })
+            .eq("player_id", playerId)
+            .in("matchday_id", matchdayIds),
+          supabaseClient
+            .from("matchday_player_stats")
+            .select("id", { count: "exact", head: true })
+            .eq("player_id", playerId)
+            .in("matchday_id", matchdayIds),
+        ]);
+
+        if (assignmentError || statError) {
+          throw assignmentError || statError;
+        }
+
+        return {
+          assignmentCount: assignmentCount || 0,
+          statCount: statCount || 0,
+        };
       }
 
       function seasonScheduleSummary(season) {
@@ -581,6 +935,110 @@
         return `${weekdayLabel(season.default_matchday_weekday)} · ${formatTimeLabel(
           season.default_kickoff_time
         )}`;
+      }
+
+      function buildSeasonListGroups(rows) {
+        const orderedRows = sortSeasonsChronologically(rows || []);
+        let focusIndex = orderedRows.findIndex((season) => Number(season.id) === Number(selectedSeasonId));
+
+        if (focusIndex === -1) {
+          focusIndex = orderedRows.length - 1;
+        }
+
+        return {
+          focus: orderedRows[focusIndex] || null,
+          newer: orderedRows.slice(focusIndex + 1),
+          older: orderedRows.slice(0, focusIndex).reverse(),
+        };
+      }
+
+      function seasonListDisclosureLabel(kind, rows) {
+        const count = rows.length;
+        const noun = count === 1 ? "season" : "seasons";
+        return kind === "newer" ? `${count} newer ${noun}` : `${count} older ${noun}`;
+      }
+
+      function seasonListDisclosureNote(kind, rows) {
+        const orderedRows = sortSeasonsChronologically(rows);
+        const earliest = orderedRows[0];
+        const latest = orderedRows[orderedRows.length - 1];
+
+        if (!latest || !earliest) {
+          return "";
+        }
+
+        const edgeLabel =
+          latest.name === earliest.name
+            ? latest.name
+            : `${earliest.name} to ${latest.name}`;
+
+        return kind === "newer"
+          ? `Open ${edgeLabel} only when switching to a later campaign.`
+          : `Open ${edgeLabel} only when you need the older archive.`;
+      }
+
+      function seasonCardMarkup(season, options = {}) {
+        const matchdays = season.matchdays || [];
+        const rosterCount = (season.seasonPlayers || []).length;
+        const scheduled = matchdays.filter((matchday) => Boolean(matchday.kickoff_at)).length;
+        const focusLabel = options.focusLabel || "";
+
+        return `
+          <article class="season-card ${season.id === selectedSeasonId ? "active" : ""}" data-season-id="${season.id}">
+            <div class="season-card-head">
+              <div>
+                <h3 class="season-name">${escapeHtml(season.name)}</h3>
+                <p class="season-meta">Created ${escapeHtml(formatDateTime(season.created_at))}</p>
+              </div>
+              <div class="count-badge">
+                <span>Days</span>
+                <strong>${escapeHtml(season.total_matchdays)}</strong>
+              </div>
+            </div>
+
+            <div class="season-tags">
+              ${focusLabel ? `<span class="tag-pill timeline-focus-pill">${escapeHtml(focusLabel)}</span>` : ""}
+              <span class="tag-pill">${escapeHtml(scheduled)} scheduled</span>
+              <span class="tag-pill">${escapeHtml(matchdays.length)} generated</span>
+              <span class="tag-pill">${escapeHtml(rosterCount)} in season</span>
+              <span class="tag-pill">${escapeHtml(season.core_spots)} core target</span>
+              <span class="tag-pill">${escapeHtml(season.rotation_spots)} rotation target</span>
+              <span class="tag-pill">${escapeHtml(seasonScheduleSummary(season))}</span>
+              <span class="tag-pill">${escapeHtml(season.venue_name || DEFAULT_VENUE_NAME)}</span>
+              <span class="tag-pill">Go live MD ${escapeHtml(season.model_start_matchday || 1)}</span>
+            </div>
+          </article>
+        `;
+      }
+
+      function seasonCardListMarkup(rows, options = {}) {
+        return rows.map((season) => seasonCardMarkup(season, options)).join("");
+      }
+
+      function seasonListDisclosureMarkup(kind, rows) {
+        if (!rows.length) {
+          return "";
+        }
+
+        if (rows.length <= 2) {
+          return `<div class="season-grid">${seasonCardListMarkup(rows)}</div>`;
+        }
+
+        return `
+          <details class="disclosure-card">
+            <summary class="disclosure-summary">
+              <div class="disclosure-copy">
+                <div class="disclosure-title">${escapeHtml(seasonListDisclosureLabel(kind, rows))}</div>
+                <div class="manual-note">${escapeHtml(seasonListDisclosureNote(kind, rows))}</div>
+              </div>
+            </summary>
+            <div class="disclosure-body">
+              <div class="season-grid">
+                ${seasonCardListMarkup(rows)}
+              </div>
+            </div>
+          </details>
+        `;
       }
 
       function setSeasonSettingsLocked(locked) {
@@ -631,7 +1089,7 @@
         const nextTier = normalizeText(nextTierValue || "").toLowerCase();
 
         if (!player) {
-          setStatus("Directory player not found. Refresh and try again.", "error");
+          setStatus("Full-squad player not found. Refresh and try again.", "error");
           renderSeasonRoster();
           return;
         }
@@ -673,7 +1131,7 @@
         player.desired_tier = nextTier;
         renderSeasonRoster();
         setStatus(
-          `${displayName(player)} is now marked ${formatTierLabel(nextTier)} for next-season bulk setup.`,
+          `${displayName(player)} is now marked ${formatTierLabel(nextTier)} for full-squad next-season bulk setup.`,
           "success"
         );
       }
@@ -688,39 +1146,22 @@
           return;
         }
 
-        seasonGrid.innerHTML = seasons
-          .map((season) => {
-            const matchdays = season.matchdays || [];
-            const rosterCount = (season.seasonPlayers || []).length;
-            const scheduled = matchdays.filter((matchday) => Boolean(matchday.kickoff_at)).length;
+        const { focus, newer, older } = buildSeasonListGroups(seasons);
 
-            return `
-              <article class="season-card ${season.id === selectedSeasonId ? "active" : ""}" data-season-id="${season.id}">
-                <div class="season-card-head">
-                  <div>
-                    <h3 class="season-name">${escapeHtml(season.name)}</h3>
-                    <p class="season-meta">Created ${escapeHtml(formatDateTime(season.created_at))}</p>
-                  </div>
-                  <div class="count-badge">
-                    <span>Days</span>
-                    <strong>${escapeHtml(season.total_matchdays)}</strong>
-                  </div>
-                </div>
+        if (!focus) {
+          seasonGrid.innerHTML = `
+            <div class="empty-state">
+              No seasons yet. Create one from the form and the app will generate its schedule.
+            </div>
+          `;
+          return;
+        }
 
-                <div class="season-tags">
-                  <span class="tag-pill">${escapeHtml(scheduled)} scheduled</span>
-                  <span class="tag-pill">${escapeHtml(matchdays.length)} generated</span>
-                  <span class="tag-pill">${escapeHtml(rosterCount)} in season</span>
-                  <span class="tag-pill">${escapeHtml(season.core_spots)} core target</span>
-                  <span class="tag-pill">${escapeHtml(season.rotation_spots)} rotation target</span>
-                  <span class="tag-pill">${escapeHtml(seasonScheduleSummary(season))}</span>
-                  <span class="tag-pill">${escapeHtml(season.venue_name || DEFAULT_VENUE_NAME)}</span>
-                  <span class="tag-pill">Go live MD ${escapeHtml(season.model_start_matchday || 1)}</span>
-                </div>
-              </article>
-            `;
-          })
-          .join("");
+        seasonGrid.innerHTML = `
+          ${seasonCardMarkup(focus, { focusLabel: "Selected" })}
+          ${seasonListDisclosureMarkup("newer", newer)}
+          ${seasonListDisclosureMarkup("older", older)}
+        `;
       }
 
       function renderMatchdays() {
@@ -748,7 +1189,7 @@
         const matchdays = selectedSeason.matchdays || [];
         const seasonRosterCount = (selectedSeason.seasonPlayers || []).length;
         selectedSeasonPill.textContent = selectedSeason.name;
-        matchdayBoardCopy.textContent = `${selectedSeason.name} has ${seasonRosterCount} active squad players who can appear in Match Centre, League Table, Planner, and club screens. Tier targets are ${selectedSeason.core_spots} Core and ${selectedSeason.rotation_spots} Rotation, with the current queue model starting at matchday ${selectedSeason.model_start_matchday || 1}. ${
+        matchdayBoardCopy.textContent = `${selectedSeason.name} has ${seasonRosterCount} active season-squad players who can appear in Match Centre, League Table, Planner, and club screens. Tier targets are ${selectedSeason.core_spots} Core and ${selectedSeason.rotation_spots} Rotation, with the current queue model starting at matchday ${selectedSeason.model_start_matchday || 1}. ${
           selectedSeason.season_start_date
             ? `Default nights are ${weekdayLabel(selectedSeason.default_matchday_weekday)} at ${formatTimeLabel(
                 selectedSeason.default_kickoff_time
@@ -808,8 +1249,11 @@
       function renderSeasonRoster() {
         if (!selectedSeasonId) {
           lastRosterDisclosureSeasonId = null;
+          activeSeasonRosterFilter = "all";
+          editingSeasonPlayerId = null;
+          seasonRosterSearch.value = "";
           rosterSeasonPill.textContent = "Choose a campaign";
-          rosterBoardCopy.textContent = "Choose a campaign to decide which squad players become active this season. Flow: Squad Register -> Season squad -> Availability -> Match Centre -> League Table -> Planner -> Club HQ.";
+          rosterBoardCopy.textContent = "Choose a campaign to decide which full-squad players become active this season. Flow: Full Squad -> Season squad -> Availability -> Match Centre -> League Table -> Planner -> Club HQ.";
           openTiersLink.href = "./tiers.html";
           selectedSeasonStartDateInput.value = "";
           selectedSeasonWeekdayInput.value = String(DEFAULT_MATCHDAY_WEEKDAY);
@@ -820,88 +1264,39 @@
           selectedModelStartMatchdayInput.value = "1";
           setSeasonSettingsLocked(true);
           seasonSettingsNote.textContent = "Choose a campaign first. These settings control the weekly queue and the matchday where the current model begins.";
-          seasonRosterAddSelect.innerHTML = `<option value="">Select a player from the squad register</option>`;
+          seasonRosterAddSelect.innerHTML = `<option value="">Select a player from the full squad</option>`;
           seasonRosterRegistrationTierSelect.value = "rotation";
           seasonRosterTierStatusSelect.value = "rotation";
           seasonRosterPaymentStatusSelect.value = "unknown";
           seedRosterButton.disabled = true;
           syncSeasonTierButton.disabled = true;
-          syncSeasonTierButton.textContent = "Use squad tier status";
+          syncSeasonTierButton.textContent = "Use full squad tier status";
           if (rosterBulkNote) {
-            rosterBulkNote.textContent = "For now, bulk add uses the current / next-season tier from Squad and only pulls players marked Core or Rotation.";
+            rosterBulkNote.textContent = "For now, bulk add uses the current / next-season tier from Full Squad and only pulls players marked Core or Rotation.";
           }
-          seasonRosterRequestSummary.innerHTML = `
-            <div class="summary-card">
-              <span>Pending requests</span>
-              <strong>0</strong>
-            </div>
-            <div class="summary-card">
-              <span>Directory matches</span>
-              <strong>0</strong>
-            </div>
-            <div class="summary-card">
-              <span>New directory asks</span>
-              <strong>0</strong>
-            </div>
-          `;
+          renderRosterFlowRow({ disabled: true });
+          seasonRosterRequestSummary.innerHTML = renderSummaryPillGroup([
+            { label: "Pending", value: 0 },
+            { label: "Full squad matches", value: 0 },
+            { label: "New full-squad asks", value: 0 },
+          ]);
           seasonRosterRequestWrap.innerHTML = `<div class="table-empty">Select a season first.</div>`;
-          seasonDirectoryPrepSummary.innerHTML = `
-            <div class="summary-card">
-              <span>Addable players</span>
-              <strong>${escapeHtml(clubPlayers.length)}</strong>
-            </div>
-            <div class="summary-card">
-              <span>Core</span>
-              <strong>0</strong>
-            </div>
-            <div class="summary-card">
-              <span>Rotation</span>
-              <strong>0</strong>
-            </div>
-            <div class="summary-card">
-              <span>Flex/Sub</span>
-              <strong>0</strong>
-            </div>
-          `;
+          seasonDirectoryPrepSummary.innerHTML = renderSummaryPillGroup([
+            { label: "Addable", value: clubPlayers.length },
+            { label: "Core", value: 0 },
+            { label: "Rotation", value: 0 },
+            { label: "Flex/Sub", value: 0 },
+          ]);
           seasonDirectoryPrepWrap.innerHTML = `<div class="table-empty">Select a season first.</div>`;
-          rosterSummaryGrid.innerHTML = `
-            <div class="summary-card">
-              <span>Directory players</span>
-              <strong>${escapeHtml(clubPlayers.length)}</strong>
-            </div>
-            <div class="summary-card">
-              <span>Active roster</span>
-              <strong>0</strong>
-            </div>
-            <div class="summary-card">
-              <span>Not added yet</span>
-              <strong>${escapeHtml(clubPlayers.length)}</strong>
-            </div>
-            <div class="summary-card">
-              <span>Core</span>
-              <strong>0</strong>
-            </div>
-            <div class="summary-card">
-              <span>Rotation</span>
-              <strong>0</strong>
-            </div>
-            <div class="summary-card">
-              <span>Flex/Sub</span>
-              <strong>0</strong>
-            </div>
-            <div class="summary-card">
-              <span>Paid</span>
-              <strong>0</strong>
-            </div>
-            <div class="summary-card">
-              <span>Pending</span>
-              <strong>0</strong>
-            </div>
-            <div class="summary-card">
-              <span>Unknown</span>
-              <strong>0</strong>
-            </div>
-          `;
+          renderSeasonRosterFilterRow([]);
+          updateSeasonRosterResultsNote(0, 0, "", "All");
+          rosterSummaryGrid.innerHTML = renderRosterSummaryMarkup({
+            fullSquadCount: clubPlayers.length,
+            seasonRosterCount: 0,
+            notAddedCount: clubPlayers.length,
+            coreTarget: 18,
+            rotationTarget: 10,
+          });
           seasonRosterWrap.innerHTML = `<div class="table-empty">Select a season first.</div>`;
           openRosterDisclosure("settings");
           return;
@@ -917,9 +1312,20 @@
           return;
         }
 
+        const seasonChanged = selectedSeason.id !== lastRosterDisclosureSeasonId;
+        if (seasonChanged) {
+          activeSeasonRosterFilter = "all";
+          editingSeasonPlayerId = null;
+          seasonRosterSearch.value = "";
+        }
+
         const rosterRows = seasonRosterRowsForSeason(selectedSeason);
         const searchValue = normalizeText(seasonRosterSearch.value).toLowerCase();
         const filteredRoster = rosterRows.filter((row) => {
+          if (!rowMatchesSeasonRosterFilter(row)) {
+            return false;
+          }
+
           if (!searchValue) {
             return true;
           }
@@ -960,7 +1366,7 @@
         const directoryMatchRequests = pendingRosterRequests.filter((request) => request.player).length;
         const newDirectoryRequests = pendingRosterRequests.filter((request) => !request.player).length;
 
-        if (selectedSeason.id !== lastRosterDisclosureSeasonId) {
+        if (seasonChanged) {
           openRosterDisclosure(
             pendingRosterRequests.length ? "requests" : rosterRows.length ? "players" : "tools"
           );
@@ -968,17 +1374,17 @@
         }
 
         rosterSeasonPill.textContent = selectedSeason.name;
-        rosterBoardCopy.textContent = `${selectedSeason.name} has ${rosterRows.length} season registrations out of ${clubPlayers.length} squad profiles. Only rostered players appear in Match Centre, League Table, Planner, and club screens. Queue tracking begins at matchday ${selectedSeason.model_start_matchday || 1}, so earlier nights remain historical. ${
+        rosterBoardCopy.textContent = `${selectedSeason.name} has ${rosterRows.length} season-squad registrations out of ${clubPlayers.length} full-squad profiles. Only season-squad players appear in Match Centre, League Table, Planner, and club screens. Queue tracking begins at matchday ${selectedSeason.model_start_matchday || 1}, so earlier nights remain historical. ${
           seasonRosterMetadataSupported
-            ? "Store what each player signed up for, whether they paid, and whether they are still active for matchdays. Use the Squad Register to set current / next-season tiers first, then bulk add current Core + Rotation."
-            : "Use the Squad Register to set current / next-season tiers first, then bulk add current Core + Rotation."
+            ? "Store what each player signed up for, whether they paid, and whether they are still active for matchdays. Use Full Squad to set current / next-season tiers first, then bulk add current Core + Rotation."
+            : "Use Full Squad to set current / next-season tiers first, then bulk add current Core + Rotation."
         }`;
         openTiersLink.href = `./tiers.html?season_id=${selectedSeasonId}`;
         seedRosterButton.disabled = !addableCoreRotationPlayers.length;
         syncSeasonTierButton.disabled = !rosterRows.length;
         syncSeasonTierButton.textContent = rosterRows.length
-          ? `Use squad tier status${selectedSeason.name ? ` for ${selectedSeason.name}` : ""}`
-          : "Use squad tier status";
+          ? `Use full squad tier status${selectedSeason.name ? ` for ${selectedSeason.name}` : ""}`
+          : "Use full squad tier status";
         selectedCoreSpotsInput.value = String(selectedSeason.core_spots);
         selectedRotationSpotsInput.value = String(selectedSeason.rotation_spots);
         selectedModelStartMatchdayInput.value = String(selectedSeason.model_start_matchday || 1);
@@ -991,50 +1397,46 @@
           ? `These settings apply to ${selectedSeason.name}. Queue fairness and pathway review only count completed matchdays on or after matchday ${selectedSeason.model_start_matchday || 1}. Fill unscheduled matchdays from the saved weekly defaults whenever you are ready.`
           : `These settings apply to ${selectedSeason.name}. Weekly fixture defaults are still in basic mode on this club build, so save kickoffs one by one for now.`;
         seasonRosterAddSelect.innerHTML = `
-          <option value="">Select a player from the squad register</option>
+          <option value="">Select a player from the full squad</option>
           ${addablePlayers
             .map(
               (player) =>
-                `<option value="${player.id}">${escapeHtml(displayName(player))} · current/next-season ${escapeHtml(formatTierLabel(player.status))}</option>`
+                `<option value="${player.id}">${escapeHtml(displayName(player))} · full squad current/next-season ${escapeHtml(formatTierLabel(player.status))}</option>`
             )
             .join("")}
         `;
         syncRosterAddDefaultsFromSelection();
         if (rosterBulkNote) {
           const bulkCopy = addableCoreRotationPlayers.length
-            ? `${addableCorePlayers.length} addable squad players are currently marked Core and ${addableRotationPlayers.length} are marked Rotation. Use Add current Core + Rotation to pull only those players into ${selectedSeason.name}.`
-            : `No addable squad players are currently marked Core or Rotation. Update player tiers in Squad first, then use Add current Core + Rotation.`;
+            ? `${addableCorePlayers.length} addable full-squad players are currently marked Core and ${addableRotationPlayers.length} are marked Rotation. Use Add current Core + Rotation to pull only those players into ${selectedSeason.name}.`
+            : `No addable full-squad players are currently marked Core or Rotation. Update player tiers in Full Squad first, then use Add current Core + Rotation.`;
           const syncCopy = rosterRows.length
             ? tierSyncRows.length
-              ? `${tierSyncRows.length} rostered players in ${selectedSeason.name} currently differ from the Squad page tier status. Use squad tier status to align this season.`
-              : `${selectedSeason.name} already matches the Squad page tier status for every rostered player.`
+              ? `${tierSyncRows.length} season-squad players in ${selectedSeason.name} currently differ from the Full Squad tier status. Use full squad tier status to align this season.`
+              : `${selectedSeason.name} already matches the Full Squad tier status for every season-squad player.`
             : "";
           rosterBulkNote.textContent = syncCopy ? `${bulkCopy} ${syncCopy}` : bulkCopy;
         }
-        seasonRosterRequestSummary.innerHTML = `
-          <div class="summary-card">
-            <span>Pending requests</span>
-            <strong>${escapeHtml(pendingRosterRequests.length)}</strong>
-          </div>
-          <div class="summary-card">
-            <span>Directory matches</span>
-            <strong>${escapeHtml(directoryMatchRequests)}</strong>
-          </div>
-          <div class="summary-card">
-            <span>New directory asks</span>
-            <strong>${escapeHtml(newDirectoryRequests)}</strong>
-          </div>
-        `;
+        renderRosterFlowRow({
+          pendingRequests: pendingRosterRequests.length,
+          addablePlayers: addablePlayers.length,
+          rosterPlayers: rosterRows.length,
+        });
+        seasonRosterRequestSummary.innerHTML = renderSummaryPillGroup([
+          { label: "Pending", value: pendingRosterRequests.length },
+          { label: "Full squad matches", value: directoryMatchRequests },
+          { label: "New full-squad asks", value: newDirectoryRequests },
+        ]);
         if (!seasonRosterRequestsSupported) {
           seasonRosterRequestWrap.innerHTML = `
             <div class="table-empty">
-              Public squad requests are waiting for the latest club update on this build.
+              Public season-squad requests are waiting for the latest club update on this build.
             </div>
           `;
         } else if (!pendingRosterRequests.length) {
           seasonRosterRequestWrap.innerHTML = `
             <div class="table-empty">
-              No pending public squad requests for ${escapeHtml(selectedSeason.name)} right now.
+              No pending public season-squad requests for ${escapeHtml(selectedSeason.name)} right now.
             </div>
           `;
         } else {
@@ -1044,8 +1446,8 @@
                 .map((request) => {
                   const requestName = seasonRosterRequestDisplayName(request);
                   const requestCopy = request.player
-                    ? `Already in the main directory as ${displayName(request.player)}`
-                    : "Needs a new main directory profile before season approval";
+                    ? `Already in the full squad register as ${displayName(request.player)}`
+                    : "Needs a new full-squad profile before season approval";
                   const requestNote = request.note
                     ? `<p class="compact-row-copy">${escapeHtml(request.note)}</p>`
                     : "";
@@ -1065,7 +1467,7 @@
                       </div>
                       <div class="compact-badges">
                         <span class="tag-pill">${escapeHtml(
-                          request.player ? "Directory match" : "New directory request"
+                          request.player ? "Full squad match" : "New full squad request"
                         )}</span>
                         <span class="tag-pill">Requested season tier ${escapeHtml(
                           formatTierLabel(request.requested_tier)
@@ -1081,7 +1483,7 @@
                           type="button"
                           data-approve-season-roster-request="${request.id}"
                         >
-                          ${request.player ? "Approve into season" : "Approve to directory + season"}
+                          ${request.player ? "Approve into season" : "Approve to full squad + season"}
                         </button>
                         <button
                           class="secondary-button"
@@ -1098,28 +1500,27 @@
             </div>
           `;
         }
-        seasonDirectoryPrepSummary.innerHTML = `
-          <div class="summary-card">
-            <span>Addable players</span>
-            <strong>${escapeHtml(addablePlayers.length)}</strong>
-          </div>
-          <div class="summary-card">
-            <span>Core</span>
-            <strong>${escapeHtml(addableCorePlayers.length)}</strong>
-          </div>
-          <div class="summary-card">
-            <span>Rotation</span>
-            <strong>${escapeHtml(addableRotationPlayers.length)}</strong>
-          </div>
-          <div class="summary-card">
-            <span>Flex/Sub</span>
-            <strong>${escapeHtml(addableFlexPlayers.length)}</strong>
-          </div>
-        `;
+        renderSeasonRosterFilterRow(rosterRows);
+        const activeFilterLabel =
+          seasonRosterFilterOptions(rosterRows).find(
+            (option) => option.key === activeSeasonRosterFilter
+          )?.label || "All";
+        updateSeasonRosterResultsNote(
+          filteredRoster.length,
+          rosterRows.length,
+          searchValue,
+          activeFilterLabel
+        );
+        seasonDirectoryPrepSummary.innerHTML = renderSummaryPillGroup([
+          { label: "Addable", value: addablePlayers.length },
+          { label: "Core", value: addableCorePlayers.length },
+          { label: "Rotation", value: addableRotationPlayers.length },
+          { label: "Flex/Sub", value: addableFlexPlayers.length },
+        ]);
         if (!addablePlayers.length) {
           seasonDirectoryPrepWrap.innerHTML = `
             <div class="table-empty">
-              Every squad player is already on ${escapeHtml(selectedSeason.name)}. Use the squad controls below to review season tiers and activity.
+              Every full-squad player is already on ${escapeHtml(selectedSeason.name)}. Use the season-squad controls below to review tiers and activity.
             </div>
           `;
         } else {
@@ -1133,7 +1534,7 @@
                         <div>
                           <div class="compact-row-title">${escapeHtml(displayName(player))}</div>
                           <p class="compact-row-copy">${escapeHtml(
-                            [player.nationality || "Directory player", ...(player.positions || [])]
+                            [player.nationality || "Full squad player", ...(player.positions || [])]
                               .filter(Boolean)
                               .join(" · ")
                           )}</p>
@@ -1145,7 +1546,7 @@
                         )}</span>
                       </div>
                       <div class="field">
-                        <label for="directory-prep-tier-${player.id}">Current / next-season tier</label>
+                        <label for="directory-prep-tier-${player.id}">Full squad current / next-season tier</label>
                         <select
                           id="directory-prep-tier-${player.id}"
                           data-directory-prep-tier="${player.id}"
@@ -1162,57 +1563,18 @@
           `;
         }
 
-        rosterSummaryGrid.innerHTML = `
-          <div class="summary-card">
-            <span>Directory players</span>
-            <strong>${escapeHtml(clubPlayers.length)}</strong>
-          </div>
-          <div class="summary-card">
-            <span>Active roster</span>
-            <strong>${escapeHtml(rosterRows.length)}</strong>
-          </div>
-          <div class="summary-card">
-            <span>Not added yet</span>
-            <strong>${escapeHtml(addablePlayers.length)}</strong>
-          </div>
-          <div class="summary-card">
-            <span>Core</span>
-            <strong>${escapeHtml(coreCount)}</strong>
-          </div>
-          <div class="summary-card">
-            <span>Rotation</span>
-            <strong>${escapeHtml(rotationCount)}</strong>
-          </div>
-          <div class="summary-card">
-            <span>Flex/Sub</span>
-            <strong>${escapeHtml(flexCount)}</strong>
-          </div>
-          <div class="summary-card">
-            <span>Core target</span>
-            <strong>${escapeHtml(selectedSeason.core_spots)}</strong>
-          </div>
-          <div class="summary-card">
-            <span>Rotation target</span>
-            <strong>${escapeHtml(selectedSeason.rotation_spots)}</strong>
-          </div>
-          <div class="summary-card">
-            <span>Paid</span>
-            <strong>${escapeHtml(paidCount)}</strong>
-          </div>
-          <div class="summary-card">
-            <span>Pending</span>
-            <strong>${escapeHtml(pendingCount)}</strong>
-          </div>
-          <div class="summary-card">
-            <span>Unknown</span>
-            <strong>${escapeHtml(unknownCount)}</strong>
-          </div>
-        `;
+        rosterSummaryGrid.innerHTML = renderRosterSummaryMarkup({
+          fullSquadCount: clubPlayers.length,
+          seasonRosterCount: rosterRows.length,
+          notAddedCount: addablePlayers.length,
+          coreTarget: selectedSeason.core_spots,
+          rotationTarget: selectedSeason.rotation_spots,
+        });
 
         if (!rosterRows.length) {
           seasonRosterWrap.innerHTML = `
             <div class="table-empty">
-              No players are in ${escapeHtml(selectedSeason.name)} yet. Add them one by one or use
+              No players are on ${escapeHtml(selectedSeason.name)}'s season squad yet. Add them one by one or use
               <strong>Add current Core + Rotation</strong> as a starting point.
             </div>
           `;
@@ -1220,47 +1582,33 @@
         }
 
         if (!filteredRoster.length) {
-          seasonRosterWrap.innerHTML = `<div class="table-empty">No active roster players match the current search.</div>`;
+          seasonRosterWrap.innerHTML = `<div class="table-empty">No season-squad players match the current search or filter.</div>`;
           return;
         }
 
         seasonRosterWrap.innerHTML = `
           <div class="compact-list">
             ${filteredRoster
-              .map(
-                (row) => `
+              .map((row) => {
+                const isEditing = isSeasonPlayerEditing(row.id);
+                const playerDetails = row.player.nationality || "Full squad player";
+
+                return `
                   <article class="compact-row" data-season-player-row="${row.id}">
                     <div class="compact-row-main">
                       <div>
                         <div class="compact-row-title">${escapeHtml(displayName(row.player))}</div>
-                        <p class="compact-row-copy">${escapeHtml(row.player.nationality || "Directory player")}</p>
+                        <p class="compact-row-copy">${escapeHtml(playerDetails)}</p>
                       </div>
-                    </div>
-                    <div class="compact-badges">
-                      <span class="tag-pill">Requested season tier ${escapeHtml(formatTierLabel(row.registration_tier))}</span>
-                      <span class="tag-pill">This season tier ${escapeHtml(formatTierLabel(row.tier_status))}</span>
-                      ${
-                        row.player.status !== row.tier_status
-                          ? `<span class="tag-pill">Current / next-season tier ${escapeHtml(formatTierLabel(row.player.status))}</span>`
-                          : ""
-                      }
-                      <span class="tag-pill">${escapeHtml(formatPaymentStatusLabel(row.payment_status))}</span>
-                      <span class="tag-pill">${escapeHtml(row.is_eligible ? "Active for matchdays" : "Inactive for matchdays")}</span>
                     </div>
                     <div class="field-grid">
                       <div class="field">
-                        <label for="season-player-registration-${row.id}">Requested season tier</label>
+                        <label for="season-player-tier-${row.id}">Tier</label>
                         <select
-                          id="season-player-registration-${row.id}"
-                          data-season-player-registration="${row.id}"
-                          ${seasonRosterMetadataSupported ? "" : "disabled"}
+                          id="season-player-tier-${row.id}"
+                          data-season-player-tier="${row.id}"
+                          ${isEditing ? "" : "disabled"}
                         >
-                          ${tierOptionsMarkup(row.registration_tier)}
-                        </select>
-                      </div>
-                      <div class="field">
-                        <label for="season-player-tier-${row.id}">This season tier</label>
-                        <select id="season-player-tier-${row.id}" data-season-player-tier="${row.id}">
                           ${tierOptionsMarkup(row.tier_status)}
                         </select>
                       </div>
@@ -1269,26 +1617,26 @@
                         <select
                           id="season-player-payment-${row.id}"
                           data-season-player-payment="${row.id}"
-                          ${seasonRosterMetadataSupported ? "" : "disabled"}
+                          ${isEditing && seasonRosterMetadataSupported ? "" : "disabled"}
                         >
                           ${paymentOptionsMarkup(row.payment_status)}
                         </select>
                       </div>
-                      <div class="field">
-                        <label for="season-player-eligible-${row.id}">Matchday status</label>
-                        <select id="season-player-eligible-${row.id}" data-season-player-eligible="${row.id}">
-                          <option value="true" ${row.is_eligible ? "selected" : ""}>Active</option>
-                          <option value="false" ${row.is_eligible ? "" : "selected"}>Inactive</option>
-                        </select>
-                      </div>
                     </div>
                     <div class="actions">
-                      <button class="primary-button" type="button" data-save-season-player="${row.id}">Save roster entry</button>
+                      ${
+                        isEditing
+                          ? `
+                            <button class="primary-button" type="button" data-save-season-player="${row.id}">Save changes</button>
+                            <button class="secondary-button" type="button" data-cancel-season-player="${row.id}">Cancel</button>
+                          `
+                          : `<button class="primary-button" type="button" data-edit-season-player="${row.id}">Edit entry</button>`
+                      }
                       <button class="secondary-button" type="button" data-remove-season-player="${row.id}">Remove</button>
                     </div>
                   </article>
                 `
-              )
+              })
               .join("")}
           </div>
         `;
@@ -1302,9 +1650,9 @@
           season_id: selectedSeason.id,
           player_id: player.id,
           tier_status: normalizeText(overrides.tier_status || registrationTier).toLowerCase(),
-          tier_reason: overrides.tier_reason || "Added from the player registry desired tier.",
+          tier_reason: overrides.tier_reason || "Added from the full squad current / next-season tier.",
           movement_note:
-            overrides.movement_note || "Season roster controls matchday and standings visibility.",
+            overrides.movement_note || "Season squad membership controls matchday and standings visibility.",
           is_eligible: overrides.is_eligible !== false,
         };
 
@@ -1324,32 +1672,26 @@
         const card = seasonRosterWrap.querySelector(`[data-season-player-row="${seasonPlayerId}"]`);
 
         if (!selectedSeason || !row || !card) {
-          setStatus("Season roster row not found. Refresh the page and try again.", "error");
+          setStatus("Season squad row not found. Refresh the page and try again.", "error");
           return;
         }
 
-        const registrationTierInput = card.querySelector(`[data-season-player-registration="${seasonPlayerId}"]`);
         const tierStatusInput = card.querySelector(`[data-season-player-tier="${seasonPlayerId}"]`);
         const paymentStatusInput = card.querySelector(`[data-season-player-payment="${seasonPlayerId}"]`);
-        const eligibilityInput = card.querySelector(`[data-season-player-eligible="${seasonPlayerId}"]`);
         const saveButton = card.querySelector(`[data-save-season-player="${seasonPlayerId}"]`);
         const player = clubPlayers.find((entry) => entry.id === row.player_id);
 
         const payload = {
           tier_status: normalizeText(tierStatusInput?.value || row.tier_status).toLowerCase(),
-          is_eligible: String(eligibilityInput?.value || row.is_eligible) === "true",
         };
 
         if (seasonRosterMetadataSupported) {
-          payload.registration_tier = normalizeText(
-            registrationTierInput?.value || row.registration_tier
-          ).toLowerCase();
           payload.payment_status = normalizePaymentStatus(paymentStatusInput?.value || row.payment_status);
         }
 
         saveButton.disabled = true;
         saveButton.textContent = "Saving...";
-        setStatus(`Saving the ${player ? displayName(player) : "player"} season record...`);
+        setStatus(`Saving the ${player ? displayName(player) : "player"} season-squad record...`);
 
         try {
           const { error } = await supabaseClient
@@ -1361,6 +1703,7 @@
             throw error;
           }
 
+          editingSeasonPlayerId = null;
           await loadSeasons();
           setStatus(
             `${player ? displayName(player) : "Season player"} updated for ${selectedSeason.name}.`,
@@ -1370,7 +1713,7 @@
           setStatus(readableError(error), "error");
         } finally {
           saveButton.disabled = false;
-          saveButton.textContent = "Save roster entry";
+          saveButton.textContent = "Save changes";
         }
       }
 
@@ -1457,14 +1800,14 @@
         const playerId = Number(seasonRosterAddSelect.value);
 
         if (!selectedSeason || !playerId) {
-          setStatus("Choose a campaign and a player from the squad register.", "warning");
+          setStatus("Choose a campaign and a player from the full squad.", "warning");
           return;
         }
 
         const player = clubPlayers.find((entry) => entry.id === playerId);
 
         if (!player) {
-          setStatus("That squad profile was not found. Refresh and try again.", "error");
+          setStatus("That full-squad profile was not found. Refresh and try again.", "error");
           return;
         }
 
@@ -1479,7 +1822,7 @@
               registration_tier: seasonRosterRegistrationTierSelect.value,
               tier_status: seasonRosterTierStatusSelect.value,
               payment_status: seasonRosterPaymentStatusSelect.value,
-              tier_reason: "Added from the squad register for this season signup.",
+              tier_reason: "Added from the full squad register for this season signup.",
               movement_note: "Review payment and season tier before the next matchday.",
               is_eligible: true,
             })
@@ -1526,7 +1869,7 @@
           );
 
         if (!rowsToInsert.length) {
-          setStatus("No missing desired core or rotation players to add.", "warning");
+          setStatus("No missing full-squad core or rotation players to add.", "warning");
           return;
         }
 
@@ -1562,7 +1905,7 @@
 
         if (!rowsToSync.length) {
           setStatus(
-            `${selectedSeason.name} already matches the Squad page current / next-season tier for every rostered player.`,
+            `${selectedSeason.name} already matches the Full Squad current / next-season tier for every season-squad player.`,
             "success"
           );
           return;
@@ -1571,7 +1914,7 @@
         syncSeasonTierButton.disabled = true;
         syncSeasonTierButton.textContent = "Syncing...";
         setStatus(
-          `Applying the Squad page current / next-season tier to ${rowsToSync.length} rostered players in ${selectedSeason.name}...`
+          `Applying the Full Squad current / next-season tier to ${rowsToSync.length} season-squad players in ${selectedSeason.name}...`
         );
 
         try {
@@ -1581,8 +1924,8 @@
                 .from("season_players")
                 .update({
                   tier_status: row.player.status,
-                  tier_reason: "Aligned with the Squad page current / next-season tier.",
-                  movement_note: "Season tier synced from the squad register status.",
+                  tier_reason: "Aligned with the Full Squad current / next-season tier.",
+                  movement_note: "Season tier synced from the full squad status.",
                 })
                 .eq("id", row.id)
                 .then(({ error }) => {
@@ -1596,47 +1939,91 @@
           openRosterDisclosure("players");
           await loadSeasons();
           setStatus(
-            `${rowsToSync.length} rostered players in ${selectedSeason.name} now match the Squad page current / next-season tier.`,
+            `${rowsToSync.length} season-squad players in ${selectedSeason.name} now match the Full Squad current / next-season tier.`,
             "success"
           );
         } catch (error) {
           setStatus(readableError(error), "error");
         } finally {
           syncSeasonTierButton.disabled = false;
-          syncSeasonTierButton.textContent = `Use squad tier status${selectedSeason.name ? ` for ${selectedSeason.name}` : ""}`;
+          syncSeasonTierButton.textContent = `Use full squad tier status${selectedSeason.name ? ` for ${selectedSeason.name}` : ""}`;
         }
       }
 
-      async function removeSeasonPlayer(seasonPlayerId) {
+      async function removeSeasonPlayer(seasonPlayerId, triggerButton = null) {
         const selectedSeason = getSelectedSeason();
         const row = (selectedSeason?.seasonPlayers || []).find((entry) => entry.id === seasonPlayerId);
         const player = clubPlayers.find((entry) => entry.id === row?.player_id);
 
         if (!row || !selectedSeason || !player) {
-          setStatus("Season roster row not found. Refresh the page and try again.", "error");
+          setStatus("Season squad row not found. Refresh the page and try again.", "error");
           return;
         }
 
-        const confirmed = window.confirm(
-          `Remove ${displayName(player)} from ${selectedSeason.name}? They will disappear from Match Centre, League Table, Planner, and the club site for this season.`
-        );
+        const playerName = displayName(player);
+        const originalButtonText = triggerButton?.textContent || "Remove";
 
-        if (!confirmed) {
-          return;
+        if (triggerButton) {
+          triggerButton.disabled = true;
+          triggerButton.textContent = "Checking...";
         }
 
-        setStatus(`Removing ${displayName(player)} from ${selectedSeason.name}...`);
+        try {
+          setStatus(`Checking whether ${playerName} can be removed from ${selectedSeason.name}...`, "loading");
 
-        const { error } = await supabaseClient.from("season_players").delete().eq("id", seasonPlayerId);
+          const { assignmentCount, statCount } = await getSeasonPlayerActivityCounts(
+            selectedSeason,
+            row.player_id
+          );
 
-        if (error) {
-          setStatus(readableError(error), "error");
-          return;
+          if (assignmentCount || statCount) {
+            const activitySummary = [
+              assignmentCount ? formatCountLabel(assignmentCount, "assignment") : "",
+              statCount ? formatCountLabel(statCount, "stat record") : "",
+            ]
+              .filter(Boolean)
+              .join(" and ");
+            showSeasonActionFailure(
+              `${playerName} still has ${activitySummary} in ${selectedSeason.name}. Clear or reassign that matchday activity before removing them from the season squad.`
+            );
+            return;
+          }
+
+          const confirmed = window.confirm(
+            `Remove ${playerName} from ${selectedSeason.name}? They will disappear from Match Centre, League Table, Planner, and the club site for this season.`
+          );
+
+          if (!confirmed) {
+            setStatus(`${playerName} stays on ${selectedSeason.name}.`);
+            return;
+          }
+
+          if (triggerButton?.isConnected) {
+            triggerButton.textContent = "Removing...";
+          }
+          setStatus(`Removing ${playerName} from ${selectedSeason.name}...`, "loading");
+
+          const { error } = await supabaseClient.from("season_players").delete().eq("id", seasonPlayerId);
+
+          if (error) {
+            showSeasonActionFailure(readableError(error));
+            return;
+          }
+
+          if (isSeasonPlayerEditing(seasonPlayerId)) {
+            editingSeasonPlayerId = null;
+          }
+          setStatus(`${playerName} removed from ${selectedSeason.name}.`, "success");
+          openRosterDisclosure("players");
+          await loadSeasons();
+        } catch (error) {
+          showSeasonActionFailure(readableError(error));
+        } finally {
+          if (triggerButton?.isConnected) {
+            triggerButton.disabled = false;
+            triggerButton.textContent = originalButtonText;
+          }
         }
-
-        setStatus(`${displayName(player)} removed from ${selectedSeason.name}.`, "success");
-        openRosterDisclosure("players");
-        await loadSeasons();
       }
 
       async function ensureSeasonRosterRequestPlayer(request) {
@@ -1739,7 +2126,7 @@
         );
 
         if (!selectedSeason || !request) {
-          setStatus("Season roster request not found. Refresh and try again.", "error");
+          setStatus("Season-squad request not found. Refresh and try again.", "error");
           return;
         }
 
@@ -1779,7 +2166,7 @@
         );
 
         if (!selectedSeason || !request) {
-          setStatus("Season roster request not found. Refresh and try again.", "error");
+          setStatus("Season-squad request not found. Refresh and try again.", "error");
           return;
         }
 
@@ -1931,7 +2318,7 @@
           selectedSeasonId = seasons[seasons.length - 1]?.id || null;
         }
 
-        updateSeasonUrl();
+        setSeasonView(activeSeasonView);
         updateHeroStats();
         renderSeasons();
         renderSeasonRoster();
@@ -1943,7 +2330,7 @@
           !seasonRosterRequestsSupported
         ) {
           setStatus(
-            "Connected. Weekly fixture defaults, signup metadata, or public squad requests are still in basic mode on this build.",
+            "Connected. Weekly fixture defaults, signup metadata, or public season-squad requests are still in basic mode on this build.",
             "warning"
           );
           return;
@@ -2206,6 +2593,28 @@
       seasonRosterAddButton.addEventListener("click", addPlayerToSeason);
       seasonRosterSearch.addEventListener("input", renderSeasonRoster);
       seasonRosterAddSelect.addEventListener("change", syncRosterAddDefaultsFromSelection);
+      seasonRosterFlowRow.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-open-roster-disclosure]");
+
+        if (!button) {
+          return;
+        }
+
+        openRosterDisclosure(button.dataset.openRosterDisclosure);
+        if (button.dataset.openRosterDisclosure === "players") {
+          seasonRosterSearch.focus();
+        }
+      });
+      seasonRosterFilterRow.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-season-roster-filter]");
+
+        if (!button) {
+          return;
+        }
+
+        activeSeasonRosterFilter = button.dataset.seasonRosterFilter;
+        renderSeasonRoster();
+      });
       seasonViewTriggers.forEach((button) => {
         button.addEventListener("click", () => {
           setSeasonView(button.dataset.seasonViewTrigger, {
@@ -2230,8 +2639,20 @@
       });
 
       seasonRosterWrap.addEventListener("click", async (event) => {
+        const editButton = event.target.closest("[data-edit-season-player]");
+        const cancelButton = event.target.closest("[data-cancel-season-player]");
         const saveButton = event.target.closest("[data-save-season-player]");
         const button = event.target.closest("[data-remove-season-player]");
+
+        if (editButton) {
+          startEditingSeasonPlayer(Number(editButton.dataset.editSeasonPlayer));
+          return;
+        }
+
+        if (cancelButton) {
+          stopEditingSeasonPlayer(Number(cancelButton.dataset.cancelSeasonPlayer));
+          return;
+        }
 
         if (saveButton) {
           await saveSeasonPlayer(Number(saveButton.dataset.saveSeasonPlayer));
@@ -2242,7 +2663,7 @@
           return;
         }
 
-        await removeSeasonPlayer(Number(button.dataset.removeSeasonPlayer));
+        await removeSeasonPlayer(Number(button.dataset.removeSeasonPlayer), button);
       });
 
       seasonRosterRequestWrap.addEventListener("click", async (event) => {
@@ -2300,6 +2721,35 @@
 
       window.addEventListener("hashchange", () => {
         setSeasonView(resolveSeasonView(), { updateHash: false });
+      });
+
+      [
+        seasonSettingsDisclosure,
+        seasonRosterToolsDisclosure,
+        seasonRosterRequestsDisclosure,
+        seasonDirectoryPrepDisclosure,
+        seasonRosterListDisclosure,
+      ].forEach((disclosure) => {
+        disclosure?.addEventListener("toggle", () => {
+          if (!disclosure.open) {
+            syncRosterFlowRow();
+            return;
+          }
+
+          [
+            seasonSettingsDisclosure,
+            seasonRosterToolsDisclosure,
+            seasonRosterRequestsDisclosure,
+            seasonDirectoryPrepDisclosure,
+            seasonRosterListDisclosure,
+          ].forEach((otherDisclosure) => {
+            if (otherDisclosure && otherDisclosure !== disclosure) {
+              otherDisclosure.open = false;
+            }
+          });
+
+          syncRosterFlowRow();
+        });
       });
 
       setSeasonView(resolveSeasonView(), { updateHash: false });

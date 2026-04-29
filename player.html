@@ -8,17 +8,17 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Mandarinas CF" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="manifest" href="./site.webmanifest" />
     <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png" />
-    <link rel="stylesheet" href="./assets/css/app.css?v=20260426f" />
-    <title>Busses · Player Card</title>
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260428x" />
+    <title>Full Squad · Player Badge</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/js/core/club_logic.js"></script>
     <script src="./assets/js/core/supabase_config.js"></script>
-    <script src="./assets/js/ui/shell.js?v=20260426h"></script>
+    <script src="./assets/js/core/runtime_config.js?v=20260427a"></script>
+    <script src="./assets/js/ui/shell.js?v=20260427a"></script>
   </head>
-  <body class="manager-touch">
+  <body class="manager-touch admin-app page-player">
     <nav class="site-nav">
       <div class="site-nav-inner">
         <a href="./squad.html" class="site-logo">
@@ -26,10 +26,12 @@
           <span>Mandarinas <span class="logo-accent">CF</span></span>
         </a>
         <div class="nav-links">
-          <a class="nav-link active" href="./squad.html">Directory</a>
-          <a class="nav-link" href="./seasons.html">Season</a>
+          <a class="nav-link" href="./seasons.html">Seasons</a>
           <a class="nav-link" href="./matchday.html">Matchday</a>
-          <a class="nav-link" href="./tiers.html">Planner</a>
+          <a class="nav-link active" href="./squad.html">Squad</a>
+          <a class="nav-link" href="./standings.html">Standings</a>
+          <a class="nav-link" href="./tiers.html">Tiers</a>
+          <a class="nav-link nav-link-extra" href="./setup.html">Setup</a>
         </div>
         <a href="./home.html" class="nav-mode-badge">Club</a>
       </div>
@@ -38,12 +40,12 @@
     <main class="page">
       <section class="panel page-header">
         <div class="page-header-main">
-          <div class="section-label">Busses · Player Card</div>
+          <div class="section-label">Full Squad · Player Badge</div>
           <h1 id="hero-copy">Player</h1>
-          <p>View the saved player record first. Edit only when you need to change the data.</p>
+          <p>View the saved player record as a club badge first. Edit only when you need to change the data.</p>
         </div>
         <div class="actions">
-          <a class="secondary-button" href="./squad.html">Back to squad</a>
+          <a class="secondary-button" href="./squad.html">Back to full squad</a>
           <a class="secondary-button" href="#history-panel">Recent matchdays</a>
           <button class="primary-button" type="button" id="edit-button">Edit</button>
         </div>
@@ -72,8 +74,8 @@
 
       <section class="master-detail" id="player-shell" hidden>
         <section class="panel master-panel" id="player-view-panel">
-          <div class="section-label">View</div>
-          <h2>Player Information</h2>
+          <div class="section-label">Badge</div>
+          <h2>Player Crest</h2>
           <div id="player-view-body"></div>
         </section>
 
@@ -190,9 +192,10 @@
     </main>
 
     <footer class="club-footer">
-      <div class="club-footer-copy">Busses · Player Card</div>
+      <div class="club-footer-copy">Full Squad · Player Badge</div>
     </footer>
 
-    <script src="./assets/js/pages/admin/player.js?v=20260425a"></script>
+    <script src="./assets/js/ui/player_badge.js?v=20260428h"></script>
+    <script src="./assets/js/pages/admin/player.js?v=20260428c"></script>
   </body>
 </html>

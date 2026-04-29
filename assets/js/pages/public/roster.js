@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     escapeHtml,
     playerDisplayName,
     playerNameParts,
+    nationalityFlag,
     calculateAge,
     formatStatusLabel,
     readableError,
@@ -270,60 +271,185 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  function renderPlayerDetailMarkup(player) {
-    const standingsMap = buildStandingsMap(allStandings);
-    const stats = getPlayerStats(player.id, standingsMap);
-    const nameParts = playerNameParts(player);
-    const positions =
-      Array.isArray(player.positions) && player.positions.length
-        ? player.positions.join(", ")
-        : "Not set";
-    const age = calculateAge(player.birth_date);
-    const history = playerDetailsMap.get(player.id) || [];
+  function formatFoot(value) {
+    const normalized = normalizeText(value).toLowerCase();
+
+    if (normalized === "left" || normalized === "right" || normalized === "both") {
+      return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+    }
+
+    return "Right";
+  }
+
+  function playerBadgeMonogram(player) {
+    const initials = [player?.first_name, player?.last_name]
+      .map((value) => normalizeText(value).charAt(0).toUpperCase())
+      .filter(Boolean)
+      .join("")
+      .slice(0, 2);
+
+    if (initials) {
+      return initials;
+    }
+
+    return playerDisplayName(player).slice(0, 2).toUpperCase();
+  }
+
+  function playerRankDisplay(value) {
+    const rank = Number(value);
+    return Number.isFinite(rank) && rank > 0 ? String(rank) : "--";
+  }
+
+  function positionRoleLabel(position) {
+    const map = {
+      GK: "Goalkeeper",
+      DEF: "Defender",
+      MID: "Midfielder",
+      ATT: "Forward",
+    };
+
+    return map[position] || position || "Player";
+  }
+
+  function badgePositionCode(positions) {
+    const normalized = (Array.isArray(positions) ? positions : [])
+      .map((value) => normalizeText(value).toUpperCase())
+      .filter(Boolean);
+
+    if (!normalized.length) {
+      return "CM";
+    }
+
+    const codeSet = new Set(normalized);
+    if (codeSet.has("GK")) {
+      return "GK";
+    }
+    if (codeSet.has("MID") && codeSet.has("ATT")) {
+      return "AM";
+    }
+    if (codeSet.has("MID") && codeSet.has("DEF")) {
+      return "DM";
+    }
+    if (codeSet.has("ATT")) {
+      return "ST";
+    }
+    if (codeSet.has("MID")) {
+      return "CM";
+    }
+    if (codeSet.has("DEF")) {
+      return "CB";
+    }
+
+    return normalized[0];
+  }
+
+  function badgePositionPillsMarkup(positions) {
+    const normalized = (Array.isArray(positions) ? positions : [])
+      .map((value) => normalizeText(value).toUpperCase())
+      .filter(Boolean)
+      .slice(0, 3);
+
+    if (!normalized.length) {
+      return "";
+    }
 
     return `
-      <div class="detail-card">
-        <div class="section-label">Identity</div>
-        <h3>${escapeHtml(nameParts.primary || playerDisplayName(player))}</h3>
-        <ul>
-          <li>Full name: <strong>${escapeHtml(`${player.first_name || ""} ${player.last_name || ""}`.trim())}</strong></li>
-          <li>Nickname: <strong>${escapeHtml(player.nickname || "Not set")}</strong></li>
-          <li>Nationality: <strong>${escapeHtml(player.nationality || "Not set")}</strong></li>
-          <li>Age: <strong>${escapeHtml(age == null ? "Unknown" : age)}</strong></li>
-        </ul>
-      </div>
-      <div class="detail-card">
-        <div class="section-label">Season Profile</div>
-        <ul>
-          <li>Tier: <strong>${escapeHtml(formatStatusLabel(player.status))}</strong></li>
-          <li>Positions: <strong>${escapeHtml(positions)}</strong></li>
-          <li>Rank: <strong>${escapeHtml(stats.rank)}</strong></li>
-          <li>Points: <strong>${escapeHtml(stats.total_points || 0)}</strong></li>
-          <li>Points per game: <strong>${escapeHtml(Number(stats.points_per_game || 0).toFixed(2))}</strong></li>
-        </ul>
-      </div>
-      <div class="detail-card">
-        <div class="section-label">Season Totals</div>
-        <ul>
-          <li>Attendance: <strong>${escapeHtml(stats.days_attended || 0)}</strong></li>
-          <li>Goals: <strong>${escapeHtml(stats.goals || 0)}</strong></li>
-          <li>Goalkeeping points: <strong>${escapeHtml(stats.goal_keep_points_earned || 0)}</strong></li>
-          <li>Clean sheets: <strong>${escapeHtml(stats.clean_sheets || 0)}</strong></li>
-          <li>Record: <strong>${escapeHtml(`${stats.wins || 0}-${stats.draws || 0}-${stats.losses || 0}`)}</strong></li>
-        </ul>
-      </div>
-      <div class="detail-card">
-        <div class="section-label">Recent Matchdays</div>
-        ${renderRecentHistory(history)}
+      <div class="roster-orbit-position-row" aria-label="Player positions">
+        ${normalized
+          .map(
+            (position) =>
+              `<span class="roster-orbit-position-pill">${escapeHtml(position)}</span>`
+          )
+          .join("")}
       </div>
     `;
   }
 
+  function badgeHeaderMarkup(player) {
+    const badgeKey = `roster-badge-${Number(player?.id) || "player"}`;
+    const topArcId = `${badgeKey}-top-arc`;
+    const subArcId = `${badgeKey}-sub-arc`;
+
+    return `
+      <div class="roster-orbit-header" aria-hidden="true">
+        <svg class="roster-orbit-header-svg" viewBox="0 0 320 186" role="presentation">
+          <defs>
+            <path id="${topArcId}" d="M 40 134 A 120 120 0 0 1 280 134"></path>
+            <path id="${subArcId}" d="M 64 136 A 96 96 0 0 1 256 136"></path>
+          </defs>
+          <text class="roster-orbit-wordmark-svg">
+            <textPath href="#${topArcId}" startOffset="50%" text-anchor="middle">
+              MANDARINAS
+            </textPath>
+          </text>
+          <text class="roster-orbit-submark-svg">
+            <textPath href="#${subArcId}" startOffset="50%" text-anchor="middle">
+              CALIFORNIA CLUB DE FUTBOL
+            </textPath>
+          </text>
+        </svg>
+      </div>
+    `;
+  }
+
+  function renderPlayerDetailMarkup(player) {
+    const standingsMap = buildStandingsMap(allStandings);
+    const stats = getPlayerStats(player.id, standingsMap);
+    const positions =
+      Array.isArray(player.positions) && player.positions.length ? player.positions : [];
+    const age = calculateAge(player.birth_date);
+    const nationality = player.nationality || "";
+    const flag = nationalityFlag(player.nationality || "");
+    const overall = Number.isFinite(Number(player.skill_rating)) ? Number(player.skill_rating) : 0;
+    const points = Number(stats.total_points || 0);
+    const pointsPerGame = Number(stats.points_per_game || 0).toFixed(2);
+    const attendance = Number(stats.days_attended || 0);
+    const goals = Number(stats.goals || 0);
+    const positionLabel = positions.length
+      ? positions
+          .slice(0, 3)
+          .map((value) => normalizeText(value).toUpperCase())
+          .filter(Boolean)
+          .join(" · ")
+      : normalizeText(player.position_label || player.primary_position || "", "N/A");
+    const badgePlayer = {
+      name: playerDisplayName(player) || "Player",
+      nationality,
+      flag,
+      birth_date: player.birth_date,
+      age,
+      dominant_foot: player.dominant_foot,
+      overall_rating: overall,
+      rank: playerRankDisplay(stats.rank),
+      ppg: Number(pointsPerGame),
+      primary_position: positions[0] || normalizeText(player.primary_position || "", "N/A"),
+      position_label: positionLabel,
+      tier: player.status,
+      positions,
+    };
+    const badgeStats = {
+      points,
+      apps: attendance,
+      goals,
+      rank: playerRankDisplay(stats.rank),
+      ppg: Number(pointsPerGame),
+      points_per_game: Number(pointsPerGame),
+    };
+    const badgeMarkup = window.renderPlayerBadge
+      ? window.renderPlayerBadge(badgePlayer, badgeStats).outerHTML
+      : "";
+
+    return `
+      <div class="roster-player-badge">
+        ${badgeMarkup}
+      </div>
+    `;
+  }
   function renderRoster() {
     const rows = visiblePlayers();
 
     if (!allPlayers.length) {
-      playerList.innerHTML = '<div class="empty-state">No players on this roster yet.</div>';
+      playerList.innerHTML = '<div class="empty-state">No players on this season squad yet.</div>';
       return;
     }
 
@@ -341,14 +467,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         const isActive = Number(player.id) === Number(selectedPlayerId);
 
         return `
-          <article class="list-item ${isActive ? "active" : ""}" data-player-id="${player.id}">
-            <div>
-              <div class="list-item-title">${escapeHtml(nameParts.primary || playerDisplayName(player))}</div>
-              <div class="compact-row-copy">${escapeHtml(subtitle || "Club player")}</div>
-            </div>
-            <div class="list-actions">
-              <span class="tier-pill ${escapeHtml(player.status)}">${escapeHtml(formatStatusLabel(player.status))}</span>
-              <button class="secondary-button" type="button">${isActive ? "Hide" : "View"}</button>
+          <article class="list-item roster-player-card ${isActive ? "active expanded" : ""}" data-player-id="${player.id}">
+            <div class="roster-player-header">
+              <div class="roster-player-header-copy">
+                <div class="list-item-title">${escapeHtml(nameParts.primary || playerDisplayName(player))}</div>
+                <div class="compact-row-copy">${escapeHtml(subtitle || "Club player")}</div>
+              </div>
+              <div class="list-actions">
+                <span class="tier-pill ${escapeHtml(player.status)}">${escapeHtml(formatStatusLabel(player.status))}</span>
+                <button class="secondary-button" type="button">${isActive ? "Hide" : "View"}</button>
+              </div>
             </div>
             ${
               isActive
@@ -362,28 +490,24 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function renderRecentHistory(details) {
-    const recent = [...(details || [])].slice(-5).reverse();
+    const recent = [...(details || [])].slice(-3).reverse();
 
     if (!recent.length) {
-      return '<div class="empty-state">No completed matchday history yet.</div>';
+      return "";
     }
 
     return `
-      <div class="timeline-list">
+      <div class="roster-player-badge-history-row">
         ${recent
           .map(
             (row) => `
-              <article class="timeline-item">
-                <div class="timeline-head">
-                  <div class="timeline-title">Matchday ${escapeHtml(row.matchday_number)}</div>
-                  <div class="timeline-copy">${escapeHtml(row.attendance_status || (row.attended ? "in" : "out"))}</div>
-                </div>
-                <div class="compact-badges">
-                  <span class="stat-pill">${escapeHtml(`${row.goals || 0} goals`)}</span>
-                  <span class="stat-pill">${escapeHtml(`${row.goal_keeps || 0} GK`)}</span>
-                  ${row.clean_sheet ? '<span class="stat-pill">Clean sheet</span>' : ""}
-                  <span class="stat-pill">${escapeHtml(`${row.wins}-${row.draws}-${row.losses}`)}</span>
-                </div>
+              <article class="roster-player-badge-history-chip">
+                <span class="roster-player-badge-history-chip-kicker">MD ${escapeHtml(row.matchday_number)}</span>
+                <strong>${escapeHtml(
+                  normalizeText(row.attendance_status || (row.attended ? "in" : "out")).replaceAll("_", " ")
+                )}</strong>
+                <small>${escapeHtml(`${row.goals || 0}G · ${row.goal_keeps || 0} GK`)}</small>
+                <small>${escapeHtml(`${row.wins}-${row.draws}-${row.losses}${row.clean_sheet ? " · CS" : ""}`)}</small>
               </article>
             `
           )
@@ -480,9 +604,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       directoryPlayers = [];
       seasonRosterRequests = [];
       existingDirectoryPlayerSelect.innerHTML =
-        '<option value="">Select your name from the main directory</option>';
+        '<option value="">Select your name from the full squad</option>';
       rosterRequestCopy.textContent =
-        "Launch a season first. Squad requests only open after a live season is available.";
+        "Launch a season first. Season-squad requests only open after a live season is available.";
       setRequestInputsDisabled(true);
       return;
     }
@@ -491,7 +615,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       existingDirectoryPlayerSelect.innerHTML =
         '<option value="">Self-request tools are waiting for the latest club update</option>';
       rosterRequestCopy.textContent =
-        "Self-request tools will open after the latest live club update adds squad request tracking.";
+        "Self-request tools will open after the latest live club update adds season-squad request tracking.";
       setRequestInputsDisabled(true);
       return;
     }
@@ -505,21 +629,21 @@ document.addEventListener("DOMContentLoaded", async () => {
       (player) => !pendingPlayerIds.has(Number(player.id))
     );
 
-    rosterRequestCopy.textContent = `${selectedSeason.name} is using ${allPlayers.length} live squad players. If you are missing from this season but already live in the main directory, request your spot here. If you are new to the club, send a directory request first. Admin approval is required before your name reaches the live squad.`;
+    rosterRequestCopy.textContent = `${selectedSeason.name} is using ${allPlayers.length} live season-squad players. If you are missing from this season but already in the full squad register, request your spot here. If you are new to the club, send a full-squad request first. Admin approval is required before your name reaches the live season squad.`;
 
     if (!addablePlayers.length) {
       existingDirectoryPlayerSelect.innerHTML =
-        '<option value="">Everyone in the main directory is already on this squad</option>';
+        '<option value="">Everyone in the full squad register is already on this season squad</option>';
     } else {
       existingDirectoryPlayerSelect.innerHTML = `
-        <option value="">Select your name from the main directory</option>
+        <option value="">Select your name from the full squad</option>
         ${addablePlayers
           .map((player) => {
             const pending = pendingPlayerIds.has(Number(player.id));
             const pendingLabel = pending ? " · pending request" : "";
             return `<option value="${player.id}" ${pending ? "disabled" : ""}>${escapeHtml(
               playerDisplayName(player)
-            )} · current/next-season ${escapeHtml(formatStatusLabel(player.status))}${escapeHtml(
+            )} · full squad current/next-season ${escapeHtml(formatStatusLabel(player.status))}${escapeHtml(
               pendingLabel
             )}</option>`;
           })
@@ -608,7 +732,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       statusLine.classList.add("warning");
       statusText.textContent = "No seasons found.";
       playerList.innerHTML = '<div class="empty-state">No seasons are available yet.</div>';
-      playerDetail.innerHTML = '<div class="empty-state">Launch a season to view the squad.</div>';
+      playerDetail.innerHTML = '<div class="empty-state">Launch a season to view the season squad.</div>';
       updateSummaryStats();
       renderRosterRequestTools();
       return;
@@ -621,7 +745,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     seasonNameEl.textContent = selectedSeason.name;
     statusLine.classList.remove("success", "error", "warning");
     statusLine.classList.add("loading");
-    statusText.textContent = "Loading the roster...";
+    statusText.textContent = "Loading the season squad...";
 
     try {
       const bundle = await fetchSeasonBundle(selectedSeason.id);
@@ -747,14 +871,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     const player = directoryPlayers.find((entry) => Number(entry.id) === playerId);
 
     if (!playerId || !player) {
-      setRosterRequestStatus("Choose your directory profile first.", "warning");
+      setRosterRequestStatus("Choose your full-squad profile first.", "warning");
       return;
     }
 
     if (
       pendingRequestsForSeason().some((row) => Number(row.player_id) === Number(playerId) && row.status === "pending")
     ) {
-      setRosterRequestStatus("A pending season request already exists for that directory player.", "warning");
+      setRosterRequestStatus("A pending season-squad request already exists for that full-squad player.", "warning");
       return;
     }
 
@@ -823,14 +947,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     const requesterName = normalizeText(`${firstName} ${lastName}`);
 
     if (!firstName || !lastName || !nationality || !contact) {
-      setRosterRequestStatus("Add your name, nationality, and contact before requesting directory review.", "warning");
+      setRosterRequestStatus("Add your name, nationality, and contact before requesting full-squad review.", "warning");
       return;
     }
 
     const existingDirectoryPlayer = findDirectoryPlayerByName(firstName, lastName);
     if (existingDirectoryPlayer) {
       setRosterRequestStatus(
-        `${playerDisplayName(existingDirectoryPlayer)} is already in the main directory. Use the directory profile request above instead.`,
+        `${playerDisplayName(existingDirectoryPlayer)} is already in the full squad register. Use the full-squad request above instead.`,
         "warning"
       );
       return;
@@ -844,13 +968,13 @@ document.addEventListener("DOMContentLoaded", async () => {
           normalizeText(row.last_name).toLowerCase() === lastName.toLowerCase()
       )
     ) {
-      setRosterRequestStatus("A pending directory request already exists for that name.", "warning");
+      setRosterRequestStatus("A pending full-squad request already exists for that name.", "warning");
       return;
     }
 
     newRequestButton.disabled = true;
     newRequestButton.textContent = "Sending...";
-    setRosterRequestStatus(`Sending a directory review for ${requesterName}...`);
+    setRosterRequestStatus(`Sending a full-squad review for ${requesterName}...`);
 
     const { error } = await supabaseClient.from("season_roster_requests").insert({
       season_id: activeSeasonId,
@@ -869,7 +993,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     newRequestButton.disabled = false;
-    newRequestButton.textContent = "Request directory + season review";
+    newRequestButton.textContent = "Request full squad + season review";
 
     if (error) {
       setRosterRequestStatus(readableError(error), "error");
@@ -880,7 +1004,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadSeasonRosterRequests();
     renderRosterRequestTools();
     setRosterRequestStatus(
-      `${requesterName} was sent to the busses for directory and season review.`,
+      `${requesterName} was sent to the busses for full-squad and season review.`,
       "success"
     );
   });

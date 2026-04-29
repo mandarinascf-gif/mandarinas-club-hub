@@ -14,6 +14,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     playerDisplayName,
     playerNameParts,
     formatStatusLabel,
+    badgeIconMarkup,
+    tierIconMarkup,
     formatDay,
     readableError,
     fetchSeasons,
@@ -39,6 +41,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const standingsDataNote = document.getElementById("standings-data-note");
   const standingsTableWrap = document.getElementById("standings-table-wrap");
   const tableNote = document.getElementById("table-note");
+  const podiumBoard = document.getElementById("podium-board");
   const topPlayersBoard = document.getElementById("top-players-board");
   const openMatchdayLink = document.getElementById("open-matchday-link");
 
@@ -105,11 +108,52 @@ document.addEventListener("DOMContentLoaded", async () => {
       .join("");
   }
 
-  function renderTopPlayersBoard() {
-    const leaders = sortStandings(standings, "total_points", "desc").slice(0, 6);
+  function renderPodiumBoard() {
+    if (!podiumBoard) {
+      return;
+    }
+
+    const leaders = sortStandings(standings, "total_points", "desc").slice(0, 3);
 
     if (!leaders.length) {
-      topPlayersBoard.innerHTML = '<div class="status-line">No ranked players yet.</div>';
+      podiumBoard.innerHTML = '<div class="status-line">No ranked players yet.</div>';
+      return;
+    }
+
+    podiumBoard.innerHTML = leaders
+      .map((row, index) => {
+        const nameParts = playerNameParts(row.player);
+        const subtitle = [nameParts.secondary, formatStatusLabel(row.player.status)]
+          .filter(Boolean)
+          .join(" · ");
+        return `
+          <article class="podium-card rank-${index + 1}">
+            <div class="podium-rank">${escapeHtml(index + 1)}</div>
+            <div>
+              <div class="podium-name">${escapeHtml(nameParts.primary || playerDisplayName(row.player))}</div>
+              <div class="podium-meta">${escapeHtml(subtitle || "Club player")}</div>
+            </div>
+            <div class="compact-badges">
+              ${index === 0 ? `<span class="winner-pill">${badgeIconMarkup("winner")}<span>Winner</span></span>` : ""}
+              <span class="tag-pill">${escapeHtml(row.total_points)} pts</span>
+              <span class="tag-pill">${escapeHtml(Number(row.points_per_game || 0).toFixed(2))} PPG</span>
+            </div>
+            <div class="podium-copy">
+              ${escapeHtml(`${row.goals} goals · ${row.days_attended} attended`)}
+            </div>
+          </article>
+        `;
+      })
+      .join("");
+  }
+
+  function renderTopPlayersBoard() {
+    const leaders = sortStandings(standings, "total_points", "desc").slice(podiumBoard ? 3 : 0, podiumBoard ? 9 : 6);
+
+    if (!leaders.length) {
+      topPlayersBoard.innerHTML = `<div class="status-line">${
+        podiumBoard ? "Only the podium is available right now." : "No ranked players yet."
+      }</div>`;
       return;
     }
 
@@ -195,6 +239,44 @@ document.addEventListener("DOMContentLoaded", async () => {
       .join("");
   }
 
+  function renderStandingsCards(rows) {
+    return `
+      <div class="standings-card-list">
+        ${rows
+          .map((row) => {
+            const nameParts = playerNameParts(row.player);
+            const subtitle = [nameParts.secondary, formatStatusLabel(row.player.status)]
+              .filter(Boolean)
+              .join(" · ");
+
+            return `
+              <article class="standings-card">
+                <header class="standings-card-head">
+                  <div class="standings-rank-badge">${escapeHtml(row.rank)}</div>
+                  <div class="standings-card-title">
+                    <div class="player-main">${escapeHtml(nameParts.primary || playerDisplayName(row.player))}</div>
+                    <div class="table-player-sub">${escapeHtml(subtitle || "Club player")}</div>
+                  </div>
+                </header>
+                <div class="compact-badges">
+                  <span class="tier-pill ${escapeHtml(row.player.status)}">${tierIconMarkup(row.player.status)}<span>${escapeHtml(formatStatusLabel(row.player.status))}</span></span>
+                  <span class="tag-pill">${escapeHtml(row.total_points)} pts</span>
+                  <span class="tag-pill">${escapeHtml(Number(row.points_per_game || 0).toFixed(2))} PPG</span>
+                </div>
+                <div class="standings-metrics">
+                  <div class="metric-pill"><span>Record</span><strong>${escapeHtml(`${row.wins}-${row.draws}-${row.losses}`)}</strong></div>
+                  <div class="metric-pill"><span>Goals</span><strong>${escapeHtml(row.goals)}</strong></div>
+                  <div class="metric-pill"><span>GK</span><strong>${escapeHtml(row.goal_keep_points_earned)}</strong></div>
+                  <div class="metric-pill"><span>CS</span><strong>${escapeHtml(row.clean_sheets)}</strong></div>
+                </div>
+              </article>
+            `;
+          })
+          .join("")}
+      </div>
+    `;
+  }
+
   function sortArrow(key) {
     if (sortKey !== key) {
       return "";
@@ -216,6 +298,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!rows.length) {
       standingsTableWrap.innerHTML = `<div class="empty-state">No players match the current filters.</div>`;
       tableNote.textContent = `${seasonLabel} · ${tierLabel}`;
+      return;
+    }
+
+    if (window.matchMedia("(max-width: 767px)").matches) {
+      standingsTableWrap.innerHTML = renderStandingsCards(rows);
+      tableNote.textContent = `${seasonLabel} · ${tierLabel} · sorted by ${currentSortLabel()}`;
       return;
     }
 
@@ -312,6 +400,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           .join(", ")}.`;
       }
 
+      renderPodiumBoard();
       renderTopPlayersBoard();
       syncOpenMatchdayLink();
       renderTable();

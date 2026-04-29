@@ -1,17 +1,17 @@
 {
-  "generated_at": "2026-04-24T14:04:42-07:00",
+  "generated_at": "2026-04-28T11:09:52-07:00",
   "config": {
-    "config_root": "/Users/andresaguayo/MCF_PickUpLeague copy/data/reseed_config",
-    "inventory_path": "/Users/andresaguayo/MCF_PickUpLeague copy/data/reseed_config/season_inventory.csv",
-    "identity_map_path": "/Users/andresaguayo/MCF_PickUpLeague copy/data/reseed_config/identity_map.csv",
-    "buddy_overrides_path": "/Users/andresaguayo/MCF_PickUpLeague copy/data/reseed_config/buddy_overrides.csv",
+    "config_root": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_config",
+    "inventory_path": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_config/season_inventory.csv",
+    "identity_map_path": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_config/identity_map.csv",
+    "buddy_overrides_path": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_config/buddy_overrides.csv",
     "include_not_ready": false
   },
   "summary": {
     "inventory_rows": 8,
     "processed_seasons": 8,
     "workbooks_found": 8,
-    "canonical_player_count": 80,
+    "canonical_player_count": 79,
     "raw_assignment_rows": 2198,
     "generated_assignment_rows": 2608,
     "raw_stat_rows": 652,
@@ -26,8 +26,8 @@
   "seasons": [
     {
       "season_name": "2025 Winter",
-      "season_folder": "/Users/andresaguayo/MCF_PickUpLeague copy/data/reseed_source/2025_winter",
-      "workbook_path": "/Users/andresaguayo/MCF_PickUpLeague copy/data/reseed_source/2025_winter/workbook.xlsx",
+      "season_folder": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_winter",
+      "workbook_path": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_winter/workbook.xlsx",
       "ready_for_import": true,
       "workbook_exists": true,
       "match_dates_sheet": "MATCH DATES",
@@ -337,6 +337,21 @@
           "source": "identity_map"
         },
         {
+          "player_key": "ALEX|MENESES",
+          "canonical_name": "Alex Meneses",
+          "first_name": "Alex",
+          "last_name": "Meneses",
+          "nickname": null,
+          "display_name": "Alex Meneses",
+          "nationality": "Unknown",
+          "positions": [
+            "MID"
+          ],
+          "default_tier": "core",
+          "status": "core",
+          "source": "identity_map"
+        },
+        {
           "player_key": "VICTOR|NIZAMA",
           "canonical_name": "Victor Nizama",
           "first_name": "Victor",
@@ -350,21 +365,6 @@
           "default_tier": "rotation",
           "status": "rotation",
           "source": "identity_map"
-        },
-        {
-          "player_key": "ALEX|PLAYER",
-          "canonical_name": "Alex",
-          "first_name": "Alex",
-          "last_name": "Player",
-          "nickname": "Alex",
-          "display_name": "Alex",
-          "nationality": "Unknown",
-          "positions": [
-            "MID"
-          ],
-          "default_tier": "core",
-          "status": "core",
-          "source": "auto"
         },
         {
           "player_key": "ALEXIS|PLAYER",
@@ -850,8 +850,8 @@
     },
     {
       "season_name": "2025 Spring",
-      "season_folder": "/Users/andresaguayo/MCF_PickUpLeague copy/data/reseed_source/2025_spring",
-      "workbook_path": "/Users/andresaguayo/MCF_PickUpLeague copy/data/reseed_source/2025_spring/workbook.xlsx",
+      "season_folder": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_spring",
+      "workbook_path": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_spring/workbook.xlsx",
       "ready_for_import": true,
       "workbook_exists": true,
       "match_dates_sheet": "MATCH DATES",
@@ -1146,6 +1146,21 @@
           "source": "identity_map"
         },
         {
+          "player_key": "ALEX|MENESES",
+          "canonical_name": "Alex Meneses",
+          "first_name": "Alex",
+          "last_name": "Meneses",
+          "nickname": null,
+          "display_name": "Alex Meneses",
+          "nationality": "Unknown",
+          "positions": [
+            "MID"
+          ],
+          "default_tier": "core",
+          "status": "core",
+          "source": "identity_map"
+        },
+        {
           "player_key": "VICTOR|NIZAMA",
           "canonical_name": "Victor Nizama",
           "first_name": "Victor",
@@ -1159,21 +1174,6 @@
           "default_tier": "rotation",
           "status": "rotation",
           "source": "identity_map"
-        },
-        {
-          "player_key": "ALEX|PLAYER",
-          "canonical_name": "Alex",
-          "first_name": "Alex",
-          "last_name": "Player",
-          "nickname": "Alex",
-          "display_name": "Alex",
-          "nationality": "Unknown",
-          "positions": [
-            "MID"
-          ],
-          "default_tier": "core",
-          "status": "core",
-          "source": "auto"
         },
         {
           "player_key": "ALEXIS|PLAYER",
@@ -1644,8 +1644,8 @@
     },
     {
       "season_name": "2025 Summer",
-      "season_folder": "/Users/andresaguayo/MCF_PickUpLeague copy/data/reseed_source/2025_summer",
-      "workbook_path": "/Users/andresaguayo/MCF_PickUpLeague copy/data/reseed_source/2025_summer/workbook.xlsx",
+      "season_folder": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_summer",
+      "workbook_path": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_summer/workbook.xlsx",
       "ready_for_import": true,
       "workbook_exists": true,
       "match_dates_sheet": "MATCH_DATES",
@@ -1950,6 +1950,21 @@
           "source": "identity_map"
         },
         {
+          "player_key": "ALEX|MENESES",
+          "canonical_name": "Alex Meneses",
+          "first_name": "Alex",
+          "last_name": "Meneses",
+          "nickname": null,
+          "display_name": "Alex Meneses",
+          "nationality": "Unknown",
+          "positions": [
+            "MID"
+          ],
+          "default_tier": "core",
+          "status": "core",
+          "source": "identity_map"
+        },
+        {
           "player_key": "JOSEPH|MURO",
           "canonical_name": "Joseph Muro",
           "first_name": "Joseph",
@@ -1993,21 +2008,6 @@
           "default_tier": "rotation",
           "status": "rotation",
           "source": "split_shared_row"
-        },
-        {
-          "player_key": "ALEX|PLAYER",
-          "canonical_name": "Alex",
-          "first_name": "Alex",
-          "last_name": "Player",
-          "nickname": "Alex",
-          "display_name": "Alex",
-          "nationality": "Unknown",
-          "positions": [
-            "MID"
-          ],
-          "default_tier": "core",
-          "status": "core",
-          "source": "auto"
         },
         {
           "player_key": "ALEXIS|PLAYER",
@@ -2478,8 +2478,8 @@
     },
     {
       "season_name": "2025 Fall",
-      "season_folder": "/Users/andresaguayo/MCF_PickUpLeague copy/data/reseed_source/2025_fall",
-      "workbook_path": "/Users/andresaguayo/MCF_PickUpLeague copy/data/reseed_source/2025_fall/workbook.xlsx",
+      "season_folder": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_fall",
+      "workbook_path": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_fall/workbook.xlsx",
       "ready_for_import": true,
       "workbook_exists": true,
       "match_dates_sheet": "MATCH_DATES",
@@ -2803,14 +2803,14 @@
           "canonical_name": "Alex Meneses",
           "first_name": "Alex",
           "last_name": "Meneses",
-          "nickname": "Alex Meneses",
+          "nickname": null,
           "display_name": "Alex Meneses",
           "nationality": "Unknown",
           "positions": [
             "MID"
           ],
-          "default_tier": "rotation",
-          "status": "rotation",
+          "default_tier": "core",
+          "status": "core",
           "source": "split_shared_row"
         },
         {
@@ -3312,8 +3312,8 @@
     },
     {
       "season_name": "2025 Holiday",
-      "season_folder": "/Users/andresaguayo/MCF_PickUpLeague copy/data/reseed_source/2025_holiday",
-      "workbook_path": "/Users/andresaguayo/MCF_PickUpLeague copy/data/reseed_source/2025_holiday/workbook.xlsx",
+      "season_folder": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_holiday",
+      "workbook_path": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_holiday/workbook.xlsx",
       "ready_for_import": true,
       "workbook_exists": true,
       "match_dates_sheet": "MATCH_DATES",
@@ -3652,15 +3652,15 @@
           "canonical_name": "Alex Meneses",
           "first_name": "Alex",
           "last_name": "Meneses",
-          "nickname": "Alex Meneses",
+          "nickname": null,
           "display_name": "Alex Meneses",
           "nationality": "Unknown",
           "positions": [
             "MID"
           ],
-          "default_tier": "rotation",
-          "status": "rotation",
-          "source": "auto"
+          "default_tier": "core",
+          "status": "core",
+          "source": "identity_map"
         },
         {
           "player_key": "VICTOR|NIZAMA",
@@ -4101,8 +4101,8 @@
     },
     {
       "season_name": "2025 Solstice",
-      "season_folder": "/Users/andresaguayo/MCF_PickUpLeague copy/data/reseed_source/2025_solstice",
-      "workbook_path": "/Users/andresaguayo/MCF_PickUpLeague copy/data/reseed_source/2025_solstice/workbook.xlsx",
+      "season_folder": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_solstice",
+      "workbook_path": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_solstice/workbook.xlsx",
       "ready_for_import": true,
       "workbook_exists": true,
       "match_dates_sheet": "MATCH_DATES",
@@ -4422,6 +4422,21 @@
           "source": "identity_map"
         },
         {
+          "player_key": "ALEX|MENESES",
+          "canonical_name": "Alex Meneses",
+          "first_name": "Alex",
+          "last_name": "Meneses",
+          "nickname": null,
+          "display_name": "Alex Meneses",
+          "nationality": "Unknown",
+          "positions": [
+            "MID"
+          ],
+          "default_tier": "core",
+          "status": "core",
+          "source": "identity_map"
+        },
+        {
           "player_key": "JOSEPH|MURO",
           "canonical_name": "Joseph Muro",
           "first_name": "Joseph",
@@ -4465,21 +4480,6 @@
           "default_tier": "rotation",
           "status": "rotation",
           "source": "split_shared_row"
-        },
-        {
-          "player_key": "ALEX|PLAYER",
-          "canonical_name": "Alex",
-          "first_name": "Alex",
-          "last_name": "Player",
-          "nickname": "Alex",
-          "display_name": "Alex",
-          "nationality": "Unknown",
-          "positions": [
-            "MID"
-          ],
-          "default_tier": "core",
-          "status": "core",
-          "source": "auto"
         },
         {
           "player_key": "ALEXIS|PLAYER",
@@ -4950,8 +4950,8 @@
     },
     {
       "season_name": "2026 Winter",
-      "season_folder": "/Users/andresaguayo/MCF_PickUpLeague copy/data/reseed_source/2026_winter",
-      "workbook_path": "/Users/andresaguayo/MCF_PickUpLeague copy/data/reseed_source/2026_winter/workbook.xlsx",
+      "season_folder": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2026_winter",
+      "workbook_path": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2026_winter/workbook.xlsx",
       "ready_for_import": true,
       "workbook_exists": true,
       "match_dates_sheet": "MATCH_DATES",
@@ -5275,14 +5275,14 @@
           "canonical_name": "Alex Meneses",
           "first_name": "Alex",
           "last_name": "Meneses",
-          "nickname": "Alex Meneses",
+          "nickname": null,
           "display_name": "Alex Meneses",
           "nationality": "Unknown",
           "positions": [
             "MID"
           ],
-          "default_tier": "rotation",
-          "status": "rotation",
+          "default_tier": "core",
+          "status": "core",
           "source": "split_shared_row"
         },
         {
@@ -5814,8 +5814,8 @@
     },
     {
       "season_name": "2026 Spring",
-      "season_folder": "/Users/andresaguayo/MCF_PickUpLeague copy/data/reseed_source/2026_spring",
-      "workbook_path": "/Users/andresaguayo/MCF_PickUpLeague copy/data/reseed_source/2026_spring/workbook.xlsx",
+      "season_folder": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2026_spring",
+      "workbook_path": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2026_spring/workbook.xlsx",
       "ready_for_import": true,
       "workbook_exists": true,
       "match_dates_sheet": "MATCH_DATES",
@@ -6124,15 +6124,15 @@
           "canonical_name": "Alex Meneses",
           "first_name": "Alex",
           "last_name": "Meneses",
-          "nickname": "Alex Meneses",
+          "nickname": null,
           "display_name": "Alex Meneses",
           "nationality": "Unknown",
           "positions": [
             "MID"
           ],
-          "default_tier": "rotation",
-          "status": "rotation",
-          "source": "auto"
+          "default_tier": "core",
+          "status": "core",
+          "source": "identity_map"
         },
         {
           "player_key": "GUSTAVO|MORENO-ORTIZ",

@@ -8,17 +8,17 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Mandarinas CF" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="manifest" href="./site.webmanifest" />
     <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png" />
-    <link rel="stylesheet" href="./assets/css/app.css?v=20260426f" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260428o" />
     <title>Busses · Season Centre</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./assets/js/core/club_logic.js"></script>
+    <script src="./assets/js/core/club_logic.js?v=20260428b"></script>
     <script src="./assets/js/core/supabase_config.js"></script>
-    <script src="./assets/js/ui/shell.js?v=20260426h"></script>
+    <script src="./assets/js/core/runtime_config.js?v=20260427a"></script>
+    <script src="./assets/js/ui/shell.js?v=20260427a"></script>
   </head>
-  <body class="manager-touch">
+  <body class="manager-touch admin-app page-seasons">
     <nav class="site-nav">
       <div class="site-nav-inner">
         <a href="./squad.html" class="site-logo">
@@ -26,10 +26,12 @@
           <span>Mandarinas <span class="logo-accent">CF</span></span>
         </a>
         <div class="nav-links">
-          <a class="nav-link" href="./squad.html">Directory</a>
-          <a class="nav-link active" href="./seasons.html">Season</a>
+          <a class="nav-link active" href="./seasons.html">Seasons</a>
           <a class="nav-link" href="./matchday.html">Matchday</a>
-          <a class="nav-link" href="./tiers.html">Planner</a>
+          <a class="nav-link" href="./squad.html">Squad</a>
+          <a class="nav-link" href="./standings.html">Standings</a>
+          <a class="nav-link" href="./tiers.html">Tiers</a>
+          <a class="nav-link nav-link-extra" href="./setup.html">Setup</a>
         </div>
         <a href="./home.html" class="nav-mode-badge">Club</a>
       </div>
@@ -39,16 +41,17 @@
       <section class="panel page-header">
         <div class="page-header-main">
           <div class="section-label">Busses · Season Centre</div>
-          <h1>Season Centre</h1>
+          <h1>Season workspace</h1>
           <p>
-            Start with the season list. Selecting a season opens its live squad and fixture plan.
-            Use the form to launch a new campaign.
+            Start with the season list. The selected campaign stays in view while older or newer
+            campaigns tuck away until you need them. Use the form to launch a new campaign.
           </p>
         </div>
         <div class="actions">
           <button class="primary-button" type="button" data-season-view-trigger="list">Season list</button>
           <button class="secondary-button" type="button" data-season-view-trigger="create">Add season</button>
           <a class="secondary-button" href="./standings.html">Open standings</a>
+          <a class="secondary-button" href="./setup.html">Open setup</a>
         </div>
       </section>
 
@@ -107,7 +110,7 @@
               role="tab"
               aria-selected="false"
             >
-              Squad
+              Season squad
             </button>
             <button
               class="workspace-btn"
@@ -125,7 +128,7 @@
           <section class="panel master-panel workspace-pane" id="season-list-panel" data-season-view="list">
           <div class="section-label">List</div>
           <h2>Seasons</h2>
-          <p>Select a season to review its roster and kickoff schedule.</p>
+          <p>Select a season to review its roster and kickoff schedule without scrolling through the full archive first.</p>
           <div class="actions">
             <button class="secondary-button" type="button" id="season-refresh-button">Reload season list</button>
             <a class="secondary-button" href="./matchday.html">Open matchdays</a>
@@ -253,23 +256,28 @@
           </section>
 
           <section class="panel detail-panel workspace-pane" id="active-roster" data-season-view="roster" hidden>
-            <div class="section-label">Squad</div>
+            <div class="section-label">Season squad</div>
             <h2>Season Squad</h2>
             <p id="roster-board-copy">
-              Choose a season from the list to manage who is active for that season.
+              Choose a season from the list to manage its season squad. The full squad register lives on
+              Squad; this panel decides who is active for the selected campaign.
             </p>
             <p>Selected season: <strong id="roster-season-pill">Choose a season</strong></p>
 
             <div class="actions">
               <button class="secondary-button" type="button" id="roster-refresh-button">Reload roster</button>
               <button class="secondary-button" type="button" id="seed-roster-button">Add current Core + Rotation</button>
-              <button class="secondary-button" type="button" id="sync-season-tier-button">Use squad tier status</button>
+              <button class="secondary-button" type="button" id="sync-season-tier-button">Use full squad tier status</button>
               <a class="secondary-button" id="open-tiers-link" href="./tiers.html">Open planner</a>
-              <a class="secondary-button" href="./squad.html#player-list-panel">Open squad register</a>
+              <a class="secondary-button" href="./squad.html#player-list-panel">Open full squad</a>
             </div>
             <p class="micro-note" id="roster-bulk-note">
-              For now, bulk add uses the squad register tier and only pulls players marked Core or Rotation.
+              For now, bulk add uses the full squad current / next-season tier and only pulls players marked Core or Rotation.
             </p>
+            <div class="field">
+              <label>Manage season squad</label>
+              <div class="filter-row" id="season-roster-flow-row" role="toolbar" aria-label="Season squad flow"></div>
+            </div>
 
             <details class="disclosure-card" id="season-settings-disclosure">
               <summary class="disclosure-summary">
@@ -339,26 +347,18 @@
               <summary class="disclosure-summary">
                 <div class="disclosure-copy">
                   <div class="section-label">Add</div>
-                  <div class="disclosure-title">Squad tools</div>
-                  <div class="micro-note">Search active registrations or add someone from the squad register.</div>
+                  <div class="disclosure-title">Season squad tools</div>
+                  <div class="micro-note">Add someone from the full squad register or seed the season from full-squad tiers.</div>
                 </div>
               </summary>
               <div class="disclosure-body">
                 <fieldset>
-                  <legend>Squad tools</legend>
+                  <legend>Season squad tools</legend>
                   <div class="field-grid">
                     <div class="field">
-                      <label for="season-roster-search">Search active roster</label>
-                      <input
-                        id="season-roster-search"
-                        type="search"
-                        placeholder="Search by player, nickname, nationality, or tier"
-                      />
-                    </div>
-                    <div class="field">
-                      <label for="season-roster-add-select">Add player from squad register</label>
+                      <label for="season-roster-add-select">Add player from full squad</label>
                       <select id="season-roster-add-select">
-                        <option value="">Select a player from the squad register</option>
+                        <option value="">Select a player from the full squad</option>
                       </select>
                     </div>
                     <div class="field">
@@ -392,8 +392,8 @@
                   </div>
                   <p class="micro-note">
                     Requested season tier is what the player asked for. This season tier is the live bucket for
-                    this season. The Squad page current / next-season tier stays the default source, and you can
-                    sync it into this season with <strong>Use squad tier status</strong>.
+                    this season. The Full Squad page current / next-season tier stays the default source, and you can
+                    sync it into this season with <strong>Use full squad tier status</strong>.
                   </p>
                 </fieldset>
               </div>
@@ -403,12 +403,12 @@
               <summary class="disclosure-summary">
                 <div class="disclosure-copy">
                   <div class="section-label">Requests</div>
-                  <div class="disclosure-title">Pending squad requests</div>
+                  <div class="disclosure-title">Pending season-squad requests</div>
                   <div class="micro-note">Review public self-add requests before they reach the live season squad.</div>
                 </div>
               </summary>
               <div class="disclosure-body">
-                <div class="summary-grid" id="season-roster-request-summary"></div>
+                <div class="summary-grid summary-pill-grid" id="season-roster-request-summary"></div>
                 <div id="season-roster-request-wrap" class="table-wrap" aria-live="polite"></div>
               </div>
             </details>
@@ -417,12 +417,12 @@
               <summary class="disclosure-summary">
                 <div class="disclosure-copy">
                   <div class="section-label">Prep</div>
-                  <div class="disclosure-title">Directory prep</div>
-                  <div class="micro-note">Update current or next-season tiers without leaving Season Centre.</div>
+                  <div class="disclosure-title">Full squad prep</div>
+                  <div class="micro-note">Review full-squad current / next-season tiers without leaving Season Centre.</div>
                 </div>
               </summary>
               <div class="disclosure-body">
-                <div class="summary-grid" id="season-directory-prep-summary"></div>
+                <div class="summary-grid summary-pill-grid" id="season-directory-prep-summary"></div>
                 <div id="season-directory-prep-wrap" class="table-wrap" aria-live="polite"></div>
               </div>
             </details>
@@ -430,13 +430,23 @@
             <details class="disclosure-card" id="season-roster-list-disclosure" open>
               <summary class="disclosure-summary">
                 <div class="disclosure-copy">
-                  <div class="section-label">Squad</div>
-                  <div class="disclosure-title">Season roster players</div>
-                  <div class="micro-note">Review the live roster, tiers, payments, and active status.</div>
+                  <div class="section-label">Season squad</div>
+                  <div class="disclosure-title">Season squad players</div>
+                  <div class="micro-note">Search, filter, and update the active season squad in one place.</div>
                 </div>
               </summary>
               <div class="disclosure-body">
-                <div class="summary-grid" id="roster-summary-grid"></div>
+                <div class="field">
+                  <label for="season-roster-search">Search season squad</label>
+                  <input
+                    id="season-roster-search"
+                    type="search"
+                    placeholder="Search by player, nickname, nationality, or tier"
+                  />
+                </div>
+                <div class="filter-row" id="season-roster-filter-row" role="toolbar" aria-label="Season squad filters"></div>
+                <p class="micro-note" id="season-roster-results-note">Showing all season squad players.</p>
+                <div class="summary-grid summary-pill-grid" id="roster-summary-grid"></div>
                 <div id="season-roster-wrap" class="table-wrap" aria-live="polite"></div>
               </div>
             </details>
@@ -463,6 +473,6 @@
       <div class="club-footer-copy">Busses · Season Centre</div>
     </footer>
 
-    <script src="./assets/js/pages/admin/seasons.js?v=20260426b"></script>
+    <script src="./assets/js/pages/admin/seasons.js?v=20260428e"></script>
   </body>
 </html>
