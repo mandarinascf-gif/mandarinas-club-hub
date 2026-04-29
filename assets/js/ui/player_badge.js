@@ -17,32 +17,6 @@
     return Number.isFinite(number) ? number : fallback;
   }
 
-  function formatBirthYear(value) {
-    const text = normalizeText(value, "");
-    if (!text) {
-      return "";
-    }
-
-    let fullYear = "";
-
-    if (/^\d{4}$/.test(text)) {
-      fullYear = text;
-    } else {
-      const date = new Date(text);
-      if (Number.isNaN(date.getTime())) {
-        return "";
-      }
-
-      fullYear = String(date.getFullYear());
-    }
-
-    if (!/^\d{4}$/.test(fullYear)) {
-      return "";
-    }
-
-    return `'${fullYear.slice(-2)}`;
-  }
-
   function formatPpg(value) {
     const numeric = normalizeNumber(value, 0);
     return `${numeric.toFixed(2)} PPG`;
@@ -51,6 +25,17 @@
   function formatRank(value) {
     const rank = Number(value);
     return Number.isFinite(rank) && rank > 0 ? String(rank) : "--";
+  }
+
+  function formatTier(value) {
+    const tier = normalizeText(value, "N/A").toLowerCase();
+    if (tier === "flex_sub") {
+      return "Flex/Sub";
+    }
+    if (tier === "core" || tier === "rotation") {
+      return tier.charAt(0).toUpperCase() + tier.slice(1);
+    }
+    return tier === "n/a" ? "N/A" : normalizeText(value, "N/A");
   }
 
   function formatPosition(player) {
@@ -65,9 +50,59 @@
     return normalizeText(player?.position_label || player?.primary_position, "N/A");
   }
 
+  function calculateAgeFromBirthDate(value) {
+    const text = normalizeText(value, "");
+    if (!text) {
+      return null;
+    }
+
+    const birthDate = new Date(text);
+    if (Number.isNaN(birthDate.getTime())) {
+      return null;
+    }
+
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDelta = today.getMonth() - birthDate.getMonth();
+    if (monthDelta < 0 || (monthDelta === 0 && today.getDate() < birthDate.getDate())) {
+      age -= 1;
+    }
+
+    return age >= 0 ? age : null;
+  }
+
+  function formatFootShort(value) {
+    const normalized = normalizeText(value, "").toLowerCase();
+    if (normalized === "right" || normalized === "rf") {
+      return "RF";
+    }
+    if (normalized === "left" || normalized === "lf") {
+      return "LF";
+    }
+    if (normalized === "both" || normalized === "bf") {
+      return "BF";
+    }
+    return "";
+  }
+
   function formatMeta(player) {
-    const birthYear = formatBirthYear(player?.birth_year ?? player?.birthYear ?? player?.birth_date);
-    return birthYear || "N/A";
+    const segments = [];
+    const nationality = normalizeText(player?.nationality, "");
+    const flag = normalizeText(player?.flag, "");
+    const age = calculateAgeFromBirthDate(player?.birth_date ?? player?.birthDate);
+    const foot = formatFootShort(player?.dominant_foot ?? player?.dominantFoot);
+
+    if (nationality) {
+      segments.push(flag ? `${flag} ${nationality}` : nationality);
+    }
+    if (age != null) {
+      segments.push(`${age} yrs`);
+    }
+    if (foot) {
+      segments.push(foot);
+    }
+
+    return segments.length ? segments.join(" · ") : "N/A";
   }
 
   function createBadgeMarkup() {
@@ -86,6 +121,8 @@
 
           <div class="badge-overlay badge-positions" data-field="position">N/A</div>
 
+          <div class="badge-overlay badge-tier" data-field="tier">N/A</div>
+
           <div class="badge-overlay badge-ovr">
             <span>OVR</span>
             <strong data-field="overall">0</strong>
@@ -99,7 +136,7 @@
           </div>
 
           <div class="badge-overlay badge-points">
-            <span class="badge-flag" data-field="flag">—</span>
+            <strong data-field="points">0</strong>
           </div>
 
           <div class="badge-overlay badge-apps">
@@ -122,10 +159,11 @@
       overall: normalizeNumber(player?.overall_rating, normalizeNumber(player?.overall, normalizeNumber(player?.skill_rating, 0))) || 0,
       rank: formatRank(player?.rank ?? stats?.rank),
       ppg: formatPpg(player?.ppg ?? stats?.ppg ?? stats?.points_per_game),
-      flag: normalizeText(player?.flag, "—"),
       meta: formatMeta(player),
       name: normalizeText(player?.name, "N/A"),
       position: formatPosition(player),
+      tier: formatTier(player?.tier ?? player?.status),
+      points: normalizeNumber(stats?.points ?? stats?.total_points, 0),
       apps: normalizeNumber(stats?.apps ?? stats?.attendance ?? stats?.days_attended, 0),
       goals: normalizeNumber(stats?.goals, 0),
     };
@@ -144,22 +182,20 @@
     positionNode?.setAttribute("title", data.position);
 
     if (nameNode) {
-      if (data.name.length > 14) {
-        nameNode.style.setProperty("--badge-name-size", "clamp(20px, 5.4vw, 32px)");
-        nameNode.style.setProperty("--badge-name-width", "62%");
-      } else if (data.name.length > 10) {
-        nameNode.style.setProperty("--badge-name-size", "clamp(22px, 6.1vw, 36px)");
-        nameNode.style.setProperty("--badge-name-width", "59%");
+      if (data.name.length > 16) {
+        nameNode.style.setProperty("--badge-name-size", "clamp(20px, 5vw, 30px)");
+      } else if (data.name.length > 12) {
+        nameNode.style.setProperty("--badge-name-size", "clamp(22px, 5.5vw, 33px)");
       }
     }
 
     if (metaNode && data.meta.length > 24) {
-      metaNode.style.setProperty("--badge-meta-size", "clamp(15px, 3.8vw, 22px)");
-      metaNode.style.setProperty("--badge-meta-width", "62%");
+      metaNode.style.setProperty("--badge-meta-size", "clamp(8px, 1.8vw, 11px)");
+      metaNode.style.setProperty("--badge-meta-width", "66%");
     }
 
     if (positionNode && data.position.length > 18) {
-      positionNode.style.setProperty("--badge-position-size", "clamp(10px, 2.5vw, 14px)");
+      positionNode.style.setProperty("--badge-position-size", "clamp(10px, 2.4vw, 13px)");
       positionNode.style.setProperty("--badge-position-width", "60%");
     }
 
@@ -184,7 +220,7 @@
       name: "Mateo Alvarez",
       nationality: "Argentina",
       flag: "🇦🇷",
-      age: 29,
+      birth_date: "1996-05-18",
       dominant_foot: "Right",
       overall_rating: 82,
       rank: 14,
