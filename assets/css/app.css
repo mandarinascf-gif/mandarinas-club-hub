@@ -6264,28 +6264,6 @@ body.manager-touch::before {
   text-overflow: ellipsis;
 }
 
-.badge-tier {
-  left: 50%;
-  top: 68.5%;
-  transform: translate(-50%, -50%);
-  min-width: 18%;
-  max-width: 32%;
-  padding: 0.18rem 0.72rem;
-  border: 1px solid rgba(246, 176, 77, 0.38);
-  border-radius: 999px;
-  background: rgba(14, 18, 23, 0.42);
-  color: #f6b04d;
-  font-family: "Oswald", sans-serif;
-  font-size: clamp(10px, 2.8vw, 14px);
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  line-height: 1.1;
-  text-transform: uppercase;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .badge-ovr,
 .badge-rank {
   width: 15.5%;
