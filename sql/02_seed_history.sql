@@ -3,13 +3,13 @@
 -- Run this AFTER 01_schema.sql.
 -- IMPORTANT: Set the dropdown to "No limit" before running.
 -- Included workbooks:
--- 1. 2025 Winter: /Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_winter/workbook.xlsx
--- 2. 2025 Spring: /Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_spring/workbook.xlsx
--- 3. 2025 Summer: /Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_summer/workbook.xlsx
--- 4. 2025 Fall: /Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_fall/workbook.xlsx
--- 5. 2025 Holiday: /Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_holiday/workbook.xlsx
--- 6. 2025 Solstice: /Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_solstice/workbook.xlsx
--- 7. 2026 Winter: /Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2026_winter/workbook.xlsx
+-- 1. 2025 Winter: /Users/andresaguayo/mandarinas-club-hub/data/reseed_source/2025_winter/workbook.xlsx
+-- 2. 2025 Spring: /Users/andresaguayo/mandarinas-club-hub/data/reseed_source/2025_spring/workbook.xlsx
+-- 3. 2025 Summer: /Users/andresaguayo/mandarinas-club-hub/data/reseed_source/2025_summer/workbook.xlsx
+-- 4. 2025 Fall: /Users/andresaguayo/mandarinas-club-hub/data/reseed_source/2025_fall/workbook.xlsx
+-- 5. 2025 Holiday: /Users/andresaguayo/mandarinas-club-hub/data/reseed_source/2025_holiday/workbook.xlsx
+-- 6. 2025 Solstice: /Users/andresaguayo/mandarinas-club-hub/data/reseed_source/2025_solstice/workbook.xlsx
+-- 7. 2026 Winter: /Users/andresaguayo/mandarinas-club-hub/data/reseed_source/2026_winter/workbook.xlsx
 -- Canonical rebuild rules applied:
 -- 1. Player identities come from data/reseed_config/identity_map.csv and approved workbook sources.
 -- 2. Slash/buddy rows are duplicated into each real player.
@@ -287,15 +287,42 @@ matchday_lookup as (
   join season_row on season_row.id = md.season_id
 ),
 match_seed as (
-  select
-    null::integer as matchday_number,
-    null::integer as round_number,
-    null::integer as match_order,
-    null::text as home_team_code,
-    null::text as away_team_code,
-    null::integer as home_score,
-    null::integer as away_score
-  where false
+  select *
+  from (
+    values
+      (1, 1, 1, 'blue', 'magenta', 4, 1),
+      (1, 1, 2, 'green', 'orange', 3, 0),
+      (1, 2, 1, 'blue', 'green', 3, 2),
+      (1, 2, 2, 'magenta', 'orange', 2, 3),
+      (2, 1, 1, 'blue', 'magenta', 1, 4),
+      (2, 1, 2, 'green', 'orange', 1, 1),
+      (2, 2, 1, 'orange', 'blue', 1, 0),
+      (2, 2, 2, 'green', 'magenta', 0, 1),
+      (3, 1, 1, 'blue', 'magenta', 0, 3),
+      (3, 1, 2, 'green', 'orange', 0, 2),
+      (3, 2, 1, 'magenta', 'orange', 1, 2),
+      (3, 2, 2, 'blue', 'green', 1, 2),
+      (4, 1, 1, 'blue', 'magenta', 0, 2),
+      (4, 1, 2, 'green', 'orange', 1, 3),
+      (4, 2, 1, 'blue', 'green', 2, 3),
+      (4, 2, 2, 'magenta', 'orange', 3, 1),
+      (5, 1, 1, 'blue', 'magenta', 1, 4),
+      (5, 1, 2, 'green', 'orange', 2, 2),
+      (5, 2, 1, 'blue', 'orange', 2, 1),
+      (5, 2, 2, 'magenta', 'green', 0, 2),
+      (6, 1, 1, 'blue', 'magenta', 1, 2),
+      (6, 1, 2, 'orange', 'green', 0, 4),
+      (6, 2, 1, 'green', 'magenta', 1, 1),
+      (6, 2, 2, 'blue', 'orange', 2, 1),
+      (7, 1, 1, 'blue', 'magenta', 2, 1),
+      (7, 1, 2, 'orange', 'green', 2, 0),
+      (7, 2, 1, 'magenta', 'green', 1, 2),
+      (7, 2, 2, 'blue', 'orange', 3, 0),
+      (8, 1, 1, 'orange', 'magenta', 3, 1),
+      (8, 1, 2, 'blue', 'green', 0, 1),
+      (8, 2, 1, 'green', 'orange', 0, 3),
+      (8, 2, 2, 'magenta', 'blue', 0, 1)
+  ) as seed(matchday_number, round_number, match_order, home_team_code, away_team_code, home_score, away_score)
 )
 insert into public.matchday_matches (
   matchday_id,
@@ -1184,15 +1211,42 @@ matchday_lookup as (
   join season_row on season_row.id = md.season_id
 ),
 match_seed as (
-  select
-    null::integer as matchday_number,
-    null::integer as round_number,
-    null::integer as match_order,
-    null::text as home_team_code,
-    null::text as away_team_code,
-    null::integer as home_score,
-    null::integer as away_score
-  where false
+  select *
+  from (
+    values
+      (1, 1, 1, 'blue', 'magenta', 2, 1),
+      (1, 1, 2, 'green', 'orange', 1, 3),
+      (1, 2, 1, 'orange', 'blue', 1, 2),
+      (1, 2, 2, 'magenta', 'green', 4, 2),
+      (2, 1, 1, 'blue', 'magenta', 1, 1),
+      (2, 1, 2, 'green', 'orange', 3, 2),
+      (2, 2, 1, 'magenta', 'green', 0, 2),
+      (2, 2, 2, 'blue', 'orange', 3, 1),
+      (3, 1, 1, 'blue', 'magenta', 1, 1),
+      (3, 1, 2, 'orange', 'green', 1, 1),
+      (3, 2, 1, 'green', 'blue', 2, 2),
+      (3, 2, 2, 'magenta', 'orange', 1, 3),
+      (4, 1, 1, 'blue', 'magenta', 1, 4),
+      (4, 1, 2, 'green', 'orange', 2, 2),
+      (4, 2, 1, 'blue', 'orange', 1, 1),
+      (4, 2, 2, 'magenta', 'green', 3, 0),
+      (5, 1, 1, 'blue', 'magenta', 3, 3),
+      (5, 1, 2, 'green', 'orange', 1, 2),
+      (5, 2, 1, 'blue', 'green', 1, 2),
+      (5, 2, 2, 'magenta', 'orange', 0, 4),
+      (6, 1, 1, 'blue', 'magenta', 1, 1),
+      (6, 1, 2, 'green', 'orange', 1, 0),
+      (6, 2, 1, 'magenta', 'green', 1, 1),
+      (6, 2, 2, 'blue', 'orange', 2, 0),
+      (7, 1, 1, 'blue', 'magenta', 2, 1),
+      (7, 1, 2, 'green', 'orange', 0, 0),
+      (7, 2, 1, 'orange', 'blue', 4, 1),
+      (7, 2, 2, 'magenta', 'green', 1, 1),
+      (8, 1, 1, 'blue', 'magenta', 1, 1),
+      (8, 1, 2, 'green', 'orange', 0, 1),
+      (8, 2, 1, 'magenta', 'green', 0, 2),
+      (8, 2, 2, 'orange', 'blue', 2, 0)
+  ) as seed(matchday_number, round_number, match_order, home_team_code, away_team_code, home_score, away_score)
 )
 insert into public.matchday_matches (
   matchday_id,
