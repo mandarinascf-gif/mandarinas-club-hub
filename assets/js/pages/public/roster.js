@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     pickSeason,
     fetchSeasonBundle,
     fetchAllTimeStandings,
+    buildBadgeStandings,
     normalizeText,
     escapeHtml,
     playerDisplayName,
@@ -21,7 +22,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     formatStatusLabel,
     readableError,
     buildCompletedMatchdays,
-    buildStandings,
     buildPlayerMatchdayDetails,
     querySeasonIdFromUrl,
   } = window.MandarinasPublic;
@@ -71,6 +71,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let allTimeStandingsPromiseCache = new Map();
   let pendingAllTimePlayerId = null;
   let playerStatViewById = new Map();
+  let html2CanvasPromise = null;
   const ALL_TIME_CACHE_KEY = "all";
 
   function hasMissingDesiredTierColumn(error) {
@@ -216,8 +217,62 @@ document.addEventListener("DOMContentLoaded", async () => {
     return promise;
   }
 
+  function buildBadgeFilename(player) {
+    const rawName = playerDisplayName(player)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    return `mandarinas-${rawName || "player"}-badge.png`;
+  }
+
+  function ensureHtml2CanvasLoaded() {
+    if (typeof window === "undefined") {
+      return Promise.reject(new Error("Browser share tools are unavailable in this context."));
+    }
+
+    if (typeof window.html2canvas === "function") {
+      return Promise.resolve(window.html2canvas);
+    }
+
+    if (html2CanvasPromise) {
+      return html2CanvasPromise;
+    }
+
+    html2CanvasPromise = new Promise((resolve, reject) => {
+      const existingScript = document.querySelector('script[data-html2canvas-loader="true"]');
+      if (existingScript) {
+        existingScript.addEventListener("load", () => resolve(window.html2canvas), { once: true });
+        existingScript.addEventListener(
+          "error",
+          () => reject(new Error("html2canvas failed to load.")),
+          { once: true }
+        );
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js";
+      script.async = true;
+      script.dataset.html2canvasLoader = "true";
+      script.addEventListener("load", () => resolve(window.html2canvas), { once: true });
+      script.addEventListener(
+        "error",
+        () => reject(new Error("html2canvas failed to load.")),
+        { once: true }
+      );
+      document.head.appendChild(script);
+    }).finally(() => {
+      if (typeof window?.html2canvas !== "function") {
+        html2CanvasPromise = null;
+      }
+    });
+
+    return html2CanvasPromise;
+  }
+
   function getPlayerStats(playerId, standingsMap) {
     return standingsMap.get(playerId) || {
+      seasons_participated: 0,
       goals: 0,
       goal_keep_points_earned: 0,
       clean_sheets: 0,
@@ -229,6 +284,51 @@ document.addEventListener("DOMContentLoaded", async () => {
       points_per_game: 0,
       rank: "-",
     };
+  }
+
+  function formatWholeNumber(value) {
+    const number = Number(value);
+    return Number.isFinite(number) ? String(Math.round(number)) : "0";
+  }
+
+  function formatRecord(stats) {
+    return `${formatWholeNumber(stats.wins)}-${formatWholeNumber(stats.draws)}-${formatWholeNumber(
+      stats.losses
+    )}`;
+  }
+
+  function formatBadgePpg(stats) {
+    const value = Number(stats?.points_per_game || 0);
+    return Number.isFinite(value) ? value.toFixed(2) : "0.00";
+  }
+
+  function renderBadgeSummaryMarkup(view, stats) {
+    const primaryLabel = view === "all_time" ? "Seasons" : "Season";
+    const primaryValue =
+      view === "all_time"
+        ? formatWholeNumber(stats.seasons_participated)
+        : normalizeText(seasonNameEl.textContent, "Current");
+
+    return `
+      <div class="player-badge-summary" aria-label="Player badge summary">
+        <div class="player-badge-summary-stat">
+          <span>${escapeHtml(primaryLabel)}</span>
+          <strong>${escapeHtml(primaryValue)}</strong>
+        </div>
+        <div class="player-badge-summary-stat">
+          <span>Record</span>
+          <strong>${escapeHtml(formatRecord(stats))}</strong>
+        </div>
+        <div class="player-badge-summary-stat">
+          <span>PPG</span>
+          <strong>${escapeHtml(formatBadgePpg(stats))}</strong>
+        </div>
+        <div class="player-badge-summary-stat">
+          <span>Apps</span>
+          <strong>${escapeHtml(formatWholeNumber(stats.days_attended))}</strong>
+        </div>
+      </div>
+    `;
   }
 
   function getPositionCategory(positions) {
@@ -501,10 +601,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     const viewNote = loadingAllTime
       ? "Loading club totals across all recorded seasons..."
       : view === "all_time"
-        ? "Club totals across all recorded seasons."
+        ? "All completed club seasons loaded into the archive."
         : `${normalizeText(seasonNameEl.textContent) || "Current season"} badge totals.`;
     const seasonActive = view === "season" || loadingAllTime;
     const allTimeActive = view === "all_time" && !loadingAllTime;
+    const badgeSummaryMarkup = !loadingAllTime ? renderBadgeSummaryMarkup(view, stats) : "";
+    const viewNoteMarkup = viewNote
+      ? `<p class="player-badge-view-note">${escapeHtml(viewNote)}</p>`
+      : "";
 
     return `
       <div class="player-badge-toolbar">
@@ -532,10 +636,21 @@ document.addEventListener("DOMContentLoaded", async () => {
             ALL TIME
           </button>
         </div>
-        <p class="player-badge-view-note">${escapeHtml(viewNote)}</p>
+        ${viewNoteMarkup}
+        <button
+          class="secondary-button player-badge-share-button"
+          type="button"
+          data-share-badge-player-id="${player.id}"
+          ${loadingAllTime ? "disabled" : ""}
+        >
+          Share Badge
+        </button>
       </div>
-      <div class="roster-player-badge ${loadingAllTime ? "is-loading" : ""}">
-        ${badgeMarkup}
+      ${badgeSummaryMarkup}
+      <div id="shareBadgeCard" class="player-badge-share-card">
+        <div class="roster-player-badge ${loadingAllTime ? "is-loading" : ""}">
+          ${badgeMarkup}
+        </div>
       </div>
     `;
   }
@@ -619,6 +734,65 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     playerDetail.innerHTML = renderPlayerDetailMarkup(player);
+  }
+
+  async function shareBadgeForPlayer(playerIdValue) {
+    const player = allPlayers.find((entry) => Number(entry.id) === Number(playerIdValue));
+    const shareButton = document.querySelector(
+      `[data-share-badge-player-id="${Number(playerIdValue)}"]`
+    );
+    const shareCard = document.getElementById("shareBadgeCard");
+
+    if (!player || !shareButton || !shareCard) {
+      return;
+    }
+
+    const originalLabel = shareButton.textContent;
+    shareButton.disabled = true;
+    shareButton.textContent = "Preparing...";
+
+    try {
+      const html2canvas = await ensureHtml2CanvasLoaded();
+      const canvas = await html2canvas(shareCard, {
+        backgroundColor: null,
+        scale: 2,
+      });
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+
+      if (!blob) {
+        throw new Error("Could not export the badge image.");
+      }
+
+      const filename = buildBadgeFilename(player);
+      const file = new File([blob], filename, {
+        type: "image/png",
+      });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: "Mandarinas CF Player Badge",
+        });
+      } else {
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.download = filename;
+        link.click();
+        URL.revokeObjectURL(downloadUrl);
+      }
+
+      restoreRosterLoadedStatus();
+    } catch (error) {
+      if (error?.name !== "AbortError") {
+        statusLine.classList.remove("loading", "success", "error");
+        statusLine.classList.add("warning");
+        statusText.textContent = `Badge share is unavailable right now. ${readableError(error)}`;
+      }
+    } finally {
+      shareButton.disabled = false;
+      shareButton.textContent = originalLabel;
+    }
   }
 
   function updateSummaryStats() {
@@ -849,7 +1023,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       allPlayers = bundle.players || [];
 
       const completedMatchdays = buildCompletedMatchdays(bundle.matchdays, bundle.matches);
-      allStandings = buildStandings(
+      allStandings = buildBadgeStandings(
         bundle.players,
         bundle.assignments,
         bundle.playerStats,
@@ -973,6 +1147,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
+    const shareButton = event.target.closest("[data-share-badge-player-id]");
+    if (shareButton) {
+      await shareBadgeForPlayer(Number(shareButton.dataset.shareBadgePlayerId));
+      return;
+    }
+
     if (event.target.closest(".roster-inline-detail")) {
       return;
     }
@@ -989,7 +1169,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   playerDetail.addEventListener("click", async (event) => {
-    await handlePlayerStatViewClick(event);
+    if (await handlePlayerStatViewClick(event)) {
+      return;
+    }
+
+    const shareButton = event.target.closest("[data-share-badge-player-id]");
+    if (!shareButton) {
+      return;
+    }
+
+    await shareBadgeForPlayer(Number(shareButton.dataset.shareBadgePlayerId));
   });
 
   seasonSelect.addEventListener("change", async () => {
