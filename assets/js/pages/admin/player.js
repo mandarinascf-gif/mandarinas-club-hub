@@ -164,27 +164,6 @@ function formatFoot(value) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-function calculateAge(value) {
-  if (!value) {
-    return null;
-  }
-
-  const birthDate = new Date(value);
-  if (Number.isNaN(birthDate.getTime())) {
-    return null;
-  }
-
-  const now = new Date();
-  let age = now.getFullYear() - birthDate.getFullYear();
-  const monthDelta = now.getMonth() - birthDate.getMonth();
-
-  if (monthDelta < 0 || (monthDelta === 0 && now.getDate() < birthDate.getDate())) {
-    age -= 1;
-  }
-
-  return age >= 0 ? age : null;
-}
-
 function playerFullName(playerRow) {
   return normalizeText(`${playerRow?.first_name || ""} ${playerRow?.last_name || ""}`) || "Player";
 }
@@ -353,7 +332,6 @@ function renderDetail() {
   const headlineName = playerHeadlineName(player);
   const tierLabel = formatTier(player.status);
   const footLabel = formatFoot(player.dominant_foot);
-  const age = calculateAge(player.birth_date);
   const birthYearLabel = formatBirthYear(player.birth_date);
   const nationality = player.nationality || "";
   const scoutNote = player.notes || "No scout note saved yet.";
@@ -364,8 +342,6 @@ function renderDetail() {
     nationality,
     flag,
     birth_date: player.birth_date,
-    age,
-    dominant_foot: player.dominant_foot,
     overall_rating: Number.isFinite(Number(player.skill_rating)) ? Number(player.skill_rating) : 0,
     rank: "--",
     ppg: 0,
@@ -377,7 +353,6 @@ function renderDetail() {
           .filter(Boolean)
           .join(" · ")
       : "N/A",
-    tier: player.status,
     positions,
   };
   const badgeTotals = {
