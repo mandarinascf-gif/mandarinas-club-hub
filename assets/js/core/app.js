@@ -48,6 +48,7 @@
     historicalSeasonIds,
     attendanceStatus,
     buildCompletedMatchdays,
+    compareStandingsPriority,
     summarizeMatchdayProgress,
     buildStandings,
     buildPlayerMatchdayDetails,
@@ -67,6 +68,7 @@
     "id, first_name, last_name, nickname, nationality, birth_date, positions, skill_rating, desired_tier, status, dominant_foot, created_at";
   const PLAYER_DIRECTORY_SELECT_FALLBACK =
     "id, first_name, last_name, nickname, nationality, birth_date, positions, skill_rating, status, dominant_foot, created_at";
+  const SUPABASE_PAGE_SIZE = 1000;
 
   let activeTeamDisplayConfig = applyTeamDisplayConfig(null);
 
@@ -163,6 +165,31 @@
     }
 
     return message;
+  }
+
+  async function fetchPagedRows(buildQuery, pageSize = SUPABASE_PAGE_SIZE) {
+    const rows = [];
+    let from = 0;
+
+    while (true) {
+      const to = from + pageSize - 1;
+      const { data, error } = await buildQuery(from, to);
+
+      if (error) {
+        throw error;
+      }
+
+      const page = data || [];
+      rows.push(...page);
+
+      if (page.length < pageSize) {
+        break;
+      }
+
+      from += pageSize;
+    }
+
+    return rows;
   }
 
   // FIX: Lightweight health check — surfaces auth or connectivity problems before the first real
@@ -325,42 +352,36 @@
     let playerStats = [];
 
     if (matchdayIds.length) {
-      const [{ data: matchesData, error: matchesError }, { data: assignmentsData, error: assignmentsError }, { data: playerStatsData, error: playerStatsError }] =
-        await Promise.all([
+      [matches, assignments, playerStats] = await Promise.all([
+        fetchPagedRows((from, to) =>
           supabaseClient
             .from("matchday_matches")
             .select("*")
             .in("matchday_id", matchdayIds)
+            .order("matchday_id", { ascending: true })
             .order("round_number", { ascending: true })
             .order("match_order", { ascending: true })
-            .limit(5000),
+            .range(from, to)
+        ),
+        fetchPagedRows((from, to) =>
           supabaseClient
             .from("matchday_assignments")
             .select("*")
             .in("matchday_id", matchdayIds)
-            .limit(10000),
+            .order("matchday_id", { ascending: true })
+            .order("player_id", { ascending: true })
+            .range(from, to)
+        ),
+        fetchPagedRows((from, to) =>
           supabaseClient
             .from("matchday_player_stats")
             .select("*")
             .in("matchday_id", matchdayIds)
-            .limit(10000),
-        ]);
-
-      if (matchesError) {
-        throw matchesError;
-      }
-
-      if (assignmentsError) {
-        throw assignmentsError;
-      }
-
-      if (playerStatsError) {
-        throw playerStatsError;
-      }
-
-      matches = matchesData || [];
-      assignments = assignmentsData || [];
-      playerStats = playerStatsData || [];
+            .order("matchday_id", { ascending: true })
+            .order("player_id", { ascending: true })
+            .range(from, to)
+        ),
+      ]);
     }
 
     return {
@@ -408,8 +429,9 @@
       };
     }
 
-    const [{ data: historicalMatches, error: historicalMatchesError }, { data: historicalPlayerStats, error: historicalPlayerStatsError }] =
-      await Promise.all([
+    return {
+      matchdays: historicalMatchdays || [],
+      matches: await fetchPagedRows((from, to) =>
         supabaseClient
           .from("matchday_matches")
           .select("*")
@@ -417,31 +439,23 @@
           .order("matchday_id", { ascending: true })
           .order("round_number", { ascending: true })
           .order("match_order", { ascending: true })
-          .limit(20000),
+          .range(from, to)
+      ),
+      playerStats: await fetchPagedRows((from, to) =>
         supabaseClient
           .from("matchday_player_stats")
           .select("*")
           .in("matchday_id", historicalMatchdayIds)
           .in("player_id", targetPlayerIds)
-          .limit(20000),
-      ]);
-
-    if (historicalMatchesError) {
-      throw historicalMatchesError;
-    }
-
-    if (historicalPlayerStatsError) {
-      throw historicalPlayerStatsError;
-    }
-
-    return {
-      matchdays: historicalMatchdays || [],
-      matches: historicalMatches || [],
-      playerStats: historicalPlayerStats || [],
+          .order("matchday_id", { ascending: true })
+          .order("player_id", { ascending: true })
+          .range(from, to)
+      ),
     };
   }
 
   function mergeStandingsEntryTotals(target, source) {
+    target.seasons_participated += Number(source.seasons_participated || 0);
     target.total_points += Number(source.total_points || 0);
     target.attendance_points += Number(source.attendance_points || 0);
     target.days_attended += Number(source.days_attended || 0);
@@ -461,6 +475,55 @@
     target.late_cancels += Number(source.late_cancels || 0);
   }
 
+  function badgePointsPerGame(entry) {
+    const points = Number(entry?.total_points || 0);
+    const apps = Number(entry?.days_attended || 0);
+    return apps ? Number((points / apps).toFixed(2)) : 0;
+  }
+
+  function compareBadgeStandings(left, right) {
+    const pointsDiff = Number(right?.total_points || 0) - Number(left?.total_points || 0);
+    if (pointsDiff !== 0) {
+      return pointsDiff;
+    }
+
+    const ppgDiff = badgePointsPerGame(right) - badgePointsPerGame(left);
+    if (Math.abs(ppgDiff) > 0.0001) {
+      return ppgDiff;
+    }
+
+    const appsDiff = Number(right?.days_attended || 0) - Number(left?.days_attended || 0);
+    if (appsDiff !== 0) {
+      return appsDiff;
+    }
+
+    return compareStandingsPriority(left, right);
+  }
+
+  function finalizeBadgeStandings(entries) {
+    return [...(entries || [])]
+      .map((entry) => ({
+        ...entry,
+        points_per_game: badgePointsPerGame(entry),
+      }))
+      .sort(compareBadgeStandings)
+      .map((entry, index) => ({
+        ...entry,
+        rank: index + 1,
+      }));
+  }
+
+  function buildBadgeStandings(players, assignments, playerStats, completedMatchdays, scoringSource) {
+    const standings = buildStandings(
+      players,
+      assignments,
+      playerStats,
+      completedMatchdays,
+      scoringSource
+    );
+    return finalizeBadgeStandings(standings);
+  }
+
   function buildAllTimeStandings(players, seasons, matchdays, matches, assignments, playerStats) {
     const normalizedPlayers = (players || []).map((player) =>
       normalizePlayerDesiredTier(player, "rotation")
@@ -471,6 +534,7 @@
         {
           player_id: Number(player.id),
           player,
+          seasons_participated: 0,
           total_points: 0,
           attendance_points: 0,
           days_attended: 0,
@@ -567,21 +631,16 @@
           return;
         }
 
-        mergeStandingsEntryTotals(standingsSeed.get(playerId), entry);
+        mergeStandingsEntryTotals(standingsSeed.get(playerId), {
+          ...entry,
+          seasons_participated: 1,
+        });
       });
     });
 
-    return sortStandings(
-      Array.from(standingsSeed.values()).filter((entry) => entry.days_attended > 0),
-      "total_points",
-      "desc"
-    ).map((entry, index) => ({
-      ...entry,
-      points_per_game: entry.games_played
-        ? Number((entry.total_points / entry.games_played).toFixed(2))
-        : 0,
-      rank: index + 1,
-    }));
+    return finalizeBadgeStandings(
+      Array.from(standingsSeed.values()).filter((entry) => entry.days_attended > 0)
+    );
   }
 
   async function fetchAllTimeStandings(options = {}) {
@@ -657,8 +716,8 @@
       return [];
     }
 
-    const [{ data: matches, error: matchesError }, { data: assignments, error: assignmentsError }, { data: allPlayerStats, error: allPlayerStatsError }] =
-      await Promise.all([
+    const [matches, assignments, allPlayerStats] = await Promise.all([
+      fetchPagedRows((from, to) =>
         supabaseClient
           .from("matchday_matches")
           .select("*")
@@ -666,36 +725,35 @@
           .order("matchday_id", { ascending: true })
           .order("round_number", { ascending: true })
           .order("match_order", { ascending: true })
-          .limit(20000),
+          .range(from, to)
+      ),
+      fetchPagedRows((from, to) =>
         supabaseClient
           .from("matchday_assignments")
           .select("*")
           .in("matchday_id", scopedMatchdayIds)
-          .limit(40000),
+          .order("matchday_id", { ascending: true })
+          .order("player_id", { ascending: true })
+          .range(from, to)
+      ),
+      fetchPagedRows((from, to) =>
         supabaseClient
           .from("matchday_player_stats")
           .select("*")
           .in("matchday_id", scopedMatchdayIds)
-          .limit(40000),
-      ]);
-
-    if (matchesError) {
-      throw matchesError;
-    }
-    if (assignmentsError) {
-      throw assignmentsError;
-    }
-    if (allPlayerStatsError) {
-      throw allPlayerStatsError;
-    }
+          .order("matchday_id", { ascending: true })
+          .order("player_id", { ascending: true })
+          .range(from, to)
+      ),
+    ]);
 
     return buildAllTimeStandings(
       normalizedPlayers || [],
       seasonScope,
       matchdays || [],
-      matches || [],
-      assignments || [],
-      allPlayerStats || []
+      matches,
+      assignments,
+      allPlayerStats
     );
   }
 
@@ -912,6 +970,7 @@
     fetchAllTimeStandings,
     fetchHistoricalTierAttendance,
     buildCompletedMatchdays,
+    buildBadgeStandings,
     buildStandings,
     buildAllTimeStandings,
     buildPlayerMatchdayDetails,
