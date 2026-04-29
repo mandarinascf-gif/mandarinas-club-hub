@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
     escapeHtml,
     playerDisplayName,
     playerNameParts,
+    nationalityFlag,
     formatDateTime,
     formatStatusLabel,
     badgeIconMarkup,
@@ -288,6 +289,8 @@ document.addEventListener("DOMContentLoaded", () => {
       .map(({ season, winner }) => {
         const nameParts = playerNameParts(winner.player);
         const art = championArtworkForSeason(season.name);
+        const nationality = winner.player?.nationality || "";
+        const flag = nationalityFlag(nationality);
         return `
           <article class="champion-card champion-card--${escapeHtml(art.theme)}">
             <div class="champion-card-media">
@@ -303,7 +306,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 <span class="champion-card-badge">${badgeIconMarkup("winner")}<span>Winner</span></span>
                 <span class="champion-card-season">${escapeHtml(`${art.label} '${seasonBadgeLabel(season.name)}`)}</span>
               </div>
-              <div class="champion-card-name">${escapeHtml(nameParts.primary || playerDisplayName(winner.player))}</div>
+              <div class="champion-card-name">
+                ${
+                  flag
+                    ? `<span class="champion-card-name-flag" role="img" aria-label="${escapeHtml(nationality)}">${escapeHtml(flag)}</span>`
+                    : ""
+                }
+                <span>${escapeHtml(nameParts.primary || playerDisplayName(winner.player))}</span>
+              </div>
               <div class="champion-card-copy">${escapeHtml(season.name)}</div>
               <div class="champion-card-points">${escapeHtml(`${winner.total_points} pts`)}</div>
             </div>
