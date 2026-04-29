@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     fetchSeasons,
     pickSeason,
     fetchSeasonBundle,
+    fetchAllTimeStandings,
     normalizeText,
     escapeHtml,
     playerDisplayName,
@@ -65,6 +66,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   let positionFilter = "all";
   let tierFilter = "all";
   let selectedPlayerId = null;
+  let rosterLoadedMessage = "";
+  let allTimeStandingsCache = new Map();
+  let allTimeStandingsPromiseCache = new Map();
+  let pendingAllTimePlayerId = null;
+  let playerStatViewById = new Map();
 
   function hasMissingDesiredTierColumn(error) {
     const message = String(error?.message || "").toLowerCase();
@@ -157,6 +163,57 @@ document.addEventListener("DOMContentLoaded", async () => {
       map.set(entry.player_id || entry.player?.id, entry);
     });
     return map;
+  }
+
+  function activePlayerStatView(playerId) {
+    return playerStatViewById.get(Number(playerId)) || "season";
+  }
+
+  function restoreRosterLoadedStatus() {
+    if (!rosterLoadedMessage) {
+      return;
+    }
+
+    statusLine.classList.remove("loading", "error", "warning");
+    statusLine.classList.add("success");
+    statusText.textContent = rosterLoadedMessage;
+  }
+
+  function setAllTimeErrorStatus(error) {
+    statusLine.classList.remove("loading", "success", "error");
+    statusLine.classList.add("warning");
+    statusText.textContent = `All-time badge stats are unavailable right now. ${readableError(error)}`;
+  }
+
+  function allTimeStandingsForActiveSeason() {
+    return allTimeStandingsCache.get(Number(activeSeasonId)) || null;
+  }
+
+  async function ensureAllTimeStandingsLoaded() {
+    const seasonKey = Number(activeSeasonId);
+    if (!Number.isFinite(seasonKey) || seasonKey <= 0) {
+      return new Map();
+    }
+
+    if (allTimeStandingsCache.has(seasonKey)) {
+      return allTimeStandingsCache.get(seasonKey);
+    }
+
+    if (allTimeStandingsPromiseCache.has(seasonKey)) {
+      return allTimeStandingsPromiseCache.get(seasonKey);
+    }
+
+    const promise = (async () => {
+      const standings = await fetchAllTimeStandings({ upToSeasonId: seasonKey });
+      const standingsMap = buildStandingsMap(standings);
+      allTimeStandingsCache.set(seasonKey, standingsMap);
+      return standingsMap;
+    })().finally(() => {
+      allTimeStandingsPromiseCache.delete(seasonKey);
+    });
+
+    allTimeStandingsPromiseCache.set(seasonKey, promise);
+    return promise;
   }
 
   function getPlayerStats(playerId, standingsMap) {
@@ -393,16 +450,22 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function renderPlayerDetailMarkup(player) {
-    const standingsMap = buildStandingsMap(allStandings);
-    const stats = getPlayerStats(player.id, standingsMap);
+    const seasonStandingsMap = buildStandingsMap(allStandings);
+    const view = activePlayerStatView(player.id);
+    const loadingAllTime = Number(pendingAllTimePlayerId) === Number(player.id);
+    const allTimeStandingsByPlayerId = allTimeStandingsForActiveSeason();
+    const activeStandingsMap =
+      view === "all_time" && allTimeStandingsByPlayerId instanceof Map
+        ? allTimeStandingsByPlayerId
+        : seasonStandingsMap;
+    const stats = getPlayerStats(player.id, activeStandingsMap);
     const positions =
       Array.isArray(player.positions) && player.positions.length ? player.positions : [];
-    const age = calculateAge(player.birth_date);
     const nationality = player.nationality || "";
     const flag = nationalityFlag(player.nationality || "");
     const overall = Number.isFinite(Number(player.skill_rating)) ? Number(player.skill_rating) : 0;
     const points = Number(stats.total_points || 0);
-    const pointsPerGame = Number(stats.points_per_game || 0).toFixed(2);
+    const pointsPerGame = Number(Number(stats.points_per_game || 0).toFixed(2));
     const attendance = Number(stats.days_attended || 0);
     const goals = Number(stats.goals || 0);
     const positionLabel = positions.length
@@ -417,7 +480,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       nationality,
       flag,
       birth_date: player.birth_date,
-      age,
       dominant_foot: player.dominant_foot,
       overall_rating: overall,
       rank: playerRankDisplay(stats.rank),
@@ -432,15 +494,50 @@ document.addEventListener("DOMContentLoaded", async () => {
       apps: attendance,
       goals,
       rank: playerRankDisplay(stats.rank),
-      ppg: Number(pointsPerGame),
-      points_per_game: Number(pointsPerGame),
+      ppg: pointsPerGame,
+      points_per_game: pointsPerGame,
     };
     const badgeMarkup = window.renderPlayerBadge
       ? window.renderPlayerBadge(badgePlayer, badgeStats).outerHTML
       : "";
+    const selectedSeasonName = normalizeText(seasonNameEl.textContent) || "Selected season";
+    const viewNote = loadingAllTime
+      ? `Loading club totals through ${selectedSeasonName}...`
+      : view === "all_time"
+        ? `Club totals across recorded seasons through ${selectedSeasonName}.`
+        : `${selectedSeasonName} badge totals.`;
+    const seasonActive = view === "season" || loadingAllTime;
+    const allTimeActive = view === "all_time" && !loadingAllTime;
 
     return `
-      <div class="roster-player-badge">
+      <div class="player-badge-toolbar">
+        <div class="player-badge-view-toggle" role="tablist" aria-label="${escapeHtml(
+          `${playerDisplayName(player)} badge stat range`
+        )}">
+          <button
+            class="view-chip player-badge-view-chip ${seasonActive ? "active" : ""}"
+            type="button"
+            data-player-stat-view="season"
+            data-player-id="${player.id}"
+            aria-pressed="${seasonActive ? "true" : "false"}"
+            ${loadingAllTime ? "disabled" : ""}
+          >
+            Current season
+          </button>
+          <button
+            class="view-chip player-badge-view-chip ${allTimeActive ? "active" : ""}"
+            type="button"
+            data-player-stat-view="all_time"
+            data-player-id="${player.id}"
+            aria-pressed="${allTimeActive ? "true" : "false"}"
+            ${loadingAllTime ? "disabled" : ""}
+          >
+            All time
+          </button>
+        </div>
+        <p class="player-badge-view-note">${escapeHtml(viewNote)}</p>
+      </div>
+      <div class="roster-player-badge ${loadingAllTime ? "is-loading" : ""}">
         ${badgeMarkup}
       </div>
     `;
@@ -719,6 +816,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function loadSeason() {
     const selectedSeason = pickSeason(seasons, activeSeasonId);
+    pendingAllTimePlayerId = null;
+    playerStatViewById = new Map();
 
     if (!selectedSeason) {
       seasonSelect.innerHTML = '<option value="">No seasons available</option>';
@@ -728,9 +827,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       allStandings = [];
       playerDetailsMap = new Map();
       selectedPlayerId = null;
+      rosterLoadedMessage = "No seasons found.";
       statusLine.classList.remove("loading", "success", "error");
       statusLine.classList.add("warning");
-      statusText.textContent = "No seasons found.";
+      statusText.textContent = rosterLoadedMessage;
       playerList.innerHTML = '<div class="empty-state">No seasons are available yet.</div>';
       playerDetail.innerHTML = '<div class="empty-state">Launch a season to view the season squad.</div>';
       updateSummaryStats();
@@ -784,9 +884,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       statusLine.classList.remove("loading", "error", "warning");
       statusLine.classList.add("success");
-      statusText.textContent = `${selectedSeason.name} · ${allPlayers.length} players loaded`;
+      rosterLoadedMessage = `${selectedSeason.name} · ${allPlayers.length} players loaded`;
+      statusText.textContent = rosterLoadedMessage;
     } catch (error) {
       const message = readableError(error);
+      rosterLoadedMessage = "";
       directoryPlayers = [];
       seasonRosterRequests = [];
       statusLine.classList.remove("loading", "success", "warning");
@@ -825,7 +927,55 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderDetail();
   });
 
-  playerList.addEventListener("click", (event) => {
+  async function handlePlayerStatViewClick(event) {
+    const viewButton = event.target.closest("[data-player-stat-view]");
+    if (!viewButton) {
+      return false;
+    }
+
+    const nextView = normalizeText(viewButton.dataset.playerStatView).toLowerCase();
+    const playerIdValue = Number(viewButton.dataset.playerId);
+    if (!Number.isFinite(playerIdValue) || (nextView !== "season" && nextView !== "all_time")) {
+      return true;
+    }
+
+    if (nextView === activePlayerStatView(playerIdValue)) {
+      return true;
+    }
+
+    if (nextView === "season") {
+      playerStatViewById.set(playerIdValue, "season");
+      restoreRosterLoadedStatus();
+      renderRoster();
+      renderDetail();
+      return true;
+    }
+
+    pendingAllTimePlayerId = playerIdValue;
+    renderRoster();
+    renderDetail();
+
+    try {
+      await ensureAllTimeStandingsLoaded();
+      playerStatViewById.set(playerIdValue, "all_time");
+      restoreRosterLoadedStatus();
+    } catch (error) {
+      playerStatViewById.set(playerIdValue, "season");
+      setAllTimeErrorStatus(error);
+    } finally {
+      pendingAllTimePlayerId = null;
+      renderRoster();
+      renderDetail();
+    }
+
+    return true;
+  }
+
+  playerList.addEventListener("click", async (event) => {
+    if (await handlePlayerStatViewClick(event)) {
+      return;
+    }
+
     if (event.target.closest(".roster-inline-detail")) {
       return;
     }
@@ -839,6 +989,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     selectedPlayerId = Number(selectedPlayerId) === nextPlayerId ? null : nextPlayerId;
     renderRoster();
     renderDetail();
+  });
+
+  playerDetail.addEventListener("click", async (event) => {
+    await handlePlayerStatViewClick(event);
   });
 
   seasonSelect.addEventListener("change", async () => {
