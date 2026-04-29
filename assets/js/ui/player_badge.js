@@ -44,11 +44,6 @@
     return /^\d{4}$/.test(fullYear) ? `\u2019${fullYear.slice(-2)}` : "";
   }
 
-  function formatPpg(value) {
-    const numeric = normalizeNumber(value, 0);
-    return `${numeric.toFixed(2)} PPG`;
-  }
-
   function formatRank(value) {
     const rank = Number(value);
     return Number.isFinite(rank) && rank > 0 ? String(rank) : "--";
@@ -205,13 +200,11 @@
         <div class="badge-side badge-ovr">
           <span>OVR</span>
           <strong data-field="overall">0</strong>
-          <small>OVERALL</small>
         </div>
 
         <div class="badge-side badge-rank">
           <span>RANK</span>
           <strong data-field="rank">--</strong>
-          <small data-field="ppg">0.00 PPG</small>
         </div>
 
         <div class="gold-ball">
@@ -246,7 +239,6 @@
     const data = {
       overall: normalizeNumber(player?.overall_rating, normalizeNumber(player?.overall, normalizeNumber(player?.skill_rating, 0))) || 0,
       rank: formatRank(player?.rank ?? stats?.rank),
-      ppg: formatPpg(player?.ppg ?? stats?.ppg ?? stats?.points_per_game),
       flag: formatFlag(player),
       meta: formatCountryYear(player),
       name: normalizeText(player?.name, "N/A"),
