@@ -627,21 +627,51 @@ def parse_match_rows(rows: list[list[str]]) -> list[tuple[int, int, int, str | N
         3: (2, 1),
         4: (2, 2),
     }
+    current_matchday_number: int | None = None
+    current_historical_block: str | None = None
 
     for row in rows[1:]:
         label = normalize_space(safe_cell(row, 1))
-        if not label.startswith("MATCH DAY"):
-            continue
+        round_number: int | None = None
+        match_order: int | None = None
+        matchday_number: int | None = None
 
-        day_match = re.search(r"(\d+)$", label)
-        if not day_match:
-            continue
+        if label.startswith("MATCH DAY"):
+            day_match = re.search(r"(\d+)$", label)
+            if not day_match:
+                continue
 
-        match_number = parse_int(safe_cell(row, 2))
-        if match_number not in round_map:
-            continue
+            match_number = parse_int(safe_cell(row, 2))
+            if match_number not in round_map:
+                continue
 
-        round_number, match_order = round_map[match_number]
+            matchday_number = int(day_match.group(1))
+            round_number, match_order = round_map[match_number]
+        else:
+            # Historical archive workbooks store matchdays as numeric cells in column 1 and block
+            # labels like `1a` / `1b` in column 2, with the second court row leaving those cells blank.
+            possible_matchday = parse_int(label)
+            if possible_matchday is not None:
+                current_matchday_number = possible_matchday
+
+            block_label = normalize_space(safe_cell(row, 2)).lower()
+            if block_label:
+                current_historical_block = block_label
+
+            court_number = parse_int(safe_cell(row, 3))
+            if current_matchday_number is None or current_historical_block is None or court_number not in (1, 2):
+                continue
+
+            matchday_number = current_matchday_number
+            if current_historical_block.endswith("a"):
+                round_number = 1
+            elif current_historical_block.endswith("b"):
+                round_number = 2
+            else:
+                continue
+
+            match_order = court_number
+
         home_team = TEAM_CODE_MAP.get(normalize_label(safe_cell(row, 5)))
         away_team = TEAM_CODE_MAP.get(normalize_label(safe_cell(row, 9)))
         home_score = parse_int(safe_cell(row, 6))
@@ -649,7 +679,7 @@ def parse_match_rows(rows: list[list[str]]) -> list[tuple[int, int, int, str | N
 
         match_rows.append(
             (
-                int(day_match.group(1)),
+                matchday_number,
                 round_number,
                 match_order,
                 home_team,
