@@ -1,7 +1,14 @@
 (function () {
-  const badgeBackgroundUrl = document.currentScript?.src
-    ? new URL("../../images/player-badge/player-badge-template-blank-v2-cropped.png", document.currentScript.src).href
-    : "./assets/images/player-badge/player-badge-template-blank-v2-cropped.png";
+  function nextFrame(callback) {
+    if (typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
+      callback();
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(callback);
+    });
+  }
 
   function normalizeText(value, fallback) {
     if (value == null) {
@@ -17,6 +24,26 @@
     return Number.isFinite(number) ? number : fallback;
   }
 
+  function formatBirthYearShort(value) {
+    const text = normalizeText(value, "");
+    if (!text) {
+      return "";
+    }
+
+    let fullYear = "";
+    if (/^\d{4}$/.test(text)) {
+      fullYear = text;
+    } else {
+      const birthDate = new Date(text);
+      if (Number.isNaN(birthDate.getTime())) {
+        return "";
+      }
+      fullYear = String(birthDate.getFullYear());
+    }
+
+    return /^\d{4}$/.test(fullYear) ? `\u2019${fullYear.slice(-2)}` : "";
+  }
+
   function formatPpg(value) {
     const numeric = normalizeNumber(value, 0);
     return `${numeric.toFixed(2)} PPG`;
@@ -25,17 +52,6 @@
   function formatRank(value) {
     const rank = Number(value);
     return Number.isFinite(rank) && rank > 0 ? String(rank) : "--";
-  }
-
-  function formatTier(value) {
-    const tier = normalizeText(value, "N/A").toLowerCase();
-    if (tier === "flex_sub") {
-      return "Flex/Sub";
-    }
-    if (tier === "core" || tier === "rotation") {
-      return tier.charAt(0).toUpperCase() + tier.slice(1);
-    }
-    return tier === "n/a" ? "N/A" : normalizeText(value, "N/A");
   }
 
   function formatPosition(player) {
@@ -47,103 +63,175 @@
         .join(" · ");
     }
 
-    return normalizeText(player?.position_label || player?.primary_position, "N/A");
+    return normalizeText(player?.position_label || player?.primary_position, "N/A").toUpperCase();
   }
 
-  function calculateAgeFromBirthDate(value) {
-    const text = normalizeText(value, "");
-    if (!text) {
-      return null;
-    }
+  function formatCountryYear(player) {
+    const country = normalizeText(player?.nationality || player?.country, "");
+    const birthYear = formatBirthYearShort(
+      player?.birth_year ?? player?.birthYear ?? player?.birth_date ?? player?.birthDate
+    );
 
-    const birthDate = new Date(text);
-    if (Number.isNaN(birthDate.getTime())) {
-      return null;
+    if (country && birthYear) {
+      return `${country} \u00b7 ${birthYear}`;
     }
-
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDelta = today.getMonth() - birthDate.getMonth();
-    if (monthDelta < 0 || (monthDelta === 0 && today.getDate() < birthDate.getDate())) {
-      age -= 1;
+    if (country) {
+      return country;
     }
-
-    return age >= 0 ? age : null;
+    if (birthYear) {
+      return birthYear;
+    }
+    return "N/A";
   }
 
-  function formatFootShort(value) {
-    const normalized = normalizeText(value, "").toLowerCase();
-    if (normalized === "right" || normalized === "rf") {
-      return "RF";
-    }
-    if (normalized === "left" || normalized === "lf") {
-      return "LF";
-    }
-    if (normalized === "both" || normalized === "bf") {
-      return "BF";
-    }
-    return "";
+  function formatFlag(player) {
+    return normalizeText(player?.flag, "");
   }
 
-  function formatMeta(player) {
-    const segments = [];
-    const nationality = normalizeText(player?.nationality, "");
-    const flag = normalizeText(player?.flag, "");
-    const age = calculateAgeFromBirthDate(player?.birth_date ?? player?.birthDate);
-    const foot = formatFootShort(player?.dominant_foot ?? player?.dominantFoot);
-
-    if (nationality) {
-      segments.push(flag ? `${flag} ${nationality}` : nationality);
-    }
-    if (age != null) {
-      segments.push(`${age} yrs`);
-    }
-    if (foot) {
-      segments.push(foot);
+  function fitSingleLineText(node, minimumSize) {
+    if (!node || typeof window === "undefined" || !node.isConnected) {
+      return;
     }
 
-    return segments.length ? segments.join(" · ") : "N/A";
+    node.style.removeProperty("font-size");
+
+    const availableWidth = node.clientWidth;
+    if (!availableWidth) {
+      return;
+    }
+
+    let fontSize = Number.parseFloat(window.getComputedStyle(node).fontSize);
+    if (!Number.isFinite(fontSize)) {
+      return;
+    }
+
+    while (node.scrollWidth > availableWidth + 1 && fontSize > minimumSize) {
+      fontSize -= 1;
+      node.style.fontSize = `${fontSize}px`;
+    }
+  }
+
+  function fitBadgeTypography(badge) {
+    if (!badge || !badge.isConnected) {
+      return;
+    }
+
+    const nameNode = badge.querySelector(".ball-name");
+    fitSingleLineText(nameNode, 14);
+  }
+
+  function scheduleBadgeFit(badge) {
+    if (!badge || badge.dataset.badgeFitScheduled === "true") {
+      return;
+    }
+
+    badge.dataset.badgeFitScheduled = "true";
+    nextFrame(() => {
+      delete badge.dataset.badgeFitScheduled;
+      fitBadgeTypography(badge);
+    });
+  }
+
+  function scheduleAllBadgeFits(root) {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const scope = root && root.querySelectorAll ? root : document;
+    if (scope.matches && scope.matches(".game-player-badge")) {
+      scheduleBadgeFit(scope);
+    }
+
+    scope.querySelectorAll(".game-player-badge").forEach((badge) => {
+      scheduleBadgeFit(badge);
+    });
+  }
+
+  function observeBadgeMounts() {
+    if (
+      typeof window === "undefined" ||
+      typeof document === "undefined" ||
+      window.__mcPlayerBadgeObserverReady
+    ) {
+      return;
+    }
+
+    window.__mcPlayerBadgeObserverReady = true;
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", () => {
+        scheduleAllBadgeFits();
+      }, { once: true });
+    } else {
+      scheduleAllBadgeFits();
+    }
+
+    if (typeof MutationObserver === "function") {
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          mutation.addedNodes.forEach((node) => {
+            if (node instanceof Element) {
+              scheduleAllBadgeFits(node);
+            }
+          });
+        });
+      });
+
+      observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+      });
+    }
+
+    if (document.fonts?.ready?.then) {
+      document.fonts.ready.then(() => {
+        scheduleAllBadgeFits();
+      });
+    }
+
+    window.addEventListener("resize", () => {
+      scheduleAllBadgeFits();
+    });
   }
 
   function createBadgeMarkup() {
     return `
-      <div class="badge-stage">
-        <div class="player-badge-shell">
-          <img class="player-badge-bg" src="${badgeBackgroundUrl}" alt="" />
+      <div class="game-player-badge">
+        <div class="badge-header">
+          <div class="badge-title">MANDARINAS</div>
+          <div class="badge-subtitle">CALIFORNIA CLUB DE FUTBOL</div>
+        </div>
 
-          <div class="badge-bottom-mask"></div>
+        <div class="badge-side badge-ovr">
+          <span>OVR</span>
+          <strong data-field="overall">0</strong>
+          <small>OVERALL</small>
+        </div>
 
-          <div class="badge-ball-readable-overlay"></div>
+        <div class="badge-side badge-rank">
+          <span>RANK</span>
+          <strong data-field="rank">--</strong>
+          <small data-field="ppg">0.00 PPG</small>
+        </div>
 
-          <div class="badge-overlay badge-meta" data-field="meta">N/A</div>
+        <div class="gold-ball">
+          <div class="ball-flag" data-field="flag"></div>
+          <div class="ball-name" data-field="name">Player</div>
+          <div class="ball-meta" data-field="meta">N/A</div>
+          <div class="ball-positions" data-field="position">N/A</div>
+        </div>
 
-          <div class="badge-overlay badge-name" data-field="name">Player</div>
-
-          <div class="badge-overlay badge-positions" data-field="position">N/A</div>
-
-          <div class="badge-overlay badge-tier" data-field="tier">N/A</div>
-
-          <div class="badge-overlay badge-ovr">
-            <span>OVR</span>
-            <strong data-field="overall">0</strong>
-            <small>OVERALL</small>
-          </div>
-
-          <div class="badge-overlay badge-rank">
-            <span>RANK</span>
-            <strong data-field="rank">--</strong>
-            <small data-field="ppg">0.00 PPG</small>
-          </div>
-
-          <div class="badge-overlay badge-points">
+        <div class="badge-stats">
+          <div>
+            <span>POINTS</span>
             <strong data-field="points">0</strong>
           </div>
-
-          <div class="badge-overlay badge-apps">
+          <div>
+            <span>APPS</span>
             <strong data-field="apps">0</strong>
           </div>
-
-          <div class="badge-overlay badge-goals">
+          <div>
+            <span>GOALS</span>
             <strong data-field="goals">0</strong>
           </div>
         </div>
@@ -159,10 +247,10 @@
       overall: normalizeNumber(player?.overall_rating, normalizeNumber(player?.overall, normalizeNumber(player?.skill_rating, 0))) || 0,
       rank: formatRank(player?.rank ?? stats?.rank),
       ppg: formatPpg(player?.ppg ?? stats?.ppg ?? stats?.points_per_game),
-      meta: formatMeta(player),
+      flag: formatFlag(player),
+      meta: formatCountryYear(player),
       name: normalizeText(player?.name, "N/A"),
       position: formatPosition(player),
-      tier: formatTier(player?.tier ?? player?.status),
       points: normalizeNumber(stats?.points ?? stats?.total_points, 0),
       apps: normalizeNumber(stats?.apps ?? stats?.attendance ?? stats?.days_attended, 0),
       goals: normalizeNumber(stats?.goals, 0),
@@ -174,31 +262,34 @@
       });
     });
 
-    const nameNode = badge.querySelector(".badge-name");
-    const metaNode = badge.querySelector(".badge-meta");
-    const positionNode = badge.querySelector(".badge-positions");
+    const flagNode = badge.querySelector(".ball-flag");
+    const nameNode = badge.querySelector(".ball-name");
+    const metaNode = badge.querySelector(".ball-meta");
+    const positionNode = badge.querySelector(".ball-positions");
+    flagNode?.setAttribute("title", data.flag || "");
     nameNode?.setAttribute("title", data.name);
     metaNode?.setAttribute("title", data.meta);
     positionNode?.setAttribute("title", data.position);
 
     if (nameNode) {
-      if (data.name.length > 16) {
-        nameNode.style.setProperty("--badge-name-size", "clamp(20px, 5vw, 30px)");
-      } else if (data.name.length > 12) {
-        nameNode.style.setProperty("--badge-name-size", "clamp(22px, 5.5vw, 33px)");
+      if (data.name.length > 22) {
+        nameNode.style.setProperty("--badge-name-size", "clamp(16px, 3.8vw, 22px)");
+      } else if (data.name.length > 18) {
+        nameNode.style.setProperty("--badge-name-size", "clamp(18px, 4.2vw, 24px)");
+      } else if (data.name.length > 14) {
+        nameNode.style.setProperty("--badge-name-size", "clamp(20px, 4.6vw, 28px)");
       }
     }
 
-    if (metaNode && data.meta.length > 24) {
-      metaNode.style.setProperty("--badge-meta-size", "clamp(8px, 1.8vw, 11px)");
-      metaNode.style.setProperty("--badge-meta-width", "66%");
+    if (metaNode && data.meta.length > 16) {
+      metaNode.style.setProperty("--badge-meta-size", "clamp(10px, 2.1vw, 14px)");
     }
 
-    if (positionNode && data.position.length > 18) {
-      positionNode.style.setProperty("--badge-position-size", "clamp(10px, 2.4vw, 13px)");
-      positionNode.style.setProperty("--badge-position-width", "60%");
+    if (positionNode && data.position.length > 12) {
+      positionNode.style.setProperty("--badge-position-size", "clamp(11px, 2.8vw, 15px)");
     }
 
+    scheduleBadgeFit(badge);
     return badge;
   }
 
@@ -209,30 +300,31 @@
 
     const badge = renderPlayerBadge(player, stats);
     target.replaceChildren(badge);
+    scheduleBadgeFit(badge);
     return badge;
   }
 
+  observeBadgeMounts();
   window.renderPlayerBadge = renderPlayerBadge;
   window.mountPlayerBadge = mountPlayerBadge;
   window.createPlayerBadgeMarkup = createBadgeMarkup;
   window.mcPlayerBadgeExample = {
     player: {
-      name: "Mateo Alvarez",
-      nationality: "Argentina",
-      flag: "🇦🇷",
-      birth_date: "1996-05-18",
-      dominant_foot: "Right",
-      overall_rating: 82,
-      rank: 14,
-      ppg: 1.75,
-      primary_position: "AM",
-      position_label: "DEF · MID · ATT",
-      tier: "Core",
+      name: "Asdruval Villanueva",
+      nationality: "Mexico",
+      flag: "🇲🇽",
+      birth_date: "1985-06-14",
+      overall_rating: 80,
+      rank: "--",
+      ppg: 0,
+      primary_position: "DEF",
+      position_label: "DEF · ATT · GK",
+      positions: ["DEF", "ATT", "GK"],
     },
     stats: {
-      points: 21,
-      apps: 12,
-      goals: 8,
+      points: 0,
+      apps: 0,
+      goals: 0,
     },
   };
 })();
