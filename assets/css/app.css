@@ -3858,6 +3858,7 @@ body.manager-touch::before {
   gap: 0.72rem;
   width: 100%;
   min-width: 0;
+  justify-items: center;
   grid-column: 1 / -1;
   overflow: visible;
 }
@@ -3899,10 +3900,11 @@ body.manager-touch::before {
 }
 
 .page-roster .roster-player-badge {
-  width: 100%;
+  width: min(100%, 360px);
   min-width: 0;
   display: grid;
   justify-items: center;
+  margin: 12px auto 0;
   gap: 0.12rem;
 }
 
@@ -4640,7 +4642,8 @@ body.manager-touch::before {
 }
 
 .page-player .player-roster-player-badge {
-  width: 100%;
+  width: min(100%, 360px);
+  margin: 12px auto 0;
 }
 
 @media (min-width: 960px) {
@@ -6153,16 +6156,22 @@ body.manager-touch::before {
   justify-content: center;
   align-items: center;
   overflow: visible;
-  padding: 12px 0 22px;
+  padding: 0 0 16px;
 }
 
 .player-badge-shell {
   position: relative;
-  width: min(100%, 430px);
-  max-width: 430px;
+  width: min(100%, 390px);
+  max-width: 390px;
   margin: 0 auto;
   overflow: visible;
   isolation: isolate;
+}
+
+.page-roster .player-badge-shell,
+.page-player .player-badge-shell {
+  width: min(100%, 360px);
+  max-width: 360px;
 }
 
 .player-badge-bg {
@@ -6184,63 +6193,68 @@ body.manager-touch::before {
 
 .badge-bottom-mask {
   position: absolute;
-  left: 22%;
-  top: 72%;
-  width: 56%;
+  left: 20%;
+  top: 71%;
+  width: 60%;
   height: 15%;
   z-index: 1;
   pointer-events: none;
-  border-radius: 0 0 22px 22px;
-  background:
-    linear-gradient(
-      to bottom,
-      rgba(5, 10, 16, 0.18),
-      rgba(5, 10, 16, 0.68) 45%,
-      rgba(5, 10, 16, 0.82)
-    );
-  filter: blur(0.2px);
+  background: linear-gradient(
+    to bottom,
+    rgba(5, 10, 16, 0.15),
+    rgba(5, 10, 16, 0.72) 55%,
+    rgba(5, 10, 16, 0.88)
+  );
+  border-radius: 0 0 26px 26px;
 }
 
 .badge-ball-readable-overlay {
   position: absolute;
   left: 50%;
-  top: 51%;
-  width: 46%;
+  top: 50%;
+  width: 44%;
   aspect-ratio: 1 / 1;
   transform: translate(-50%, -50%);
   border-radius: 50%;
   z-index: 1;
   pointer-events: none;
-  background:
-    radial-gradient(circle at 50% 42%, rgba(0, 0, 0, 0.08) 0%, rgba(0, 0, 0, 0.16) 42%, rgba(0, 0, 0, 0.28) 100%);
+  background: radial-gradient(
+    circle at 50% 45%,
+    rgba(0, 0, 0, 0.05),
+    rgba(0, 0, 0, 0.18) 55%,
+    rgba(0, 0, 0, 0.28)
+  );
 }
 
 .badge-meta {
   left: 50%;
-  top: 56%;
+  top: 55%;
   transform: translate(-50%, -50%);
-  width: var(--badge-meta-width, 58%);
+  width: var(--badge-meta-width, 62%);
   color: #d8a24a;
-  font-family: "Great Vibes", cursive;
-  font-size: var(--badge-meta-size, clamp(17px, 4.5vw, 28px));
-  line-height: 1;
+  font-family: "Oswald", sans-serif;
+  font-size: var(--badge-meta-size, clamp(9px, 2vw, 12px));
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  line-height: 1.08;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   text-shadow:
     0 2px 6px rgba(0, 0, 0, 0.95),
-    0 0 10px rgba(216, 162, 74, 0.35);
+    0 0 8px rgba(216, 162, 74, 0.22);
 }
 
 .badge-name {
   left: 50%;
   top: 49%;
-  transform: translate(-50%, -52%);
-  width: var(--badge-name-width, 56%);
+  transform: translate(-50%, -50%);
+  width: var(--badge-name-width, 52%);
+  max-width: 52%;
   color: #d8a24a;
   font-family: "Great Vibes", cursive;
-  font-size: var(--badge-name-size, clamp(24px, 7vw, 42px));
-  line-height: 1;
+  font-size: var(--badge-name-size, clamp(24px, 6vw, 36px));
+  line-height: 0.94;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -6253,12 +6267,34 @@ body.manager-touch::before {
   left: 50%;
   top: 62.5%;
   transform: translate(-50%, -50%);
-  width: var(--badge-position-width, 56%);
+  width: var(--badge-position-width, 58%);
   color: #a7f3c5;
   font-family: "Oswald", sans-serif;
-  font-size: var(--badge-position-size, clamp(11px, 3vw, 16px));
+  font-size: var(--badge-position-size, clamp(10px, 2.6vw, 14px));
   font-weight: 700;
   letter-spacing: 0.14em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badge-tier {
+  left: 50%;
+  top: 68.5%;
+  transform: translate(-50%, -50%);
+  min-width: 19%;
+  max-width: 34%;
+  padding: 0.12rem 0.58rem;
+  border: 1px solid rgba(246, 176, 77, 0.32);
+  border-radius: 999px;
+  background: rgba(11, 16, 23, 0.42);
+  color: #f6b04d;
+  font-family: "Oswald", sans-serif;
+  font-size: clamp(9px, 2.1vw, 12px);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.05;
+  text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -6271,14 +6307,14 @@ body.manager-touch::before {
 }
 
 .badge-ovr {
-  left: 13.8%;
-  top: 46.3%;
+  left: 19%;
+  top: 50%;
   transform: translate(-50%, -50%);
 }
 
 .badge-rank {
-  left: 86.2%;
-  top: 46.3%;
+  left: 81%;
+  top: 50%;
   transform: translate(-50%, -50%);
 }
 
@@ -6319,7 +6355,7 @@ body.manager-touch::before {
 }
 
 .badge-points {
-  left: 30%;
+  left: 31%;
 }
 
 .badge-apps {
@@ -6327,58 +6363,15 @@ body.manager-touch::before {
 }
 
 .badge-goals {
-  left: 70%;
+  left: 69%;
 }
 
 .badge-points,
 .badge-apps,
 .badge-goals {
-  top: 78.9%;
-  width: 17%;
+  top: 80%;
+  width: 15%;
   transform: translate(-50%, -50%);
-}
-
-.badge-points {
-  isolation: isolate;
-  top: 77.6%;
-}
-
-.badge-points::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: -1.22rem;
-  width: clamp(68px, 14vw, 92px);
-  height: clamp(42px, 8vw, 56px);
-  transform: translateX(-50%);
-  border-radius: 16px;
-  background:
-    linear-gradient(
-      to bottom,
-      rgba(5, 10, 16, 0.46),
-      rgba(5, 10, 16, 0.88) 40%,
-      rgba(5, 10, 16, 0.96)
-    );
-  z-index: -1;
-  filter: blur(0.45px);
-}
-
-.badge-apps {
-  top: 80.1%;
-}
-
-.badge-flag {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.8em;
-  padding: 0.04em 0.12em;
-  color: #ffffff;
-  font-size: clamp(32px, 7vw, 46px);
-  line-height: 0.9;
-  text-shadow:
-    0 2px 6px rgba(0, 0, 0, 0.95),
-    0 0 8px rgba(255, 255, 255, 0.08);
 }
 
 .badge-points strong,
@@ -6386,7 +6379,7 @@ body.manager-touch::before {
 .badge-goals strong {
   color: #ffffff;
   font-family: "Anton", sans-serif;
-  font-size: clamp(20px, 5vw, 30px);
+  font-size: clamp(18px, 4.6vw, 28px);
   line-height: 0.95;
   text-shadow:
     0 2px 6px rgba(0, 0, 0, 0.95),
@@ -6399,30 +6392,20 @@ body.manager-touch::before {
   }
 
   .badge-name {
-    font-size: var(--badge-name-size, clamp(22px, 7vw, 34px));
-    width: var(--badge-name-width, 54%);
+    font-size: var(--badge-name-size, clamp(22px, 6.2vw, 32px));
   }
 
   .badge-ovr {
-    left: 13.3%;
+    left: 18.5%;
   }
 
   .badge-rank {
-    left: 86.7%;
+    left: 81.5%;
   }
 
   .badge-points,
   .badge-apps,
   .badge-goals {
-    top: 79.1%;
-    width: 18%;
-  }
-
-  .badge-points {
-    top: 77.8%;
-  }
-
-  .badge-apps {
-    top: 80.3%;
+    width: 16%;
   }
 }
