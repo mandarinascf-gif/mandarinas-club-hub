@@ -601,9 +601,19 @@ textarea:disabled {
 }
 
 .champion-card-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
   font-size: 1.05rem;
   line-height: 1.22;
   font-weight: 700;
+}
+
+.champion-card-name-flag {
+  flex: none;
+  font-size: 0.96rem;
+  line-height: 1;
 }
 
 .champion-card-copy {
