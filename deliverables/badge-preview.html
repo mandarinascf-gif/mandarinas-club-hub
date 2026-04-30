@@ -61,35 +61,51 @@
           return Number.isFinite(number) ? String(Math.round(number)) : "0";
         };
         const ppgValue = Number(example.stats?.points_per_game || 0);
+        const summaryCards = [
+          {
+            key: "season",
+            label: "Seasons",
+            icon: "season",
+            value: "8",
+            formattedValue: "8",
+          },
+          {
+            key: "record",
+            label: "Record",
+            icon: "record",
+            value: `${summaryValue(example.stats?.wins)}-${summaryValue(example.stats?.draws)}-${summaryValue(example.stats?.losses)}`,
+            formattedValue: `${summaryValue(example.stats?.wins)}-${summaryValue(example.stats?.draws)}-${summaryValue(example.stats?.losses)}`,
+            valueKind: "compact",
+          },
+          {
+            key: "ppg",
+            label: "PPG",
+            icon: "ppg",
+            value: Number.isFinite(ppgValue) ? ppgValue.toFixed(2) : "0.00",
+            formattedValue: Number.isFinite(ppgValue) ? ppgValue.toFixed(2) : "0.00",
+            valueKind: "compact",
+          },
+          {
+            key: "apps",
+            label: "Apps",
+            icon: "apps",
+            value: summaryValue(example.stats?.apps),
+            formattedValue: summaryValue(example.stats?.apps),
+          },
+        ];
 
         previewShell.innerHTML = `
           <div class="player-badge-share-card">
             <button class="secondary-button player-badge-share-button" type="button">Share Badge</button>
-            <div class="player-badge-summary" aria-label="Player badge summary">
-              <div class="player-badge-summary-stat">
-                <span>Season</span>
-                <strong>Summer '26</strong>
-              </div>
-              <div class="player-badge-summary-stat">
-                <span>Record</span>
-                <strong>${summaryValue(example.stats?.wins)}-${summaryValue(example.stats?.draws)}-${summaryValue(example.stats?.losses)}</strong>
-              </div>
-              <div class="player-badge-summary-stat">
-                <span>PPG</span>
-                <strong>${Number.isFinite(ppgValue) ? ppgValue.toFixed(2) : "0.00"}</strong>
-              </div>
-              <div class="player-badge-summary-stat">
-                <span>Apps</span>
-                <strong>${summaryValue(example.stats?.apps)}</strong>
-              </div>
-            </div>
             <div class="roster-player-badge"></div>
           </div>
         `;
 
         const badgeHost = previewShell.querySelector(".roster-player-badge");
         if (badgeHost) {
-          window.mountPlayerBadge(badgeHost, example.player, example.stats);
+          window.mountPlayerBadge(badgeHost, example.player, example.stats, {
+            summaryCards,
+          });
         }
       }
     </script>
