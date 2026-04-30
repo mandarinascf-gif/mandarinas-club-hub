@@ -613,11 +613,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       rank: playerRankDisplay(stats.rank),
       ppg: pointsPerGame,
       points_per_game: pointsPerGame,
+      seasons_won: Number(stats.seasons_won || 0),
+      seasons_participated: Number(stats.seasons_participated || 0),
     };
     const badgeSummaryCards = !loadingAllTime ? buildBadgeSummaryCards(view, stats) : [];
     const badgeMarkup = window.renderPlayerBadge
       ? window.renderPlayerBadge(badgePlayer, badgeStats, {
           summaryCards: badgeSummaryCards,
+          showTrophy: view === "all_time" && !loadingAllTime,
         }).outerHTML
       : "";
     const viewNote = loadingAllTime
