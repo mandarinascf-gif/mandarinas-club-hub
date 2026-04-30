@@ -327,6 +327,7 @@
       .replace(/^-+|-+$/g, "");
     const valueClassName = [
       "badge-stat-value",
+      "stat-value",
       `badge-stat-value--${normalizedKey || "stat"}`,
       `badge-stat-value--${normalizedValueKind || "numeric"}`,
       formattedValue.length >= 8 ? "badge-stat-value--long" : "",
@@ -335,6 +336,7 @@
       .join(" ");
     const cardClassName = [
       "badge-stat-card",
+      "stat-card",
       `badge-stat-card--${normalizedKey || "stat"}`,
       `badge-stat-card--${normalizedValueKind || "numeric"}`,
     ]
@@ -352,10 +354,41 @@
     };
   }
 
+  function isZeroLikeBadgeValue(value) {
+    if (typeof value === "number") {
+      return Number.isFinite(value) && value === 0;
+    }
+
+    const normalized = normalizeText(value, "");
+    if (!normalized) {
+      return true;
+    }
+
+    const parsed = Number(normalized.replace(/,/g, ""));
+    return Number.isFinite(parsed) && parsed === 0;
+  }
+
+  function shouldRenderBadgeCard(card) {
+    const key = normalizeText(card?.key, "stat")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+    if (key === "season" || key === "record") {
+      return true;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(card || {}, "value")) {
+      return !isZeroLikeBadgeValue(card.value);
+    }
+
+    return !isZeroLikeBadgeValue(card?.formattedValue);
+  }
+
   function buildBadgeStatCards(stats, options) {
     const source = stats && typeof stats === "object" ? stats : {};
     const summaryCards = Array.isArray(options?.summaryCards)
-      ? options.summaryCards.filter(Boolean).map(normalizeBadgeCard)
+      ? options.summaryCards.filter(Boolean).filter(shouldRenderBadgeCard).map(normalizeBadgeCard)
       : [];
 
     if (summaryCards.length) {
@@ -385,7 +418,7 @@
           icon: "clean_sheets",
           value: source.clean_sheets ?? source.cleanSheets ?? 0,
         }),
-      ];
+      ].filter((card) => shouldRenderBadgeCard(card));
     }
 
     const hasFullStandings =
@@ -428,7 +461,7 @@
           },
         ];
 
-    return cards.map(normalizeBadgeCard);
+    return cards.filter(shouldRenderBadgeCard).map(normalizeBadgeCard);
   }
 
   function fitTextBlock(node, minimumSize) {
@@ -574,14 +607,14 @@
 
     const flagMarkup = model.flagCode || model.flagTitle
       ? `
-          <div class="ball-flag">
+          <div class="ball-flag player-flag">
             ${badgeFlagMarkup(model.flagCode, model.flagTitle)}
           </div>
         `
       : "";
 
     return `
-      <div class="game-player-badge">
+      <div class="game-player-badge player-card" data-stat-count="${model.statCards.length}">
         <div class="premium-badge-wordmark">
           <div class="premium-badge-kicker">Mandarinas CF</div>
           <div class="premium-badge-subkicker">California Club de Futbol</div>
@@ -620,12 +653,12 @@
               <div class="ball-positions ball-positions--${positionCount}" data-count="${positionCount}" title="${escapeHtml(model.positionTitle)}">
                 ${positionPillsMarkup(model.player)}
               </div>
-              <div class="badge-ball-name" title="${escapeHtml(model.name)}">${escapeHtml(model.name)}</div>
+              <div class="badge-ball-name player-name" title="${escapeHtml(model.name)}">${escapeHtml(model.name)}</div>
             </div>
           </div>
         </div>
 
-        <div class="premium-badge-stats" data-count="${model.statCards.length}">
+        <div class="premium-badge-stats stats-grid" data-count="${model.statCards.length}">
           ${statCardsMarkup}
         </div>
       </div>
@@ -688,6 +721,7 @@
   window.renderPlayerBadge = renderPlayerBadge;
   window.mountPlayerBadge = mountPlayerBadge;
   window.createPlayerBadgeMarkup = createBadgeMarkup;
+  window.schedulePlayerBadgeFit = scheduleBadgeFit;
   window.mcPlayerBadgeExample = {
     player: {
       name: "Asdruval Villanueva",
