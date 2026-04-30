@@ -1,5 +1,6 @@
 (function () {
   const BALL_ART_PATH = "assets/images/player-badge/reference-ball-full.png";
+  let badgeSerial = 0;
   const scriptUrl =
     typeof document !== "undefined" && document.currentScript?.src
       ? new URL(document.currentScript.src, window.location.href)
@@ -134,7 +135,7 @@
   function positionList(player) {
     if (Array.isArray(player?.positions) && player.positions.length) {
       return player.positions
-        .slice(0, 3)
+        .slice(0, 4)
         .map((value) => normalizeText(value, "").toUpperCase())
         .filter(Boolean);
     }
@@ -158,6 +159,76 @@
           `<span class="badge-position-pill" title="${escapeHtml(value)}">${escapeHtml(value)}</span>`
       )
       .join("");
+  }
+
+  function trophyMarkup(value, idPrefix) {
+    const safeId = normalizeText(idPrefix, `badge-trophy-${++badgeSerial}`).replace(/[^a-zA-Z0-9_-]/g, "");
+    const cupGoldId = `${safeId}-cupGold`;
+    const darkGoldId = `${safeId}-darkGold`;
+    const cupGlowId = `${safeId}-cupGlow`;
+    const goldShadowId = `${safeId}-goldShadow`;
+    const trophyValue = formatWholeNumber(Math.max(0, normalizeNumber(value, 0)));
+
+    return `
+      <div class="trophy-wrap" aria-label="Seasons won">
+        <svg class="elite-trophy" viewBox="0 0 180 180" role="img" aria-hidden="true">
+          <defs>
+            <linearGradient id="${cupGoldId}" x1="35" y1="20" x2="145" y2="165">
+              <stop offset="0%" stop-color="#fff3a6"></stop>
+              <stop offset="22%" stop-color="#f6c443"></stop>
+              <stop offset="48%" stop-color="#b87916"></stop>
+              <stop offset="72%" stop-color="#f3c64a"></stop>
+              <stop offset="100%" stop-color="#7a470d"></stop>
+            </linearGradient>
+
+            <linearGradient id="${darkGoldId}" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#7d4a10"></stop>
+              <stop offset="50%" stop-color="#f2bf3c"></stop>
+              <stop offset="100%" stop-color="#5b3308"></stop>
+            </linearGradient>
+
+            <radialGradient id="${cupGlowId}" cx="50%" cy="25%" r="65%">
+              <stop offset="0%" stop-color="#fff8bf" stop-opacity=".95"></stop>
+              <stop offset="45%" stop-color="#d99b25" stop-opacity=".45"></stop>
+              <stop offset="100%" stop-color="#000000" stop-opacity="0"></stop>
+            </radialGradient>
+
+            <filter id="${goldShadowId}" x="-30%" y="-30%" width="160%" height="160%">
+              <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#000" flood-opacity=".55"></feDropShadow>
+              <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#d9a431" flood-opacity=".45"></feDropShadow>
+            </filter>
+          </defs>
+
+          <ellipse cx="90" cy="154" rx="44" ry="10" fill="#090604" opacity=".65"></ellipse>
+
+          <g filter="url(#${goldShadowId})">
+            <path class="trophy-handle" d="M48 54H25c-5 0-8 4-8 9 0 25 14 43 39 48l4-15c-16-4-26-16-27-28h18z"></path>
+            <path class="trophy-handle" d="M132 54h23c5 0 8 4 8 9 0 25-14 43-39 48l-4-15c16-4 26-16 27-28h-18z"></path>
+
+            <path
+              class="trophy-cup"
+              d="M48 34h84c-2 47-15 78-42 78S50 81 48 34z"
+              fill="url(#${cupGoldId})"
+              stroke="#fff0a3"
+              stroke-width="2"
+            ></path>
+
+            <path
+              d="M58 43h64c-3 31-11 52-32 52S61 74 58 43z"
+              fill="url(#${cupGlowId})"
+              opacity=".55"
+            ></path>
+
+            <path d="M78 111h24v25H78z" fill="url(#${darkGoldId})" stroke="#eec24e" stroke-width="1.5"></path>
+            <path d="M59 136h62l8 19H51z" fill="url(#${cupGoldId})" stroke="#eec24e" stroke-width="1.5"></path>
+            <path d="M48 155h84v11H48z" fill="#2b1705" stroke="#b98b2b" stroke-width="1.5"></path>
+          </g>
+
+          <text class="trophy-number" x="90" y="78" text-anchor="middle" dominant-baseline="middle">${escapeHtml(trophyValue)}</text>
+        </svg>
+        <div class="trophy-label">Seasons Won</div>
+      </div>
+    `;
   }
 
   function statIconMarkup(kind) {
@@ -488,7 +559,7 @@
   function createBadgeMarkup(model) {
     const crestUrl = escapeHtml(assetUrl("assets/images/brand/mandarinas-crest-clean.png"));
     const ballArtUrl = escapeHtml(assetUrl(BALL_ART_PATH));
-    const positionCount = Math.min(Math.max(positionList(model.player).length, 1), 3);
+    const positionCount = Math.min(Math.max(positionList(model.player).length, 1), 4);
     const statCardsMarkup = model.statCards
       .map(
         (card) => `
@@ -511,9 +582,6 @@
 
     return `
       <div class="game-player-badge">
-        <div class="premium-badge-noise" aria-hidden="true"></div>
-        <div class="premium-badge-inner-frame" aria-hidden="true"></div>
-
         <div class="premium-badge-wordmark">
           <div class="premium-badge-kicker">Mandarinas CF</div>
           <div class="premium-badge-subkicker">California Club de Futbol</div>
@@ -537,8 +605,9 @@
           </div>
         </div>
 
+        ${model.showTrophy ? trophyMarkup(model.seasonsWon, model.trophyId) : ""}
+
         <div class="badge-ball-stage">
-          <div class="badge-ball-halo" aria-hidden="true"></div>
           <div class="badge-ball-crop">
             <img
               class="badge-ball-image"
@@ -546,13 +615,13 @@
               alt=""
               loading="eager"
             />
-          </div>
-          <div class="badge-ball-overlay">
-            ${flagMarkup}
-            <div class="ball-positions ball-positions--${positionCount}" data-count="${positionCount}" title="${escapeHtml(model.positionTitle)}">
-              ${positionPillsMarkup(model.player)}
+            <div class="badge-ball-overlay badge-ball-overlay--${positionCount}">
+              ${flagMarkup}
+              <div class="ball-positions ball-positions--${positionCount}" data-count="${positionCount}" title="${escapeHtml(model.positionTitle)}">
+                ${positionPillsMarkup(model.player)}
+              </div>
+              <div class="badge-ball-name" title="${escapeHtml(model.name)}">${escapeHtml(model.name)}</div>
             </div>
-            <div class="badge-ball-name" title="${escapeHtml(model.name)}">${escapeHtml(model.name)}</div>
           </div>
         </div>
 
@@ -575,6 +644,11 @@
       flagTitle: normalizeText(player?.nationality || player?.country, ""),
       name: normalizeText(player?.name, "N/A"),
       positionTitle: formatPosition(player),
+      seasonsWon: stats?.seasons_won ?? player?.seasons_won ?? 0,
+      showTrophy:
+        Boolean(options?.showTrophy) &&
+        normalizeNumber(stats?.seasons_won ?? player?.seasons_won, 0) > 0,
+      trophyId: `mc-badge-trophy-${++badgeSerial}`,
       statCards: buildBadgeStatCards(stats, options),
     };
 
@@ -616,25 +690,27 @@
   window.createPlayerBadgeMarkup = createBadgeMarkup;
   window.mcPlayerBadgeExample = {
     player: {
-      name: "Alex Meneses",
-      nationality: "Peru",
-      flag_code: "PE",
-      overall_rating: 73,
-      rank: "291",
-      primary_position: "AM",
-      position_label: "AM · CM · RW",
-      positions: ["AM", "CM", "RW"],
+      name: "Asdruval Villanueva",
+      nationality: "Mexico",
+      flag_code: "MX",
+      overall_rating: 80,
+      rank: "19",
+      primary_position: "DEF",
+      position_label: "DEF · ATT · GK",
+      positions: ["DEF", "ATT", "GK"],
+      seasons_won: 8,
     },
     stats: {
-      points: 299,
-      apps: 55,
-      goals: 15,
-      wins: 47,
-      draws: 20,
-      losses: 43,
-      goal_keeps: 0,
+      points: 298,
+      apps: 54,
+      goals: 6,
+      wins: 40,
+      draws: 21,
+      losses: 47,
+      goal_keeps: 5,
       clean_sheets: 0,
-      points_per_game: 5.44,
+      points_per_game: 5.52,
+      seasons_won: 8,
     },
   };
 })();
