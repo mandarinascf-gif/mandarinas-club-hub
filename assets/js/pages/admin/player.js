@@ -288,11 +288,13 @@ function buildHistoryBadgeStats() {
       attendance: totals.attendance + (row.attendanceLabel === "IN" ? 1 : 0),
       goals: totals.goals + Number(row.goals || 0),
       goalKeeps: totals.goalKeeps + Number(row.goalKeeps || 0),
+      cleanSheets: totals.cleanSheets + (row.cleanSheet ? 1 : 0),
     }),
     {
       attendance: 0,
       goals: 0,
       goalKeeps: 0,
+      cleanSheets: 0,
     }
   );
 }
@@ -356,9 +358,10 @@ function renderDetail() {
     positions,
   };
   const badgeTotals = {
-    points: 0,
     apps: badgeStats.attendance,
     goals: badgeStats.goals,
+    goal_keeps: badgeStats.goalKeeps,
+    clean_sheets: badgeStats.cleanSheets,
   };
   const badgeMarkup = window.renderPlayerBadge
     ? window.renderPlayerBadge(badgePlayer, badgeTotals).outerHTML

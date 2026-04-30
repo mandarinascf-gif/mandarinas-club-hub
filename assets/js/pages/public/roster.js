@@ -591,6 +591,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       points,
       apps: attendance,
       goals,
+      wins: Number(stats.wins || 0),
+      draws: Number(stats.draws || 0),
+      losses: Number(stats.losses || 0),
+      goal_keeps: Number(stats.goal_keeps || 0),
+      clean_sheets: Number(stats.clean_sheets || 0),
       rank: playerRankDisplay(stats.rank),
       ppg: pointsPerGame,
       points_per_game: pointsPerGame,
@@ -756,6 +761,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const canvas = await html2canvas(shareCard, {
         backgroundColor: null,
         scale: 2,
+        useCORS: true,
       });
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
 
