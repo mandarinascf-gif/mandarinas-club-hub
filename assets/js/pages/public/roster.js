@@ -313,33 +313,36 @@ document.addEventListener("DOMContentLoaded", async () => {
     return `${match[1]} '${match[3]}`;
   }
 
-  function renderBadgeSummaryMarkup(view, stats) {
+  function buildBadgeSummaryCards(view, stats) {
     const primaryLabel = view === "all_time" ? "Seasons" : "Season";
     const primaryValue =
       view === "all_time"
         ? formatWholeNumber(stats.seasons_participated)
         : formatBadgeSeasonLabel(seasonNameEl.textContent);
 
-    return `
-      <div class="player-badge-summary" aria-label="Player badge summary">
-        <div class="player-badge-summary-stat">
-          <span>${escapeHtml(primaryLabel)}</span>
-          <strong>${escapeHtml(primaryValue)}</strong>
-        </div>
-        <div class="player-badge-summary-stat">
-          <span>Record</span>
-          <strong>${escapeHtml(formatRecord(stats))}</strong>
-        </div>
-        <div class="player-badge-summary-stat">
-          <span>PPG</span>
-          <strong>${escapeHtml(formatBadgePpg(stats))}</strong>
-        </div>
-        <div class="player-badge-summary-stat">
-          <span>Apps</span>
-          <strong>${escapeHtml(formatWholeNumber(stats.days_attended))}</strong>
-        </div>
-      </div>
-    `;
+    return [
+      { key: "season", label: primaryLabel, value: primaryValue, formattedValue: primaryValue, valueKind: "text" },
+      {
+        key: "record",
+        label: "Record",
+        value: formatRecord(stats),
+        formattedValue: formatRecord(stats),
+        valueKind: "compact",
+      },
+      {
+        key: "ppg",
+        label: "PPG",
+        value: formatBadgePpg(stats),
+        formattedValue: formatBadgePpg(stats),
+        valueKind: "compact",
+      },
+      {
+        key: "apps",
+        label: "Apps",
+        value: formatWholeNumber(stats.days_attended),
+        formattedValue: formatWholeNumber(stats.days_attended),
+      },
+    ];
   }
 
   function getPositionCategory(positions) {
@@ -611,8 +614,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       ppg: pointsPerGame,
       points_per_game: pointsPerGame,
     };
+    const badgeSummaryCards = !loadingAllTime ? buildBadgeSummaryCards(view, stats) : [];
     const badgeMarkup = window.renderPlayerBadge
-      ? window.renderPlayerBadge(badgePlayer, badgeStats).outerHTML
+      ? window.renderPlayerBadge(badgePlayer, badgeStats, {
+          summaryCards: badgeSummaryCards,
+        }).outerHTML
       : "";
     const viewNote = loadingAllTime
       ? "Loading club totals across all recorded seasons..."
@@ -621,7 +627,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         : `${normalizeText(seasonNameEl.textContent) || "Current season"} badge totals.`;
     const seasonActive = view === "season" || loadingAllTime;
     const allTimeActive = view === "all_time" && !loadingAllTime;
-    const badgeSummaryMarkup = !loadingAllTime ? renderBadgeSummaryMarkup(view, stats) : "";
     const viewNoteMarkup = viewNote
       ? `<p class="player-badge-view-note">${escapeHtml(viewNote)}</p>`
       : "";
@@ -663,7 +668,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         >
           Share Badge
         </button>
-        ${badgeSummaryMarkup}
         <div class="roster-player-badge ${loadingAllTime ? "is-loading" : ""}">
           ${badgeMarkup}
         </div>
