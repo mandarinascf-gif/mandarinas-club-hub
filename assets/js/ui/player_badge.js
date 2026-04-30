@@ -162,6 +162,26 @@
 
   function statIconMarkup(kind) {
     const icons = {
+      season: `
+        <path d="M5.1 3.85H14.9C15.84 3.85 16.6 4.61 16.6 5.55V14.9C16.6 15.84 15.84 16.6 14.9 16.6H5.1C4.16 16.6 3.4 15.84 3.4 14.9V5.55C3.4 4.61 4.16 3.85 5.1 3.85Z" />
+        <path d="M6.55 2.35V5.45" />
+        <path d="M13.45 2.35V5.45" />
+        <path d="M3.4 7.1H16.6" />
+        <path d="M6.2 10.05H9.15" />
+        <path d="M10.85 10.05H13.8" />
+        <path d="M6.2 12.85H9.15" />
+      `,
+      record: `
+        <path d="M4.15 5.1H15.85" />
+        <path d="M4.15 10H15.85" />
+        <path d="M4.15 14.9H15.85" />
+        <path d="M7.2 3.35V16.65" />
+        <path d="M12.8 3.35V16.65" />
+      `,
+      ppg: `
+        <path d="M4.35 14.9L8.15 10.45L11.05 12.6L15.65 6.15" />
+        <path d="M12.85 6.15H15.65V8.95" />
+      `,
       points: `
         <path d="M10 2.25L12.45 7.15L17.85 7.95L13.95 11.7L14.85 17L10 14.45L5.15 17L6.05 11.7L2.15 7.95L7.55 7.15Z" />
       `,
@@ -219,8 +239,84 @@
     `;
   }
 
-  function buildBadgeStatCards(stats) {
+  function normalizeBadgeCard(card) {
+    const formattedValue =
+      card && Object.prototype.hasOwnProperty.call(card, "formattedValue")
+        ? normalizeText(card.formattedValue, "0")
+        : typeof card?.value === "string"
+          ? normalizeText(card.value, "0")
+          : formatWholeNumber(card?.value);
+    const normalizedKey = normalizeText(card?.key, "stat")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    const normalizedValueKind = normalizeText(card?.valueKind, "numeric")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    const valueClassName = [
+      "badge-stat-value",
+      `badge-stat-value--${normalizedKey || "stat"}`,
+      `badge-stat-value--${normalizedValueKind || "numeric"}`,
+      formattedValue.length >= 8 ? "badge-stat-value--long" : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+    const cardClassName = [
+      "badge-stat-card",
+      `badge-stat-card--${normalizedKey || "stat"}`,
+      `badge-stat-card--${normalizedValueKind || "numeric"}`,
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    return {
+      key: normalizeText(card?.key, "stat"),
+      label: normalizeText(card?.label, "Stat"),
+      icon: normalizeText(card?.icon || card?.key, ""),
+      value: formattedValue,
+      valueKind: normalizedValueKind || "numeric",
+      valueClassName,
+      cardClassName,
+    };
+  }
+
+  function buildBadgeStatCards(stats, options) {
     const source = stats && typeof stats === "object" ? stats : {};
+    const summaryCards = Array.isArray(options?.summaryCards)
+      ? options.summaryCards.filter(Boolean).map(normalizeBadgeCard)
+      : [];
+
+    if (summaryCards.length) {
+      return [
+        ...summaryCards,
+        normalizeBadgeCard({
+          key: "points",
+          label: "Points",
+          icon: "points",
+          value: source.points ?? source.total_points ?? 0,
+        }),
+        normalizeBadgeCard({
+          key: "goals",
+          label: "Goals",
+          icon: "goals",
+          value: source.goals ?? 0,
+        }),
+        normalizeBadgeCard({
+          key: "goal-keeps",
+          label: "Goal Keeps",
+          icon: "goal_keeps",
+          value: source.goal_keeps ?? source.goalKeeps ?? source.goal_keep_points_earned ?? 0,
+        }),
+        normalizeBadgeCard({
+          key: "clean-sheets",
+          label: "Clean Sheets",
+          icon: "clean_sheets",
+          value: source.clean_sheets ?? source.cleanSheets ?? 0,
+        }),
+      ];
+    }
+
     const hasFullStandings =
       source.wins != null || source.draws != null || source.losses != null || source.points != null;
     const cards = hasFullStandings
@@ -261,10 +357,7 @@
           },
         ];
 
-    return cards.map((card) => ({
-      ...card,
-      value: formatWholeNumber(card.value),
-    }));
+    return cards.map(normalizeBadgeCard);
   }
 
   function fitTextBlock(node, minimumSize) {
@@ -298,7 +391,20 @@
       return;
     }
 
-    fitTextBlock(badge.querySelector(".badge-footer-name"), 12);
+    fitTextBlock(badge.querySelector(".badge-ball-name"), 10);
+    badge.querySelectorAll(".badge-stat-value").forEach((node) => {
+      let minimumSize = 20;
+
+      if (node.classList.contains("badge-stat-value--record")) {
+        minimumSize = 15;
+      } else if (node.classList.contains("badge-stat-value--text")) {
+        minimumSize = 10;
+      } else if (node.classList.contains("badge-stat-value--compact")) {
+        minimumSize = 16;
+      }
+
+      fitTextBlock(node, minimumSize);
+    });
   }
 
   function scheduleBadgeFit(badge) {
@@ -382,13 +488,14 @@
   function createBadgeMarkup(model) {
     const crestUrl = escapeHtml(assetUrl("assets/images/brand/mandarinas-crest-clean.png"));
     const ballArtUrl = escapeHtml(assetUrl(BALL_ART_PATH));
+    const positionCount = Math.min(Math.max(positionList(model.player).length, 1), 3);
     const statCardsMarkup = model.statCards
       .map(
         (card) => `
-          <div class="badge-stat-card" data-stat-key="${escapeHtml(card.key)}">
+          <div class="${escapeHtml(card.cardClassName)}" data-stat-key="${escapeHtml(card.key)}" data-value-kind="${escapeHtml(card.valueKind)}">
             ${statIconMarkup(card.icon)}
             <span class="badge-stat-label">${escapeHtml(card.label)}</span>
-            <strong class="badge-stat-value">${escapeHtml(card.value)}</strong>
+            <strong class="${escapeHtml(card.valueClassName)}" title="${escapeHtml(card.value)}">${escapeHtml(card.value)}</strong>
           </div>
         `
       )
@@ -440,18 +547,13 @@
               loading="eager"
             />
           </div>
-        </div>
-
-        <div class="premium-badge-identity">
-          ${flagMarkup}
-          <div class="ball-positions" title="${escapeHtml(model.positionTitle)}">
-            ${positionPillsMarkup(model.player)}
+          <div class="badge-ball-overlay">
+            ${flagMarkup}
+            <div class="ball-positions ball-positions--${positionCount}" data-count="${positionCount}" title="${escapeHtml(model.positionTitle)}">
+              ${positionPillsMarkup(model.player)}
+            </div>
+            <div class="badge-ball-name" title="${escapeHtml(model.name)}">${escapeHtml(model.name)}</div>
           </div>
-        </div>
-
-        <div class="premium-badge-footer">
-          <img class="premium-badge-footer-crest" src="${crestUrl}" alt="" loading="eager" />
-          <span class="badge-footer-name" title="${escapeHtml(model.name)}">${escapeHtml(model.name)}</span>
         </div>
 
         <div class="premium-badge-stats" data-count="${model.statCards.length}">
@@ -461,7 +563,7 @@
     `;
   }
 
-  function renderPlayerBadge(player, stats) {
+  function renderPlayerBadge(player, stats, options) {
     const data = {
       player,
       overall: formatWholeNumber(
@@ -473,21 +575,23 @@
       flagTitle: normalizeText(player?.nationality || player?.country, ""),
       name: normalizeText(player?.name, "N/A"),
       positionTitle: formatPosition(player),
-      statCards: buildBadgeStatCards(stats),
+      statCards: buildBadgeStatCards(stats, options),
     };
 
     const host = document.createElement("div");
     host.innerHTML = createBadgeMarkup(data).trim();
     const badge = host.firstElementChild;
-    const nameNode = badge?.querySelector(".badge-footer-name");
+    const nameNode = badge?.querySelector(".badge-ball-name");
 
     if (nameNode) {
-      if (data.name.length > 24) {
-        nameNode.style.setProperty("--badge-footer-name-size", "clamp(0.72rem, 2.2vw, 0.92rem)");
+      if (data.name.length > 26) {
+        nameNode.style.setProperty("--badge-ball-name-size", "clamp(0.68rem, 2vw, 0.86rem)");
+      } else if (data.name.length > 20) {
+        nameNode.style.setProperty("--badge-ball-name-size", "clamp(0.76rem, 2.2vw, 0.94rem)");
       } else if (data.name.length > 18) {
-        nameNode.style.setProperty("--badge-footer-name-size", "clamp(0.8rem, 2.35vw, 0.98rem)");
+        nameNode.style.setProperty("--badge-ball-name-size", "clamp(0.82rem, 2.3vw, 0.98rem)");
       } else if (data.name.length > 14) {
-        nameNode.style.setProperty("--badge-footer-name-size", "clamp(0.88rem, 2.55vw, 1.08rem)");
+        nameNode.style.setProperty("--badge-ball-name-size", "clamp(0.9rem, 2.45vw, 1.04rem)");
       }
     }
 
@@ -495,12 +599,12 @@
     return badge;
   }
 
-  function mountPlayerBadge(target, player, stats) {
+  function mountPlayerBadge(target, player, stats, options) {
     if (!target) {
       return null;
     }
 
-    const badge = renderPlayerBadge(player, stats);
+    const badge = renderPlayerBadge(player, stats, options);
     target.replaceChildren(badge);
     scheduleBadgeFit(badge);
     return badge;
@@ -522,15 +626,15 @@
       positions: ["AM", "CM", "RW"],
     },
     stats: {
-      points: 0,
-      apps: 0,
-      goals: 0,
-      wins: 0,
-      draws: 0,
-      losses: 0,
+      points: 299,
+      apps: 55,
+      goals: 15,
+      wins: 47,
+      draws: 20,
+      losses: 43,
       goal_keeps: 0,
       clean_sheets: 0,
-      points_per_game: 0,
+      points_per_game: 5.44,
     },
   };
 })();
