@@ -765,8 +765,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       `[data-share-badge-player-id="${Number(playerIdValue)}"]`
     );
     const shareCard = document.getElementById("shareBadgeCard");
+    const badgeCard = shareCard?.querySelector(".player-card");
 
-    if (!player || !shareButton || !shareCard) {
+    if (!player || !shareButton || !shareCard || !badgeCard) {
       return;
     }
 
@@ -776,34 +777,58 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     try {
       const html2canvas = await ensureHtml2CanvasLoaded();
-      const canvas = await html2canvas(shareCard, {
-        backgroundColor: null,
-        scale: 2,
-        useCORS: true,
-      });
-      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+      const exportSurface = document.createElement("div");
+      exportSurface.className = "player-badge-export-surface";
 
-      if (!blob) {
-        throw new Error("Could not export the badge image.");
-      }
+      const clone = badgeCard.cloneNode(true);
+      clone.classList.add("export-mode");
+      exportSurface.appendChild(clone);
+      document.body.appendChild(exportSurface);
 
-      const filename = buildBadgeFilename(player);
-      const file = new File([blob], filename, {
-        type: "image/png",
-      });
+      try {
+        if (document.fonts?.ready?.then) {
+          await document.fonts.ready;
+        }
 
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: "Mandarinas CF Player Badge",
+        clone.offsetHeight;
+        if (typeof window.schedulePlayerBadgeFit === "function") {
+          window.schedulePlayerBadgeFit(clone);
+        }
+
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+
+        const canvas = await html2canvas(clone, {
+          backgroundColor: null,
+          scale: 2,
+          useCORS: true,
         });
-      } else {
-        const downloadUrl = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = downloadUrl;
-        link.download = filename;
-        link.click();
-        URL.revokeObjectURL(downloadUrl);
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+
+        if (!blob) {
+          throw new Error("Could not export the badge image.");
+        }
+
+        const filename = buildBadgeFilename(player);
+        const file = new File([blob], filename, {
+          type: "image/png",
+        });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: "Mandarinas CF Player Badge",
+          });
+        } else {
+          const downloadUrl = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = downloadUrl;
+          link.download = filename;
+          link.click();
+          URL.revokeObjectURL(downloadUrl);
+        }
+      } finally {
+        exportSurface.remove();
       }
 
       restoreRosterLoadedStatus();
