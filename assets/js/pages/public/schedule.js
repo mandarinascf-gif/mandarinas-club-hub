@@ -10,9 +10,9 @@ document.addEventListener("DOMContentLoaded", () => {
     TEAM_ORDER,
     calculateAge,
     escapeHtml,
+    flagIconMarkup,
     formatDateTime,
     formatTeamLabel,
-    nationalityFlag,
     teamClassName,
     playerDisplayName,
     readableError,
@@ -361,19 +361,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function lineupNationalityBadge(value) {
-    const flag = nationalityFlag(value);
-
-    if (flag) {
-      return flag;
-    }
-
-    const normalized = String(value || "").trim();
-
-    if (!normalized || normalized.toLowerCase() === "unknown") {
-      return "?";
-    }
-
-    return normalized.slice(0, 2).toUpperCase();
+    return flagIconMarkup(value, {
+      variant: "mini",
+      className: "lineup-player-name-flag",
+      decorative: true,
+      label: value || "Unknown nationality",
+    });
   }
 
   function lineupAverageValue(values, digits = 0) {
@@ -663,7 +656,6 @@ document.addEventListener("DOMContentLoaded", () => {
               const position = positions[row.playerId] || { x: 50, y: 50 };
               const tooltip = row.summary ? `${row.name} - ${row.summary}` : row.name;
               const nationalityBadge = lineupNationalityBadge(row.nationality);
-              const nationalityLabel = row.nationality || "Unknown nationality";
               return `
                 <button
                   class="lineup-player-token ${escapeHtml(teamClassName(teamCode))}"
@@ -682,7 +674,7 @@ document.addEventListener("DOMContentLoaded", () => {
                   </span>
                   <span class="lineup-player-meta">
                     <span class="lineup-player-name">
-                      <span class="lineup-player-name-flag" aria-hidden="true" title="${escapeHtml(nationalityLabel)}">${escapeHtml(nationalityBadge)}</span>
+                      ${nationalityBadge || ""}
                       <span class="lineup-player-name-text">${escapeHtml(compactLineupName(row.name))}</span>
                     </span>
                     ${

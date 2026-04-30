@@ -15,9 +15,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     buildBadgeStandings,
     normalizeText,
     escapeHtml,
+    nationalityCode,
     playerDisplayName,
     playerNameParts,
-    nationalityFlag,
     calculateAge,
     formatStatusLabel,
     readableError,
@@ -302,12 +302,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     return Number.isFinite(value) ? value.toFixed(2) : "0.00";
   }
 
+  function formatBadgeSeasonLabel(value) {
+    const label = normalizeText(value, "Current");
+    const match = label.match(/^([A-Za-z]+)\s+(19|20)(\d{2})$/);
+
+    if (!match) {
+      return label;
+    }
+
+    return `${match[1]} '${match[3]}`;
+  }
+
   function renderBadgeSummaryMarkup(view, stats) {
     const primaryLabel = view === "all_time" ? "Seasons" : "Season";
     const primaryValue =
       view === "all_time"
         ? formatWholeNumber(stats.seasons_participated)
-        : normalizeText(seasonNameEl.textContent, "Current");
+        : formatBadgeSeasonLabel(seasonNameEl.textContent);
 
     return `
       <div class="player-badge-summary" aria-label="Player badge summary">
@@ -562,7 +573,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const positions =
       Array.isArray(player.positions) && player.positions.length ? player.positions : [];
     const nationality = player.nationality || "";
-    const flag = nationalityFlag(player.nationality || "");
+    const flagCode = nationalityCode(player.nationality || "");
     const overall = Number.isFinite(Number(player.skill_rating)) ? Number(player.skill_rating) : 0;
     const points = Number(stats.total_points || 0);
     const pointsPerGame = Number(Number(stats.points_per_game || 0).toFixed(2));
@@ -578,7 +589,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const badgePlayer = {
       name: playerDisplayName(player) || "Player",
       nationality,
-      flag,
+      flag_code: flagCode,
       birth_date: player.birth_date,
       overall_rating: overall,
       rank: playerRankDisplay(stats.rank),
@@ -642,6 +653,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           </button>
         </div>
         ${viewNoteMarkup}
+      </div>
+      <div id="shareBadgeCard" class="player-badge-share-card">
         <button
           class="secondary-button player-badge-share-button"
           type="button"
@@ -650,9 +663,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         >
           Share Badge
         </button>
-      </div>
-      ${badgeSummaryMarkup}
-      <div id="shareBadgeCard" class="player-badge-share-card">
+        ${badgeSummaryMarkup}
         <div class="roster-player-badge ${loadingAllTime ? "is-loading" : ""}">
           ${badgeMarkup}
         </div>

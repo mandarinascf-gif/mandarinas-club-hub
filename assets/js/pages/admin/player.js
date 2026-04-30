@@ -52,8 +52,8 @@ if (!window.MandarinasLogic) {
 const {
   normalizeTeamDisplayConfig,
   teamDisplayLabel,
+  nationalityCode,
   normalizePlayerDesiredTier,
-  nationalityFlag,
 } = window.MandarinasLogic;
 
 function hasMissingDesiredTierColumn(error) {
@@ -337,12 +337,12 @@ function renderDetail() {
   const birthYearLabel = formatBirthYear(player.birth_date);
   const nationality = player.nationality || "";
   const scoutNote = player.notes || "No scout note saved yet.";
-  const flag = nationalityFlag(player.nationality || "");
+  const flagCode = nationalityCode(player.nationality || "");
   const badgeStats = buildHistoryBadgeStats();
   const badgePlayer = {
     name: headlineName || "Player",
     nationality,
-    flag,
+    flag_code: flagCode,
     birth_date: player.birth_date,
     overall_rating: Number.isFinite(Number(player.skill_rating)) ? Number(player.skill_rating) : 0,
     rank: "--",

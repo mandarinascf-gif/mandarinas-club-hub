@@ -71,8 +71,64 @@
     return Number.isFinite(number) ? String(Math.round(number)) : "0";
   }
 
-  function formatFlag(player) {
-    return normalizeText(player?.flag, "");
+  function resolveFlagCode(player) {
+    const directCode = normalizeText(player?.flag_code || player?.flagCode, "").toUpperCase();
+
+    if (/^[A-Z]{2}$/.test(directCode)) {
+      return directCode;
+    }
+
+    const globalCode = window.MandarinasLogic?.nationalityCode?.(
+      player?.nationality || player?.country || ""
+    );
+    const normalizedGlobalCode = normalizeText(globalCode, "").toUpperCase();
+
+    if (/^[A-Z]{2}$/.test(normalizedGlobalCode)) {
+      return normalizedGlobalCode;
+    }
+
+    const inferred = normalizeText(player?.nationality || player?.country, "").toUpperCase();
+    return /^[A-Z]{2}$/.test(inferred) ? inferred : "";
+  }
+
+  function flagAssetPath(code) {
+    const normalized = normalizeText(code, "").toLowerCase();
+    return /^[a-z]{2}$/.test(normalized) ? assetUrl(`assets/flags/${normalized}.png`) : "";
+  }
+
+  function fallbackFlagCode(code, label) {
+    const normalizedCode = normalizeText(code, "").toUpperCase();
+
+    if (/^[A-Z]{2}$/.test(normalizedCode)) {
+      return normalizedCode;
+    }
+
+    return normalizeText(label, "")
+      .replace(/[^A-Za-z]/g, "")
+      .slice(0, 2)
+      .toUpperCase();
+  }
+
+  function badgeFlagMarkup(code, label) {
+    const normalizedCode = normalizeText(code, "").toUpperCase();
+    const fallback = fallbackFlagCode(normalizedCode, label);
+
+    if (!normalizedCode && !fallback) {
+      return "";
+    }
+
+    const src = flagAssetPath(normalizedCode);
+
+    return `
+      <span class="flag-icon flag-icon--badge flag-icon--glossy${normalizedCode ? "" : " flag-icon--fallback"}" data-flag-code="${escapeHtml((normalizedCode || fallback).toLowerCase())}" aria-hidden="true" title="${escapeHtml(label || fallback)}">
+        ${
+          src
+            ? `<img class="flag-icon-image" src="${escapeHtml(src)}" alt="" loading="eager" decoding="async" onerror="this.hidden=true; this.parentElement.classList.add('flag-icon--fallback');" />`
+            : ""
+        }
+        <span class="flag-icon-fallback">${escapeHtml(fallback || "??")}</span>
+      </span>
+    `;
   }
 
   function positionList(player) {
@@ -338,8 +394,12 @@
       )
       .join("");
 
-    const flagMarkup = model.flag
-      ? `<div class="ball-flag" title="${escapeHtml(model.flagTitle)}">${escapeHtml(model.flag)}</div>`
+    const flagMarkup = model.flagCode || model.flagTitle
+      ? `
+          <div class="ball-flag">
+            ${badgeFlagMarkup(model.flagCode, model.flagTitle)}
+          </div>
+        `
       : "";
 
     return `
@@ -409,7 +469,7 @@
       ),
       rank: formatRank(player?.rank ?? stats?.rank),
       ppg: formatPpg(stats?.ppg ?? stats?.points_per_game),
-      flag: formatFlag(player),
+      flagCode: resolveFlagCode(player),
       flagTitle: normalizeText(player?.nationality || player?.country, ""),
       name: normalizeText(player?.name, "N/A"),
       positionTitle: formatPosition(player),
@@ -454,7 +514,7 @@
     player: {
       name: "Alex Meneses",
       nationality: "Peru",
-      flag: "🇵🇪",
+      flag_code: "PE",
       overall_rating: 73,
       rank: "291",
       primary_position: "AM",

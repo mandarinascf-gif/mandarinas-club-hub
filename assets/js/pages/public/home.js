@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
     escapeHtml,
     playerDisplayName,
     playerNameParts,
-    nationalityFlag,
+    flagIconMarkup,
     formatDateTime,
     formatStatusLabel,
     badgeIconMarkup,
@@ -290,7 +290,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const nameParts = playerNameParts(winner.player);
         const art = championArtworkForSeason(season.name);
         const nationality = winner.player?.nationality || "";
-        const flag = nationalityFlag(nationality);
+        const flag = flagIconMarkup(nationality, {
+          variant: "table",
+          className: "champion-card-name-flag",
+          decorative: true,
+          label: nationality || "Unknown nationality",
+        });
         return `
           <article class="champion-card champion-card--${escapeHtml(art.theme)}">
             <div class="champion-card-media">
@@ -307,11 +312,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <span class="champion-card-season">${escapeHtml(`${art.label} '${seasonBadgeLabel(season.name)}`)}</span>
               </div>
               <div class="champion-card-name">
-                ${
-                  flag
-                    ? `<span class="champion-card-name-flag" role="img" aria-label="${escapeHtml(nationality)}">${escapeHtml(flag)}</span>`
-                    : ""
-                }
+                ${flag}
                 <span>${escapeHtml(nameParts.primary || playerDisplayName(winner.player))}</span>
               </div>
               <div class="champion-card-copy">${escapeHtml(season.name)}</div>

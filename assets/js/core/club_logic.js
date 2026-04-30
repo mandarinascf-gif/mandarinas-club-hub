@@ -1,6 +1,12 @@
 (function () {
   "use strict";
 
+  const scriptUrl =
+    typeof document !== "undefined" && document.currentScript?.src
+      ? new URL(document.currentScript.src, window.location.href)
+      : null;
+  const assetBaseUrl = scriptUrl ? new URL("../../../", scriptUrl) : null;
+
   const STATUS_LABELS = {
     core: "Core",
     rotation: "Rotation",
@@ -96,6 +102,7 @@
     venezuela: "VE",
     venezuelan: "VE",
   };
+  const FLAG_ASSET_ROOT = "assets/flags";
 
   const DEFAULT_SCORING_SETTINGS = Object.freeze({
     attendance_points: 2,
@@ -227,6 +234,92 @@
 
   function nationalityFlag(value) {
     return countryCodeToFlag(nationalityCode(value));
+  }
+
+  function assetUrl(path) {
+    if (!path) {
+      return "";
+    }
+
+    const normalizedPath = String(path).replace(/^\/+/, "");
+
+    if (assetBaseUrl) {
+      return new URL(normalizedPath, assetBaseUrl).href;
+    }
+
+    if (typeof window !== "undefined") {
+      return new URL(normalizedPath, window.location.href).href;
+    }
+
+    return normalizedPath;
+  }
+
+  function flagAssetPath(code) {
+    const normalized = normalizeText(code).toLowerCase();
+
+    if (!/^[a-z]{2}$/.test(normalized)) {
+      return "";
+    }
+
+    return assetUrl(`${FLAG_ASSET_ROOT}/${normalized}.png`);
+  }
+
+  function flagFallbackCode(value) {
+    const resolvedCode = nationalityCode(value);
+
+    if (resolvedCode) {
+      return resolvedCode;
+    }
+
+    const normalized = normalizeText(value)
+      .replace(/[^A-Za-z]/g, "")
+      .slice(0, 2)
+      .toUpperCase();
+
+    return normalized || "";
+  }
+
+  function flagIconMarkup(value, options = {}) {
+    const settings = options && typeof options === "object" ? options : {};
+    const code = normalizeText(settings.code || nationalityCode(value)).toUpperCase();
+    const fallback = normalizeText(settings.fallback || flagFallbackCode(value)).toUpperCase();
+    const label = normalizeText(settings.label || value || code || fallback || "Unknown nationality");
+    const variant = normalizeText(settings.variant || "table").toLowerCase() || "table";
+    const extraClass = normalizeText(settings.className || "");
+
+    if (!code && !fallback) {
+      return "";
+    }
+
+    const classNames = ["flag-icon", `flag-icon--${variant}`];
+
+    if (settings.glossy) {
+      classNames.push("flag-icon--glossy");
+    }
+
+    if (!code) {
+      classNames.push("flag-icon--fallback");
+    }
+
+    if (extraClass) {
+      classNames.push(extraClass);
+    }
+
+    const src = flagAssetPath(code);
+    const accessibility = settings.decorative
+      ? `aria-hidden="true" title="${escapeHtml(label)}"`
+      : `role="img" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}"`;
+
+    return `
+      <span class="${escapeHtml(classNames.join(" "))}" data-flag-code="${escapeHtml((code || fallback).toLowerCase())}" ${accessibility}>
+        ${
+          src
+            ? `<img class="flag-icon-image" src="${escapeHtml(src)}" alt="" loading="lazy" decoding="async" onerror="this.hidden=true; this.parentElement.classList.add('flag-icon--fallback');" />`
+            : ""
+        }
+        <span class="flag-icon-fallback">${escapeHtml(fallback || code || "??")}</span>
+      </span>
+    `;
   }
 
   function normalizeHexColor(value, fallback) {
@@ -2115,6 +2208,8 @@
     sortSeasonsChronologically,
     nationalityCode,
     nationalityFlag,
+    flagAssetPath,
+    flagIconMarkup,
     TEAM_ORDER,
     normalizeTeamDisplayConfig,
     teamDisplayLabel,

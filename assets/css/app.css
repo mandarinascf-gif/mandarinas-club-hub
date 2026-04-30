@@ -610,10 +610,93 @@ textarea:disabled {
   font-weight: 700;
 }
 
+.flag-icon {
+  --flag-size: 18px;
+  --flag-border-color: rgba(148, 163, 184, 0.34);
+  --flag-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
+  --flag-fallback-bg: linear-gradient(180deg, rgba(30, 41, 59, 0.98), rgba(15, 23, 42, 0.98));
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--flag-size);
+  height: var(--flag-size);
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid var(--flag-border-color);
+  background: var(--flag-fallback-bg);
+  box-shadow: var(--flag-shadow);
+  color: #f8fafc;
+  flex: none;
+  isolation: isolate;
+}
+
+.flag-icon-image,
+.flag-icon-fallback {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.flag-icon-image {
+  display: block;
+  object-fit: cover;
+}
+
+.flag-icon-fallback {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-family: "Montserrat", sans-serif;
+  font-size: calc(var(--flag-size) * 0.46);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.flag-icon--fallback .flag-icon-image {
+  display: none;
+}
+
+.flag-icon--fallback .flag-icon-fallback {
+  display: inline-flex;
+}
+
+.flag-icon--table {
+  --flag-size: 20px;
+  --flag-border-color: rgba(255, 255, 255, 0.22);
+  --flag-shadow: 0 2px 6px rgba(15, 23, 42, 0.14);
+}
+
+.flag-icon--mini {
+  --flag-size: 16px;
+  --flag-border-color: rgba(255, 255, 255, 0.18);
+  --flag-shadow: 0 1px 4px rgba(2, 6, 12, 0.16);
+}
+
+.flag-icon--badge {
+  --flag-size: 48px;
+  --flag-border-color: rgba(212, 175, 55, 0.6);
+  --flag-shadow:
+    0 10px 18px rgba(0, 0, 0, 0.28),
+    0 0 14px rgba(212, 175, 55, 0.16);
+  --flag-fallback-bg: linear-gradient(180deg, rgba(46, 33, 20, 0.98), rgba(15, 10, 6, 0.98));
+}
+
+.flag-icon--glossy::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 32% 22%, rgba(255, 255, 255, 0.28), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 46%);
+  pointer-events: none;
+}
+
 .champion-card-name-flag {
   flex: none;
-  font-size: 0.96rem;
-  line-height: 1;
 }
 
 .champion-card-copy {
@@ -2434,9 +2517,10 @@ tr:last-child td {
 }
 
 .lineup-player-name {
-  display: grid;
-  justify-items: center;
-  gap: 0.04rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.24rem;
   max-width: 4.45rem;
   min-width: 0;
   padding: 0.18rem 0.42rem 0.22rem;
@@ -2452,9 +2536,7 @@ tr:last-child td {
 }
 
 .lineup-player-name-flag {
-  display: block;
-  font-size: 0.62rem;
-  line-height: 1;
+  flex: none;
 }
 
 .lineup-player-name-text {
@@ -3575,7 +3657,7 @@ body.manager-touch::before {
   }
 
   .lineup-player-name-flag {
-    font-size: 0.58rem;
+    --flag-size: 15px;
   }
 
   .lineup-player-name-text {
@@ -4010,6 +4092,7 @@ body.manager-touch::before {
 }
 
 .page-roster .player-badge-summary-stat {
+  min-width: 0;
   display: grid;
   gap: 0.18rem;
   padding: 0.72rem 0.5rem 0.66rem;
@@ -4033,17 +4116,28 @@ body.manager-touch::before {
 
 .page-roster .player-badge-summary-stat strong {
   color: #fff6e2;
-  font-size: 1rem;
+  font-size: clamp(0.74rem, 2.8vw, 1rem);
   line-height: 1;
-  letter-spacing: 0.01em;
+  letter-spacing: 0;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .page-roster .player-badge-share-card {
   width: min(100%, 392px);
   max-width: calc(100vw - 2rem);
   margin: 0 auto;
+  display: grid;
+  gap: 0.85rem;
   padding: 12px 8px 18px;
+}
+
+.page-roster .player-badge-share-card .player-badge-share-button,
+.page-roster .player-badge-share-card .player-badge-summary {
+  width: 100%;
+  max-width: none;
+  margin: 0;
 }
 
 :is(.page-roster, .page-player) .roster-orbit-badge {
@@ -6138,9 +6232,13 @@ body.manager-touch::before {
 }
 
 .ball-flag {
-  font-size: clamp(18px, 4.2vw, 22px);
-  line-height: 1;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.82));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ball-flag .flag-icon--badge {
+  --flag-size: clamp(42px, 9vw, 52px);
 }
 
 .ball-positions {
