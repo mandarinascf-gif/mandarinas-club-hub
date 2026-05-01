@@ -71,7 +71,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   let allTimeStandingsPromiseCache = new Map();
   let pendingAllTimePlayerId = null;
   let playerStatViewById = new Map();
-  let html2CanvasPromise = null;
   const ALL_TIME_CACHE_KEY = "all";
 
   function hasMissingDesiredTierColumn(error) {
@@ -215,59 +214,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     allTimeStandingsPromiseCache.set(ALL_TIME_CACHE_KEY, promise);
     return promise;
-  }
-
-  function buildBadgeFilename(player) {
-    const rawName = playerDisplayName(player)
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-    return `mandarinas-${rawName || "player"}-badge.png`;
-  }
-
-  function ensureHtml2CanvasLoaded() {
-    if (typeof window === "undefined") {
-      return Promise.reject(new Error("Browser share tools are unavailable in this context."));
-    }
-
-    if (typeof window.html2canvas === "function") {
-      return Promise.resolve(window.html2canvas);
-    }
-
-    if (html2CanvasPromise) {
-      return html2CanvasPromise;
-    }
-
-    html2CanvasPromise = new Promise((resolve, reject) => {
-      const existingScript = document.querySelector('script[data-html2canvas-loader="true"]');
-      if (existingScript) {
-        existingScript.addEventListener("load", () => resolve(window.html2canvas), { once: true });
-        existingScript.addEventListener(
-          "error",
-          () => reject(new Error("html2canvas failed to load.")),
-          { once: true }
-        );
-        return;
-      }
-
-      const script = document.createElement("script");
-      script.src = "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js";
-      script.async = true;
-      script.dataset.html2canvasLoader = "true";
-      script.addEventListener("load", () => resolve(window.html2canvas), { once: true });
-      script.addEventListener(
-        "error",
-        () => reject(new Error("html2canvas failed to load.")),
-        { once: true }
-      );
-      document.head.appendChild(script);
-    }).finally(() => {
-      if (typeof window?.html2canvas !== "function") {
-        html2CanvasPromise = null;
-      }
-    });
-
-    return html2CanvasPromise;
   }
 
   function getPlayerStats(playerId, standingsMap) {
@@ -660,14 +606,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             ALL TIME
           </button>
         </div>
-        <button
-          class="secondary-button player-badge-share-button"
-          type="button"
-          data-share-badge-player-id="${player.id}"
-          ${loadingAllTime ? "disabled" : ""}
-        >
-          Share
-        </button>
       </div>
       ${viewNoteMarkup}
       <div id="shareBadgeCard" class="player-badge-share-card share-badge-container fut-card-shell">
@@ -757,110 +695,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     playerDetail.innerHTML = renderPlayerDetailMarkup(player);
-  }
-
-  async function shareBadgeForPlayer(playerIdValue) {
-    const player = allPlayers.find((entry) => Number(entry.id) === Number(playerIdValue));
-    const shareButton = document.querySelector(
-      `[data-share-badge-player-id="${Number(playerIdValue)}"]`
-    );
-    const shareCard = document.getElementById("shareBadgeCard");
-    const badgeCard = shareCard?.querySelector(".fut-card");
-
-    if (!player || !shareButton || !shareCard || !badgeCard) {
-      return;
-    }
-
-    const originalLabel = shareButton.textContent;
-    shareButton.disabled = true;
-    shareButton.textContent = "Preparing...";
-
-    try {
-      const html2canvas = await ensureHtml2CanvasLoaded();
-      const exportSurface = document.createElement("div");
-      exportSurface.className = "player-badge-export-surface";
-
-      const clone = badgeCard.cloneNode(true);
-      clone.classList.add("export-mode");
-      Object.assign(clone.style, {
-        position: "fixed",
-        top: "-9999px",
-        left: "0",
-        width: "900px",
-        height: "auto",
-        transform: "none",
-      });
-      exportSurface.appendChild(clone);
-      document.body.appendChild(exportSurface);
-
-      try {
-        if (document.fonts?.ready?.then) {
-          await document.fonts.ready;
-        }
-
-        if (typeof window.schedulePlayerBadgeFit === "function") {
-          window.schedulePlayerBadgeFit(clone);
-        }
-
-        await Promise.all(
-          [...clone.querySelectorAll("img")].map((img) =>
-            img.complete
-              ? Promise.resolve()
-              : new Promise((resolve) => {
-                  img.onload = resolve;
-                  img.onerror = resolve;
-                })
-          )
-        );
-
-        clone.offsetHeight;
-        await new Promise((resolve) => requestAnimationFrame(resolve));
-        await new Promise((resolve) => requestAnimationFrame(resolve));
-
-        const canvas = await html2canvas(clone, {
-          backgroundColor: null,
-          scale: 2,
-          useCORS: true,
-        });
-        const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
-
-        if (!blob) {
-          throw new Error("Could not export the badge image.");
-        }
-
-        const filename = buildBadgeFilename(player);
-        const file = new File([blob], filename, {
-          type: "image/png",
-        });
-
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: "Mandarinas CF Player Badge",
-          });
-        } else {
-          const downloadUrl = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = downloadUrl;
-          link.download = filename;
-          link.click();
-          URL.revokeObjectURL(downloadUrl);
-        }
-      } finally {
-        exportSurface.remove();
-      }
-
-      restoreRosterLoadedStatus();
-    } catch (error) {
-      if (error?.name !== "AbortError") {
-        statusLine.classList.remove("loading", "success", "error");
-        statusLine.classList.add("warning");
-        statusText.textContent = `Badge share is unavailable right now. ${readableError(error)}`;
-      }
-    } finally {
-      shareButton.disabled = false;
-      shareButton.textContent = originalLabel;
-    }
   }
 
   function updateSummaryStats() {
@@ -1215,12 +1049,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    const shareButton = event.target.closest("[data-share-badge-player-id]");
-    if (shareButton) {
-      await shareBadgeForPlayer(Number(shareButton.dataset.shareBadgePlayerId));
-      return;
-    }
-
     if (event.target.closest(".roster-inline-detail")) {
       return;
     }
@@ -1240,13 +1068,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (await handlePlayerStatViewClick(event)) {
       return;
     }
-
-    const shareButton = event.target.closest("[data-share-badge-player-id]");
-    if (!shareButton) {
-      return;
-    }
-
-    await shareBadgeForPlayer(Number(shareButton.dataset.shareBadgePlayerId));
   });
 
   seasonSelect.addEventListener("change", async () => {
