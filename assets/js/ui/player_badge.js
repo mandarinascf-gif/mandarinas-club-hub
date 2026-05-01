@@ -285,7 +285,7 @@
   justify-items: center;
   align-content: start;
   gap: clamp(3px, 0.45vh, 6px);
-  transform: translateY(clamp(-6px, -0.8vh, -10px));
+  transform: translateY(clamp(-3px, -0.4vh, -6px));
   z-index: 1;
 }
 
@@ -329,7 +329,7 @@
   gap: clamp(4px, 0.5vh, 6px);
   width: min(100%, calc(var(--sz-ball) - 24px));
   max-width: calc(100% - 8px);
-  margin-top: clamp(-1px, -0.15vh, -3px);
+  margin-top: 0;
 }
 
 .fut-position-pill {
