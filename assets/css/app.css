@@ -3947,8 +3947,7 @@ body.manager-touch::before {
 
 .page-roster .list-item,
 .page-roster .roster-grid,
-.page-roster .roster-player-badge,
-.page-roster .game-player-badge {
+.page-roster .roster-player-badge {
   overflow: visible;
 }
 
@@ -3958,20 +3957,35 @@ body.manager-touch::before {
 }
 
 .player-badge-toolbar {
-  width: min(100%, 392px);
+  width: min(100%, 460px);
   max-width: calc(100vw - 2rem);
-  display: grid;
-  gap: 0.6rem;
-  justify-items: center;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   margin: 0 auto;
+}
+
+.player-badge-toolbar .player-badge-view-toggle {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.player-badge-toolbar .player-badge-share-button {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 10px 16px;
+  white-space: nowrap;
+  border-radius: 999px;
+  font-size: 12px;
 }
 
 .player-badge-view-toggle,
 .season-toggle {
   width: 100%;
   display: flex;
-  gap: 10px;
-  padding: 6px;
+  gap: 6px;
+  padding: 4px;
   border: 1px solid rgba(212, 175, 55, 0.2);
   border-radius: 999px;
   background: rgba(20, 15, 10, 0.82);
@@ -3980,21 +3994,27 @@ body.manager-touch::before {
 }
 
 .player-badge-view-chip,
-.pill {
+.season-toggle .pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex: 1 1 0;
   min-width: 0;
-  min-height: 44px;
-  padding: 10px 12px;
+  min-height: 40px;
+  padding: 8px 6px;
   border: none;
   border-radius: 999px;
   background: rgba(9, 7, 4, 0.5);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   color: rgba(255, 241, 214, 0.72);
   font-family: "Montserrat", sans-serif;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   transition:
     color 0.25s ease,
     background 0.25s ease,
@@ -4026,7 +4046,7 @@ body.manager-touch::before {
 
 .season-toggle .pill,
 .player-badge-view-toggle .player-badge-view-chip {
-  min-height: 44px;
+  min-height: 38px;
 }
 
 .season-toggle .pill:active,
@@ -4044,6 +4064,31 @@ body.manager-touch::before {
 
 .player-badge-share-button {
   width: 100%;
+}
+
+@media (max-width: 460px) {
+  .player-badge-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: stretch;
+  }
+
+  .player-badge-toolbar .player-badge-view-toggle,
+  .player-badge-toolbar .player-badge-share-button {
+    width: 100%;
+    max-width: none;
+  }
+
+  .player-badge-toolbar .player-badge-share-button {
+    justify-content: center;
+  }
+
+  .player-badge-view-chip,
+  .season-toggle .pill {
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    padding-inline: 4px;
+  }
 }
 
 .page-roster .roster-player-card.expanded {
@@ -4104,6 +4149,7 @@ body.manager-touch::before {
 }
 
 .page-roster .player-badge-share-card .player-badge-share-button {
+  /* button moved to toolbar row; kept for backwards compat */
   width: 100%;
   max-width: none;
   margin: 0;
@@ -5926,861 +5972,5 @@ body.manager-touch::before {
 
   .page-videos .video-card-list {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-.game-player-badge {
-  --card-h: min(calc(100svh - 106px), 820px);
-  --pad: clamp(12px, 1.7vh, 18px);
-  --gap: clamp(6px, 1vh, 10px);
-  --title: clamp(28px, 4.7vh, 44px);
-  --subtitle: clamp(9px, 1.3vh, 13px);
-  --ball: clamp(160px, 24vh, 236px);
-  --pill-width: clamp(72px, 18vw, 90px);
-  --stat-h: clamp(62px, 10vh, 92px);
-  --stat-label: clamp(8px, 1.15vh, 11px);
-  --stat-value: clamp(24px, 3.4vh, 38px);
-  width: min(94vw, 430px);
-  max-width: 100%;
-  height: var(--card-h);
-  max-height: 820px;
-  min-height: 0;
-  margin: 12px auto 10px;
-  padding: var(--pad);
-  box-sizing: border-box;
-  display: grid;
-  grid-template-rows: auto auto auto auto minmax(0, 1fr);
-  align-content: stretch;
-  gap: var(--gap);
-  overflow: hidden;
-  border-radius: 28px;
-  border: 2px solid #b58a2b;
-  background:
-    radial-gradient(circle at 50% -10%, rgba(228, 178, 63, 0.24), transparent 34%),
-    repeating-linear-gradient(
-      145deg,
-      transparent 0 26px,
-      rgba(186, 140, 42, 0.04) 26px 27px
-    ),
-    linear-gradient(180deg, #24170d 0%, #0a0704 54%, #130b06 100%);
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 236, 183, 0.08),
-    inset 0 16px 24px rgba(255, 219, 120, 0.04),
-    0 26px 56px rgba(0, 0, 0, 0.42);
-}
-
-.game-player-badge::before,
-.game-player-badge::after,
-.premium-badge-noise,
-.premium-badge-inner-frame,
-.badge-ball-halo {
-  display: none !important;
-  content: none !important;
-}
-
-.premium-badge-wordmark {
-  display: grid;
-  justify-items: center;
-  gap: clamp(2px, 0.35vh, 4px);
-  text-align: center;
-}
-
-.premium-badge-kicker {
-  max-width: 100%;
-  color: #fff0bf;
-  font-family: "Anton", sans-serif;
-  font-size: var(--title);
-  letter-spacing: 0.08em;
-  line-height: 0.92;
-  text-transform: uppercase;
-  text-wrap: balance;
-}
-
-.premium-badge-subkicker {
-  max-width: 100%;
-  color: rgba(214, 169, 56, 0.86);
-  font-family: "Montserrat", sans-serif;
-  font-size: var(--subtitle);
-  font-weight: 800;
-  letter-spacing: 0.32em;
-  line-height: 1;
-  text-transform: uppercase;
-  text-align: center;
-}
-
-.premium-badge-header {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(76px, 19vw, 104px) minmax(0, 1fr);
-  align-items: center;
-  gap: clamp(8px, 1.1vh, 12px);
-}
-
-.badge-side-panel {
-  min-width: 0;
-  min-height: clamp(76px, 11vh, 104px);
-  padding: clamp(9px, 1.5vh, 12px) clamp(8px, 1.4vw, 12px);
-  border-radius: 18px;
-  border: 1px solid rgba(202, 159, 58, 0.42);
-  background: linear-gradient(180deg, #22160d 0%, #0c0705 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 245, 211, 0.06),
-    0 12px 22px rgba(0, 0, 0, 0.24);
-  display: grid;
-  justify-items: center;
-  align-content: center;
-  gap: clamp(2px, 0.35vh, 4px);
-  text-align: center;
-}
-
-.badge-side-label {
-  color: rgba(214, 169, 56, 0.88);
-  font-family: "Montserrat", sans-serif;
-  font-size: clamp(9px, 1.15vh, 11px);
-  font-weight: 800;
-  letter-spacing: 0.24em;
-  line-height: 1;
-  text-transform: uppercase;
-}
-
-.badge-side-panel strong {
-  color: #fff8e8;
-  font-family: "Cinzel", serif;
-  font-size: clamp(22px, 3.8vh, 34px);
-  font-weight: 900;
-  line-height: 0.95;
-  text-shadow: none;
-}
-
-.badge-side-panel small {
-  max-width: 100%;
-  color: rgba(255, 238, 195, 0.84);
-  font-family: "Montserrat", sans-serif;
-  font-size: clamp(8px, 1vh, 10px);
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  line-height: 1.08;
-  text-wrap: balance;
-}
-
-.badge-crest-shell {
-  display: grid;
-  place-items: center;
-  min-width: 0;
-}
-
-.badge-crest {
-  width: 100%;
-  max-width: 104px;
-  height: auto;
-  display: block;
-}
-
-.trophy-wrap {
-  display: grid;
-  justify-items: center;
-  gap: 2px;
-  min-width: 0;
-}
-
-.elite-trophy {
-  width: clamp(50px, 8vh, 76px);
-  height: clamp(50px, 8vh, 76px);
-  display: block;
-}
-
-.trophy-number {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 46px;
-  font-weight: 900;
-  fill: #140b02;
-  stroke: #fff2a8;
-  stroke-width: 0.7px;
-  paint-order: stroke fill;
-}
-
-.trophy-label {
-  color: #d6a938;
-  font-family: "Montserrat", sans-serif;
-  font-size: clamp(7px, 0.95vh, 9px);
-  font-weight: 900;
-  letter-spacing: 0.18em;
-  line-height: 1;
-  text-transform: uppercase;
-}
-
-.badge-ball-stage {
-  width: min(100%, var(--ball));
-  aspect-ratio: 1;
-  min-height: 0;
-  margin: 0 auto;
-}
-
-.badge-ball-crop {
-  width: 100%;
-  height: 100%;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 35% 26%, rgba(255, 223, 139, 0.16), transparent 34%),
-    #0e0906;
-  border: 1px solid rgba(196, 150, 47, 0.16);
-  box-shadow: none;
-}
-
-.badge-ball-image,
-.badge-ball-overlay {
-  grid-area: 1 / 1;
-}
-
-.badge-ball-image {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-  object-position: 50% 45.5%;
-  filter: brightness(0.84) saturate(0.82) contrast(1.08);
-  transform: scale(3.08);
-  transform-origin: 50% 45.5%;
-  z-index: 0;
-}
-
-.badge-ball-overlay {
-  width: calc(100% - clamp(18px, 4vw, 28px));
-  height: 100%;
-  min-width: 0;
-  display: grid;
-  justify-items: center;
-  align-content: start;
-  gap: clamp(4px, 0.55vh, 6px);
-  padding: 21% 0 14%;
-  background: none;
-  box-shadow: none;
-  filter: none;
-  z-index: 1;
-}
-
-.ball-flag,
-.ball-positions,
-.badge-ball-name,
-.player-name,
-.player-flag {
-  min-width: 0;
-  text-align: center;
-}
-
-.ball-flag {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: none;
-  filter: none;
-}
-
-.ball-flag .flag-icon--badge {
-  --flag-size: clamp(32px, 5.9vh, 44px);
-  --flag-shadow: none;
-  box-shadow: none;
-  filter: none;
-}
-
-.ball-flag .flag-icon--glossy::after {
-  display: none;
-}
-
-.ball-flag .flag-icon,
-.ball-flag .flag-icon-image,
-.ball-flag .flag-icon-fallback,
-.ball-flag .flag-icon--badge,
-.badge-ball-name,
-.player-name {
-  box-shadow: none !important;
-  filter: none !important;
-  text-shadow: none !important;
-}
-
-.ball-positions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, var(--pill-width)));
-  justify-content: center;
-  justify-items: stretch;
-  gap: clamp(6px, 0.75vh, 8px);
-  width: min(100%, calc(var(--pill-width) * 2 + var(--gap)));
-}
-
-.badge-position-pill {
-  min-width: 0;
-  width: 100%;
-  padding: 4px 0;
-  border-radius: 999px;
-  border: 1px solid rgba(212, 175, 55, 0.42);
-  background: linear-gradient(180deg, rgba(26, 17, 10, 0.98), rgba(10, 7, 5, 0.98));
-  color: #f7ebc8;
-  font-family: "Montserrat", sans-serif;
-  font-size: clamp(10px, 1.15vh, 13px);
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  line-height: 1;
-  text-transform: uppercase;
-  text-align: center;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-}
-
-.ball-positions--1 {
-  grid-template-columns: minmax(0, var(--pill-width));
-}
-
-.ball-positions--3 > :last-child {
-  grid-column: 1 / -1;
-  width: var(--pill-width);
-  justify-self: center;
-}
-
-.badge-ball-name {
-  width: min(100%, 13ch);
-  max-width: 100%;
-  color: #fff0c7;
-  font-family: "Cinzel", serif;
-  font-size: var(--badge-ball-name-size, clamp(16px, 2.1vh, 26px));
-  font-weight: 900;
-  letter-spacing: 0.06em;
-  line-height: 0.9;
-  text-transform: uppercase;
-  text-align: center;
-  white-space: normal;
-  text-wrap: balance;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  min-height: 1.8em;
-  max-height: 1.8em;
-  overflow: hidden;
-}
-
-.premium-badge-stats {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-auto-rows: minmax(0, 1fr);
-  gap: var(--gap);
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  min-height: 0;
-  padding-bottom: clamp(8px, 1vh, 12px);
-  align-content: stretch;
-}
-
-.badge-stat-card {
-  min-width: 0;
-  min-height: var(--stat-h);
-  height: 100%;
-  position: relative !important;
-  padding: clamp(8px, 1.2vh, 12px) clamp(7px, 1.4vw, 10px);
-  border-radius: 16px;
-  border: 1px solid rgba(202, 159, 58, 0.46);
-  overflow: hidden;
-  margin: 0 !important;
-  inset: auto !important;
-  background: linear-gradient(180deg, #1a1208 0%, #090604 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 243, 201, 0.05);
-  display: grid;
-  justify-items: center;
-  grid-template-rows: auto auto minmax(0, 1fr);
-  align-items: center;
-  align-content: center;
-  gap: clamp(2px, 0.35vh, 6px);
-  text-align: center;
-  box-sizing: border-box;
-  transform: none !important;
-  opacity: 1 !important;
-}
-
-.badge-stat-icon {
-  width: 18px;
-  height: 18px;
-  color: #d7af4b;
-  display: inline-grid;
-  place-items: center;
-  filter: none;
-}
-
-.badge-stat-icon svg {
-  width: 100%;
-  height: 100%;
-  stroke: currentColor;
-  stroke-width: 1.65;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.badge-stat-label {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  color: rgba(214, 169, 56, 0.9);
-  font-family: "Montserrat", sans-serif;
-  font-size: var(--stat-label);
-  font-weight: 800;
-  letter-spacing: 0.22em;
-  line-height: 1.05;
-  text-transform: uppercase;
-  text-wrap: balance;
-  overflow-wrap: anywhere;
-}
-
-.badge-stat-value {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  display: grid;
-  place-items: center;
-  color: #fff7e6;
-  font-family: "Cinzel", serif;
-  font-size: var(--stat-value);
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: -0.03em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: clip;
-  overflow-wrap: normal;
-  word-break: normal;
-  text-shadow: none;
-}
-
-.badge-stat-value--compact {
-  font-size: clamp(22px, 3.1vh, 34px);
-}
-
-.badge-stat-value--record {
-  font-size: clamp(19px, 2.7vh, 30px);
-  letter-spacing: -0.07em;
-}
-
-.badge-stat-value--season {
-  font-size: clamp(16px, 2.2vh, 26px);
-}
-
-.badge-stat-value--text {
-  font-family: "Montserrat", sans-serif;
-  font-size: clamp(12px, 1.7vh, 16px);
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  line-height: 1.08;
-  white-space: normal;
-  text-transform: uppercase;
-  text-wrap: balance;
-}
-
-.badge-stat-value--long:not(.badge-stat-value--record):not(.badge-stat-value--text) {
-  font-size: clamp(20px, 2.8vh, 30px);
-}
-
-.game-player-badge[data-stat-count="7"],
-.game-player-badge[data-stat-count="8"] {
-  --gap: clamp(4px, 0.72vh, 7px);
-  --ball: clamp(146px, 21.5vh, 204px);
-  --stat-h: clamp(54px, 8vh, 72px);
-  --stat-label: clamp(7px, 0.95vh, 9px);
-  --stat-value: clamp(20px, 2.7vh, 30px);
-}
-
-.game-player-badge[data-stat-count="7"] .premium-badge-stats,
-.game-player-badge[data-stat-count="8"] .premium-badge-stats {
-  gap: clamp(4px, 0.62vh, 7px);
-  padding-bottom: clamp(4px, 0.5vh, 6px);
-}
-
-.game-player-badge[data-stat-count="7"] .badge-stat-card,
-.game-player-badge[data-stat-count="8"] .badge-stat-card {
-  min-height: clamp(54px, 8vh, 72px);
-  padding: clamp(6px, 0.95vh, 8px) clamp(6px, 1.1vw, 8px);
-  gap: clamp(1px, 0.2vh, 3px);
-}
-
-.game-player-badge[data-stat-count="7"] .badge-stat-icon,
-.game-player-badge[data-stat-count="7"] .badge-stat-icon svg,
-.game-player-badge[data-stat-count="8"] .badge-stat-icon,
-.game-player-badge[data-stat-count="8"] .badge-stat-icon svg {
-  width: 16px;
-  height: 16px;
-}
-
-.game-player-badge[data-stat-count="7"] .badge-stat-value--record,
-.game-player-badge[data-stat-count="8"] .badge-stat-value--record {
-  font-size: clamp(16px, 2.2vh, 24px);
-}
-
-@media (max-width: 519px) {
-  .game-player-badge {
-    --card-h: min(calc(100svh - 88px), 760px);
-    --pad: clamp(10px, 1.35vh, 14px);
-    --gap: clamp(5px, 0.72vh, 8px);
-    --title: clamp(24px, 4.1vh, 36px);
-    --subtitle: clamp(8px, 1.05vh, 11px);
-    --ball: clamp(144px, 21vh, 208px);
-    --pill-width: clamp(66px, 18vw, 84px);
-    --stat-h: clamp(56px, 8.2vh, 78px);
-    --stat-label: clamp(8px, 0.98vh, 10px);
-    --stat-value: clamp(22px, 3vh, 34px);
-    width: 100%;
-    max-width: min(94vw, 420px);
-    height: var(--card-h);
-    margin: 8px auto 0;
-    border-radius: 24px;
-  }
-
-  .premium-badge-header {
-    grid-template-columns: minmax(0, 1fr) clamp(68px, 18vw, 82px) minmax(0, 1fr);
-    gap: clamp(6px, 0.9vh, 8px);
-  }
-
-  .badge-side-panel {
-    min-height: clamp(68px, 9.5vh, 82px);
-    padding: 8px 6px;
-    border-radius: 16px;
-  }
-
-  .badge-crest {
-    max-width: 82px;
-  }
-
-  .elite-trophy {
-    width: clamp(46px, 7vh, 66px);
-    height: clamp(46px, 7vh, 66px);
-  }
-
-  .badge-ball-overlay {
-    width: min(100%, calc(var(--ball) - 18px));
-    padding-top: 22%;
-    padding-bottom: 13%;
-  }
-
-  .ball-flag .flag-icon--badge {
-    --flag-size: clamp(30px, 4.8vh, 40px);
-  }
-
-  .badge-position-pill {
-    font-size: clamp(9px, 1.02vh, 12px);
-  }
-
-  .badge-ball-name {
-    width: min(100%, 12ch);
-    font-size: var(--badge-ball-name-size, clamp(15px, 1.85vh, 22px));
-    min-height: 1.78em;
-    max-height: 1.78em;
-  }
-
-  .badge-stat-value--record {
-    font-size: clamp(18px, 2.45vh, 28px);
-  }
-
-  .game-player-badge[data-stat-count="7"],
-  .game-player-badge[data-stat-count="8"] {
-    --gap: clamp(3px, 0.5vh, 5px);
-    --ball: clamp(122px, 17vh, 164px);
-    --stat-h: clamp(44px, 5.8vh, 58px);
-    --stat-label: clamp(6px, 0.66vh, 8px);
-    --stat-value: clamp(16px, 2.05vh, 24px);
-  }
-
-  .game-player-badge[data-stat-count="7"] .premium-badge-wordmark,
-  .game-player-badge[data-stat-count="8"] .premium-badge-wordmark {
-    gap: 1px;
-  }
-
-  .game-player-badge[data-stat-count="7"] .premium-badge-kicker,
-  .game-player-badge[data-stat-count="8"] .premium-badge-kicker {
-    font-size: clamp(21px, 3.55vh, 30px);
-  }
-
-  .game-player-badge[data-stat-count="7"] .premium-badge-subkicker,
-  .game-player-badge[data-stat-count="8"] .premium-badge-subkicker {
-    font-size: clamp(7px, 0.84vh, 9px);
-  }
-
-  .game-player-badge[data-stat-count="7"] .badge-side-panel,
-  .game-player-badge[data-stat-count="8"] .badge-side-panel {
-    min-height: clamp(60px, 7.4vh, 72px);
-    padding: 6px 5px;
-  }
-
-  .game-player-badge[data-stat-count="7"] .badge-side-panel strong,
-  .game-player-badge[data-stat-count="8"] .badge-side-panel strong {
-    font-size: clamp(18px, 2.7vh, 24px);
-  }
-
-  .game-player-badge[data-stat-count="7"] .badge-side-panel small,
-  .game-player-badge[data-stat-count="8"] .badge-side-panel small {
-    font-size: clamp(7px, 0.78vh, 9px);
-  }
-
-  .game-player-badge[data-stat-count="7"] .badge-ball-overlay,
-  .game-player-badge[data-stat-count="8"] .badge-ball-overlay {
-    padding-top: 18%;
-    padding-bottom: 10%;
-    gap: clamp(3px, 0.35vh, 4px);
-  }
-
-  .game-player-badge[data-stat-count="7"] .ball-flag .flag-icon--badge,
-  .game-player-badge[data-stat-count="8"] .ball-flag .flag-icon--badge {
-    --flag-size: clamp(26px, 3.6vh, 34px);
-  }
-
-  .game-player-badge[data-stat-count="7"] .badge-position-pill,
-  .game-player-badge[data-stat-count="8"] .badge-position-pill {
-    padding-block: 3px;
-    font-size: clamp(8px, 0.82vh, 10px);
-  }
-
-  .game-player-badge[data-stat-count="7"] .badge-ball-name,
-  .game-player-badge[data-stat-count="8"] .badge-ball-name {
-    font-size: var(--badge-ball-name-size, clamp(12px, 1.38vh, 16px));
-    min-height: 1.72em;
-    max-height: 1.72em;
-  }
-
-  .game-player-badge[data-stat-count="7"] .premium-badge-stats,
-  .game-player-badge[data-stat-count="8"] .premium-badge-stats {
-    gap: clamp(3px, 0.45vh, 5px);
-    padding-bottom: 2px;
-  }
-
-  .game-player-badge[data-stat-count="7"] .badge-stat-card,
-  .game-player-badge[data-stat-count="8"] .badge-stat-card {
-    min-height: clamp(44px, 5.8vh, 58px);
-    padding: 5px 5px;
-    gap: 2px;
-    border-radius: 12px;
-  }
-
-  .game-player-badge[data-stat-count="7"] .badge-stat-icon,
-  .game-player-badge[data-stat-count="7"] .badge-stat-icon svg,
-  .game-player-badge[data-stat-count="8"] .badge-stat-icon,
-  .game-player-badge[data-stat-count="8"] .badge-stat-icon svg {
-    width: 14px;
-    height: 14px;
-  }
-
-  .game-player-badge[data-stat-count="7"] .badge-stat-label,
-  .game-player-badge[data-stat-count="8"] .badge-stat-label {
-    letter-spacing: 0.16em;
-    line-height: 1;
-  }
-
-  .game-player-badge[data-stat-count="7"] .badge-stat-value--record,
-  .game-player-badge[data-stat-count="8"] .badge-stat-value--record {
-    font-size: clamp(14px, 1.8vh, 20px);
-  }
-
-  .site-nav-inner {
-    gap: 0.65rem;
-    padding:
-      calc(env(safe-area-inset-top) + 0.62rem)
-      0.9rem
-      0.62rem;
-  }
-
-  .site-logo {
-    gap: 0.6rem;
-    min-height: 38px;
-    font-size: clamp(0.96rem, 4.2vw, 1.14rem);
-  }
-
-  .logo-dot {
-    width: 2.45rem;
-    height: 2.45rem;
-  }
-
-  .nav-mode-badge {
-    min-height: 38px;
-    padding: 0.48rem 0.88rem;
-    font-size: clamp(0.86rem, 3.6vw, 0.98rem);
-  }
-}
-
-@media (max-width: 390px) {
-  .game-player-badge {
-    --card-h: min(calc(100svh - 80px), 690px);
-    --pad: 9px;
-    --gap: 4px;
-    --title: clamp(22px, 3.8vh, 30px);
-    --subtitle: clamp(7px, 0.9vh, 9px);
-    --ball: clamp(132px, 19vh, 184px);
-    --pill-width: clamp(60px, 17vw, 72px);
-    --stat-h: clamp(52px, 7.6vh, 70px);
-    --stat-label: clamp(7px, 0.82vh, 9px);
-    --stat-value: clamp(19px, 2.55vh, 28px);
-    max-width: min(94vw, 356px);
-    border-radius: 22px;
-  }
-
-  .premium-badge-subkicker {
-    display: none;
-  }
-
-  .premium-badge-header {
-    grid-template-columns: minmax(0, 1fr) 70px minmax(0, 1fr);
-    gap: 6px;
-  }
-
-  .badge-side-panel {
-    min-height: 64px;
-  }
-
-  .badge-side-panel strong {
-    font-size: clamp(18px, 3vh, 24px);
-  }
-
-  .badge-crest {
-    max-width: 70px;
-  }
-
-  .elite-trophy {
-    width: clamp(42px, 6.4vh, 56px);
-    height: clamp(42px, 6.4vh, 56px);
-  }
-
-  .badge-position-pill {
-    font-size: clamp(8px, 0.9vh, 10px);
-  }
-
-  .badge-ball-name {
-    width: min(100%, 11.5ch);
-    font-size: var(--badge-ball-name-size, clamp(13px, 1.65vh, 18px));
-  }
-
-  .badge-stat-icon {
-    width: 16px;
-    height: 16px;
-  }
-
-  .badge-stat-value--record {
-    font-size: clamp(16px, 2.2vh, 24px);
-    letter-spacing: -0.08em;
-  }
-
-  .game-player-badge[data-stat-count="7"],
-  .game-player-badge[data-stat-count="8"] {
-    --ball: clamp(112px, 15.6vh, 148px);
-    --stat-h: clamp(40px, 5.2vh, 52px);
-    --stat-label: clamp(6px, 0.6vh, 7px);
-    --stat-value: clamp(14px, 1.72vh, 20px);
-  }
-
-  .game-player-badge[data-stat-count="7"] .badge-ball-name,
-  .game-player-badge[data-stat-count="8"] .badge-ball-name {
-    font-size: var(--badge-ball-name-size, clamp(11px, 1.18vh, 14px));
-  }
-
-  .game-player-badge[data-stat-count="7"] .badge-stat-card,
-  .game-player-badge[data-stat-count="8"] .badge-stat-card {
-    min-height: clamp(40px, 5.2vh, 52px);
-    padding: 4px;
-  }
-
-  .game-player-badge[data-stat-count="7"] .badge-stat-value--record,
-  .game-player-badge[data-stat-count="8"] .badge-stat-value--record {
-    font-size: clamp(12px, 1.5vh, 17px);
-  }
-
-  .site-nav-inner {
-    padding:
-      calc(env(safe-area-inset-top) + 0.58rem)
-      0.8rem
-      0.58rem;
-  }
-
-  .site-logo {
-    gap: 0.56rem;
-    font-size: 1rem;
-  }
-
-  .logo-dot {
-    width: 2.3rem;
-    height: 2.3rem;
-  }
-
-  .nav-mode-badge {
-    min-height: 36px;
-    padding: 0.46rem 0.8rem;
-    font-size: 0.88rem;
-  }
-}
-
-.game-player-badge.export-mode,
-.player-card.export-mode {
-  --card-h: auto;
-  --pad: 18px;
-  --gap: 10px;
-  --title: 44px;
-  --subtitle: 13px;
-  --ball: 236px;
-  --pill-width: 90px;
-  --stat-h: 120px;
-  --stat-label: 11px;
-  --stat-value: 38px;
-  width: 430px !important;
-  max-width: 430px !important;
-  height: auto !important;
-  max-height: none !important;
-  min-height: 0 !important;
-  margin: 0 !important;
-  overflow: visible !important;
-}
-
-.game-player-badge.export-mode .premium-badge-header,
-.player-card.export-mode .premium-badge-header {
-  grid-template-columns: 1fr 104px 1fr;
-  gap: 12px;
-}
-
-.game-player-badge.export-mode .badge-crest,
-.player-card.export-mode .badge-crest {
-  max-width: 104px;
-}
-
-.game-player-badge.export-mode .elite-trophy,
-.player-card.export-mode .elite-trophy {
-  width: 76px;
-  height: 76px;
-}
-
-.game-player-badge.export-mode .badge-ball-overlay,
-.player-card.export-mode .badge-ball-overlay {
-  width: calc(100% - 28px);
-  padding-top: 21%;
-  padding-bottom: 14%;
-}
-
-.game-player-badge.export-mode .premium-badge-stats,
-.player-card.export-mode .premium-badge-stats,
-.game-player-badge.export-mode .stats-grid,
-.player-card.export-mode .stats-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-  padding-bottom: 0;
-}
-
-.game-player-badge.export-mode .badge-stat-card,
-.player-card.export-mode .badge-stat-card,
-.game-player-badge.export-mode .stat-card,
-.player-card.export-mode .stat-card {
-  min-height: 120px;
-  height: 120px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .game-player-badge,
-  .season-toggle .pill,
-  .player-badge-view-toggle .player-badge-view-chip {
-    animation: none !important;
-    transition: none !important;
-  }
-
-  .season-toggle .pill:active,
-  .player-badge-view-toggle .player-badge-view-chip:active {
-    transform: none !important;
   }
 }
