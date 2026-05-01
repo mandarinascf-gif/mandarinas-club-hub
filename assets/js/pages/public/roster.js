@@ -620,7 +620,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const badgeMarkup = window.renderPlayerBadge
       ? window.renderPlayerBadge(badgePlayer, badgeStats, {
           summaryCards: badgeSummaryCards,
-          showTrophy: view === "all_time" && !loadingAllTime,
+          showTrophy: !loadingAllTime && Number(stats.seasons_won || 0) > 0,
         }).outerHTML
       : "";
     const viewNote = loadingAllTime
@@ -660,18 +660,18 @@ document.addEventListener("DOMContentLoaded", async () => {
             ALL TIME
           </button>
         </div>
-        ${viewNoteMarkup}
-      </div>
-      <div id="shareBadgeCard" class="player-badge-share-card">
         <button
           class="secondary-button player-badge-share-button"
           type="button"
           data-share-badge-player-id="${player.id}"
           ${loadingAllTime ? "disabled" : ""}
         >
-          Share Badge
+          Share
         </button>
-        <div class="roster-player-badge ${loadingAllTime ? "is-loading" : ""}">
+      </div>
+      ${viewNoteMarkup}
+      <div id="shareBadgeCard" class="player-badge-share-card share-badge-container fut-card-shell">
+        <div class="roster-player-badge badge-preview ${loadingAllTime ? "is-loading" : ""}">
           ${badgeMarkup}
         </div>
       </div>
@@ -765,7 +765,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       `[data-share-badge-player-id="${Number(playerIdValue)}"]`
     );
     const shareCard = document.getElementById("shareBadgeCard");
-    const badgeCard = shareCard?.querySelector(".player-card");
+    const badgeCard = shareCard?.querySelector(".fut-card");
 
     if (!player || !shareButton || !shareCard || !badgeCard) {
       return;
@@ -782,6 +782,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const clone = badgeCard.cloneNode(true);
       clone.classList.add("export-mode");
+      Object.assign(clone.style, {
+        position: "fixed",
+        top: "-9999px",
+        left: "0",
+        width: "900px",
+        height: "auto",
+        transform: "none",
+      });
       exportSurface.appendChild(clone);
       document.body.appendChild(exportSurface);
 
@@ -790,11 +798,22 @@ document.addEventListener("DOMContentLoaded", async () => {
           await document.fonts.ready;
         }
 
-        clone.offsetHeight;
         if (typeof window.schedulePlayerBadgeFit === "function") {
           window.schedulePlayerBadgeFit(clone);
         }
 
+        await Promise.all(
+          [...clone.querySelectorAll("img")].map((img) =>
+            img.complete
+              ? Promise.resolve()
+              : new Promise((resolve) => {
+                  img.onload = resolve;
+                  img.onerror = resolve;
+                })
+          )
+        );
+
+        clone.offsetHeight;
         await new Promise((resolve) => requestAnimationFrame(resolve));
         await new Promise((resolve) => requestAnimationFrame(resolve));
 
