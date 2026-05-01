@@ -280,15 +280,20 @@
   width: 100%; height: 100%;
   min-width: 0; min-height: 0;
   box-sizing: border-box;
-  padding: clamp(10px, 1.8vh, 18px) clamp(10px, 2.5vw, 16px);
+  padding: clamp(6px, 1.1vh, 12px) clamp(10px, 2.5vw, 16px);
   display: grid;
   justify-items: center;
-  align-content: center;
-  gap: clamp(4px, 0.6vh, 8px);
+  align-content: start;
+  gap: clamp(3px, 0.45vh, 6px);
+  transform: translateY(clamp(-6px, -0.8vh, -10px));
   z-index: 1;
 }
 
-.fut-flag-wrap { display: grid; place-items: center; }
+.fut-flag-wrap {
+  display: grid;
+  place-items: center;
+  margin-top: 0;
+}
 
 .fut-player-flag,
 .fut-player-flag-image,
@@ -319,13 +324,19 @@
 .fut-position-pills {
   display: flex;
   justify-content: center;
+  align-items: center;
   flex-wrap: wrap;
   gap: clamp(4px, 0.5vh, 6px);
+  width: min(100%, calc(var(--sz-ball) - 24px));
+  max-width: calc(100% - 8px);
+  margin-top: clamp(-1px, -0.15vh, -3px);
 }
 
 .fut-position-pill {
-  width: var(--sz-pill-w);
-  padding: clamp(3px, 0.4vh, 5px) 0;
+  width: auto;
+  min-width: clamp(36px, 9vw, 54px);
+  max-width: 100%;
+  padding: clamp(3px, 0.4vh, 5px) clamp(8px, 1.8vw, 12px);
   border-radius: 999px;
   border: 1px solid rgba(212,175,55,.46);
   background: linear-gradient(180deg, rgba(26,17,10,.98), rgba(10,7,5,.98));
