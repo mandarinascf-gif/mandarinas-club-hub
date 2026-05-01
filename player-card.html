@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#090604" />
+<title>Player Card Prototype · Mandarinas CF</title>
+
+<!-- Google Fonts: Anton (title), Cinzel (values), Montserrat (labels) -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Cinzel:wght@700;900&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet" />
+
+<!-- html2canvas for export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+
+<style>
+/* ============================================================
+   RESET & PAGE
+   ============================================================ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;                 /* no page scroll */
+  background: #050302;
+  font-family: 'Montserrat', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
+.prototype-banner {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 214, 107, 0.45);
+  border-radius: 999px;
+  background: rgba(18, 10, 4, 0.88);
+  color: #ffe7aa;
+  font: 800 11px/1 "Montserrat", sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   CARD SHELL
+   Uses CSS custom properties + clamp() throughout so every
+   dimension scales fluidly between small phones and tablets.
+   ============================================================ */
+.fut-card {
+  /* ---- sizing tokens ---- */
+  --card-w: min(96vw, 460px);
+  --card-h: calc(100svh - 24px);        /* small top/bottom breathing room */
+  --pad: clamp(8px, 1.4vh, 16px);
+  --gap: clamp(5px, 1vh, 12px);
+
+  /* ---- typography tokens ---- */
+  --title-sz: clamp(24px, 4.8vh, 44px);
+  --sub-sz: clamp(7px, 1.2vh, 12px);
+  --name-sz: clamp(18px, 2.8vh, 34px);
+  --stat-val-sz: clamp(20px, 3.4vh, 36px);
+  --stat-lbl-sz: clamp(7px, 1.1vh, 11px);
+
+  /* ---- component tokens ---- */
+  --ball-sz: clamp(100px, 18vh, 210px);
+  --pill-w: clamp(64px, 17vw, 88px);
+  --stat-h: clamp(52px, 8vh, 86px);
+  --trophy-sz: clamp(40px, 6.5vh, 72px);
+  --flag-sz: clamp(32px, 4.5vh, 48px);
+  --crest-sz: clamp(68px, 16vw, 110px);
+  --mini-h: clamp(68px, 9.5vh, 100px);
+
+  width: var(--card-w);
+  height: var(--card-h);
+  max-height: 860px;
+  padding: var(--pad);
+  overflow: hidden;
+
+  display: grid;
+  /* header | subtitle | top-row | hero | pills+name | stats */
+  grid-template-rows: auto auto auto auto minmax(0, 1fr);
+  gap: var(--gap);
+  align-content: start;
+
+  border-radius: clamp(20px, 3vw, 32px);
+  border: 2px solid #b58a2b;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(220, 170, 60, 0.20), transparent 35%),
+    linear-gradient(180deg, #1a1207 0%, #090604 100%);
+  color: #fff;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 236, 183, 0.08),
+    inset 0 14px 20px rgba(255, 219, 120, 0.03),
+    0 24px 56px rgba(0, 0, 0, 0.40);
+}
+
+/* ============================================================
+   1. HEADER  (title + subtitle)
+   ============================================================ */
+.fut-header {
+  display: grid;
+  gap: clamp(1px, 0.3vh, 4px);
+  text-align: center;
+}
+
+.fut-title {
+  color: #fff0bf;
+  font-family: 'Anton', sans-serif;
+  font-size: var(--title-sz);
+  letter-spacing: 0.08em;
+  line-height: 0.92;
+  text-transform: uppercase;
+}
+
+.fut-subtitle {
+  color: #d3a83b;
+  font-family: 'Montserrat', sans-serif;
+  font-size: var(--sub-sz);
+  font-weight: 800;
+  letter-spacing: 0.30em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   2. TOP ROW  (OVR | Crest | Rank+PPG)
+   Three-column grid: side cards stretch equally, crest centered.
+   ============================================================ */
+.fut-top-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--crest-sz) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(6px, 1vh, 12px);
+}
+
+/* Mini info cards (OVR + Rank) */
+.fut-mini {
+  min-height: var(--mini-h);
+  padding: clamp(6px, 0.9vh, 10px);
+  border-radius: clamp(14px, 2vw, 20px);
+  border: 1px solid rgba(202, 159, 58, 0.48);
+  background: linear-gradient(180deg, #1a1208, #080503);
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: clamp(2px, 0.25vh, 4px);
+  text-align: center;
+}
+
+.fut-mini__label {
+  color: #d3a83b;
+  font-size: clamp(8px, 1vh, 11px);
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.fut-mini__value {
+  color: #fff8e8;
+  font-family: 'Cinzel', serif;
+  font-size: clamp(20px, 3.4vh, 32px);
+  font-weight: 900;
+  line-height: 0.95;
+}
+
+.fut-mini__meta {
+  color: rgba(255, 238, 195, 0.84);
+  font-size: clamp(7px, 0.85vh, 10px);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* Club crest */
+.fut-crest {
+  display: grid;
+  place-items: center;
+}
+
+.fut-crest img {
+  width: 100%;
+  max-width: var(--crest-sz);
+  height: auto;
+  display: block;
+}
+
+/* ============================================================
+   3. HERO SECTION
+   Trophy → Ball (with flag overlay) → Position pills → Name
+   All stacked vertically, centered.
+   ============================================================ */
+.fut-hero {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: clamp(4px, 0.7vh, 8px);
+  min-height: 0;
+}
+
+/* ---- Trophy ---- */
+.fut-trophy-wrap {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+}
+
+.fut-trophy-svg {
+  width: var(--trophy-sz);
+  height: var(--trophy-sz);
+  display: block;
+}
+
+.fut-trophy-number {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 46px;
+  font-weight: 900;
+  fill: #140b02;
+  stroke: #fff2a8;
+  stroke-width: 0.7px;
+  paint-order: stroke fill;
+}
+
+.fut-trophy-label {
+  color: #d6a938;
+  font-size: clamp(5px, 0.75vh, 8px);
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* ---- Ball stage ---- */
+.fut-ball-stage {
+  width: var(--ball-sz);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  border: 1px solid rgba(196, 150, 47, 0.18);
+  background:
+    radial-gradient(circle at 35% 26%, rgba(255, 223, 139, 0.12), transparent 34%),
+    #0e0906;
+}
+
+.fut-ball-stage > * { grid-area: 1 / 1; }
+
+.fut-ball-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: 50% 46%;
+  transform: scale(3.05);
+  transform-origin: 50% 46%;
+  filter: brightness(0.78) saturate(0.8) contrast(1.08);
+  z-index: 0;
+}
+
+.fut-ball-overlay {
+  width: 100%; height: 100%;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: clamp(6px, 0.8vh, 10px);
+  z-index: 1;
+}
+
+/* ---- Flag (centered on ball) ---- */
+.fut-flag {
+  width: var(--flag-sz);
+  height: var(--flag-sz);
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid rgba(214, 169, 56, 0.76);
+  background: #110b05;
+}
+
+.fut-flag img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.fut-flag-text {
+  color: #fff0c7;
+  font-size: clamp(9px, 1.3vh, 13px);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+/* ---- Position pills ---- */
+.fut-pills {
+  display: flex;
+  justify-content: center;
+  gap: clamp(5px, 0.6vh, 8px);
+  flex-wrap: wrap;
+}
+
+.fut-pill {
+  width: var(--pill-w);
+  padding: clamp(3px, 0.5vh, 6px) 0;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 175, 55, 0.46);
+  background: linear-gradient(180deg, rgba(26, 17, 10, 0.98), rgba(10, 7, 5, 0.98));
+  color: #f7ebc8;
+  font-size: clamp(8px, 1vh, 12px);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1;
+}
+
+/* ---- Player name ---- */
+.fut-name {
+  max-width: min(100%, 14ch);
+  color: #fff0c7;
+  font-family: 'Cinzel', serif;
+  font-size: var(--name-sz);
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: center;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  max-height: 2em;
+  overflow: hidden;
+}
+
+/* ============================================================
+   4. STATS GRID
+   CSS Grid only. 2 columns. Equal-height cards.
+   No absolute positioning, no transforms, no negative margins.
+   ============================================================ */
+.fut-stats {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: var(--stat-h);
+  gap: var(--gap);
+  align-content: start;
+  min-height: 0;
+}
+
+.fut-stat {
+  /* Each stat is a DIRECT CHILD of the grid — no wrappers */
+  height: var(--stat-h);
+  min-height: 0;
+  padding: clamp(4px, 0.6vh, 8px);
+  border-radius: clamp(12px, 1.8vw, 18px);
+  border: 1px solid rgba(202, 159, 58, 0.55);
+  background: linear-gradient(180deg, #1a1208, #080503);
+
+  /* Flex column: icon → label → value, all centered */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(2px, 0.3vh, 5px);
+  text-align: center;
+
+  /* FORBIDDEN overrides — insurance against inheritance */
+  position: static;
+  transform: none;
+  margin: 0;
+}
+
+/* Zero-value dimming */
+.fut-stat.is-zero {
+  opacity: 0.42;
+  filter: grayscale(0.4);
+}
+
+/* Stat icon */
+.fut-stat__icon {
+  width: clamp(14px, 2vh, 18px);
+  height: clamp(14px, 2vh, 18px);
+  color: #d7af4b;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.fut-stat__icon svg {
+  width: 100%; height: 100%;
+  stroke: currentColor;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+/* Stat label */
+.fut-stat__label {
+  color: #d3a83b;
+  font-size: var(--stat-lbl-sz);
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+/* Stat value */
+.fut-stat__value {
+  color: #fff7e6;
+  font-family: 'Cinzel', serif;
+  font-size: var(--stat-val-sz);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.fut-stat__value--record {
+  font-size: clamp(16px, 2.6vh, 28px);
+  letter-spacing: -0.06em;
+}
+
+/* ============================================================
+   SHARE BUTTON (floating, bottom-right)
+   ============================================================ */
+.fut-share-btn {
+  position: fixed;
+  bottom: max(12px, env(safe-area-inset-bottom, 12px));
+  right: 12px;
+  width: 48px; height: 48px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #d4a830, #8b6914);
+  color: #0a0703;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  z-index: 100;
+  transition: transform 0.15s ease;
+}
+.fut-share-btn:active { transform: scale(0.92); }
+.fut-share-btn svg { width: 22px; height: 22px; }
+
+/* Toast notification */
+.fut-toast {
+  position: fixed;
+  bottom: 72px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #1a1208;
+  color: #fff0c7;
+  border: 1px solid #b58a2b;
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s, transform 0.3s;
+  z-index: 200;
+}
+.fut-toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ============================================================
+   EXPORT-MODE OVERRIDES
+   Applied to the offscreen clone for hi-res image rendering.
+   Fixed dimensions — no clamp, no viewport units.
+   ============================================================ */
+.fut-card.export-mode {
+  --card-w: 900px;
+  --card-h: auto;
+  --pad: 28px;
+  --gap: 18px;
+  --title-sz: 62px;
+  --sub-sz: 16px;
+  --name-sz: 44px;
+  --stat-val-sz: 44px;
+  --stat-lbl-sz: 13px;
+  --ball-sz: 300px;
+  --pill-w: 120px;
+  --stat-h: 110px;
+  --trophy-sz: 90px;
+  --flag-sz: 62px;
+  --crest-sz: 160px;
+  --mini-h: 130px;
+
+  width: 900px !important;
+  max-width: 900px !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  margin: 0 !important;
+  border-radius: 42px;
+}
+
+.fut-card.export-mode .fut-top-row {
+  grid-template-columns: 1fr 160px 1fr;
+  gap: 20px;
+}
+
+.fut-card.export-mode .fut-mini {
+  min-height: 130px;
+  border-radius: 24px;
+}
+
+.fut-card.export-mode .fut-stat {
+  height: 110px !important;
+  min-height: 110px !important;
+  border-radius: 22px;
+  padding: 12px;
+}
+
+.fut-card.export-mode .fut-stat__value--record {
+  font-size: 34px;
+}
+
+.fut-card.export-mode .fut-stats {
+  gap: 18px;
+  grid-auto-rows: 110px;
+}
+
+.fut-card.export-mode .fut-pill {
+  font-size: 16px;
+  padding: 8px 0;
+}
+
+/* ============================================================
+   SMALL-HEIGHT PHONES (< 700px viewport)
+   Tighten everything so the card still fits.
+   ============================================================ */
+@media (max-height: 700px) {
+  .fut-card {
+    --pad: 6px;
+    --gap: 3px;
+    --title-sz: clamp(18px, 3.4vh, 26px);
+    --sub-sz: clamp(5px, 0.7vh, 8px);
+    --name-sz: clamp(14px, 1.9vh, 20px);
+    --ball-sz: clamp(88px, 14vh, 128px);
+    --trophy-sz: clamp(34px, 5vh, 46px);
+    --flag-sz: clamp(26px, 3.6vh, 36px);
+    --stat-h: clamp(40px, 5.5vh, 54px);
+    --stat-val-sz: clamp(14px, 1.9vh, 20px);
+    --stat-lbl-sz: clamp(5px, 0.65vh, 7px);
+    --mini-h: clamp(54px, 7.5vh, 68px);
+    --crest-sz: clamp(56px, 13vw, 72px);
+    --pill-w: clamp(52px, 14vw, 66px);
+  }
+
+  .fut-stat__icon { width: 12px; height: 12px; }
+}
+
+/* ============================================================
+   TABLETS / WIDER SCREENS
+   ============================================================ */
+@media (min-width: 520px) and (min-height: 820px) {
+  .fut-card {
+    --card-w: 460px;
+    --stat-h: clamp(70px, 9vh, 88px);
+    --ball-sz: clamp(180px, 22vh, 228px);
+    border-radius: 32px;
+  }
+}
+</style>
+</head>
+
+<body>
+<div class="prototype-banner">Prototype only · not wired into the live app</div>
+
+<!-- =====================================================
+     THE CARD — rendered by JS below
+     ===================================================== -->
+<div id="card-mount"></div>
+
+<!-- Share / Export button -->
+<button class="fut-share-btn" id="shareBtn" aria-label="Share card">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/>
+    <polyline points="16 6 12 2 8 6"/>
+    <line x1="12" y1="2" x2="12" y2="15"/>
+  </svg>
+</button>
+
+<!-- Toast -->
+<div class="fut-toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   DATA MODEL
+   Mirror of the existing player_badge.js data contract.
+   Replace this object with real Supabase data or URL params.
+   ============================================================ */
+const PLAYER = {
+  name: "Asdruval Villanueva",
+  nationality: "Mexico",
+  flag_code: "MX",
+  overall_rating: 80,
+  rank: 19,
+  positions: ["DEF", "ATT", "GK"],
+  seasons_won: 8,
+};
+
+const STATS = {
+  seasons_participated: 8,
+  wins: 40,
+  draws: 21,
+  losses: 47,
+  ppg: 5.52,
+  apps: 54,
+  points: 298,
+  goals: 6,
+  goal_keeps: 5,
+  clean_sheets: 0,
+};
+
+/* ============================================================
+   ASSET PATHS — adjust if your folder structure changes
+   ============================================================ */
+const CREST_SRC  = "./assets/images/brand/mandarinas-crest-clean.png";
+const BALL_SRC   = "./assets/images/player-badge/reference-ball-full.png";
+const FLAG_DIR   = "./assets/flags/";
+
+/* ============================================================
+   STAT ICON SVG PATHS (stroke-based, 20×20 viewBox)
+   ============================================================ */
+const STAT_ICONS = {
+  season: '<path d="M5.1 3.85H14.9C15.84 3.85 16.6 4.61 16.6 5.55V14.9C16.6 15.84 15.84 16.6 14.9 16.6H5.1C4.16 16.6 3.4 15.84 3.4 14.9V5.55C3.4 4.61 4.16 3.85 5.1 3.85Z"/><path d="M6.55 2.35V5.45"/><path d="M13.45 2.35V5.45"/><path d="M3.4 7.1H16.6"/><path d="M6.2 10.05H9.15"/><path d="M10.85 10.05H13.8"/><path d="M6.2 12.85H9.15"/>',
+  record: '<path d="M4.15 5.1H15.85"/><path d="M4.15 10H15.85"/><path d="M4.15 14.9H15.85"/><path d="M7.2 3.35V16.65"/><path d="M12.8 3.35V16.65"/>',
+  ppg: '<path d="M4.35 14.9L8.15 10.45L11.05 12.6L15.65 6.15"/><path d="M12.85 6.15H15.65V8.95"/>',
+  apps: '<path d="M6.1 4.1L8.95 6.1H11.05L13.9 4.1L17 6.45L15.55 10.05L13.8 9.3V16H6.2V9.3L4.45 10.05L3 6.45Z"/>',
+  points: '<path d="M10 2.25L12.45 7.15L17.85 7.95L13.95 11.7L14.85 17L10 14.45L5.15 17L6.05 11.7L2.15 7.95L7.55 7.15Z"/>',
+  goals: '<circle cx="10" cy="10" r="7"/><path d="M10 5.75L11.9 7.05L11.2 9.35H8.8L8.1 7.05Z"/><path d="M8.1 7.05L5.75 7.7L5.3 10.15L7.2 11.95"/><path d="M11.9 7.05L14.25 7.7L14.7 10.15L12.8 11.95"/><path d="M8.8 9.35L7.2 11.95L8.15 14.15"/><path d="M11.2 9.35L12.8 11.95L11.85 14.15"/><path d="M8.15 14.15H11.85"/>',
+  goal_keeps: '<path d="M7.1 4.95V9.65"/><path d="M9.45 4.2V8.8"/><path d="M11.75 4.65V8.6"/><path d="M14.05 5.85V9.75"/><path d="M7.05 9.2L5.95 8.1C5.15 7.3 3.85 8.4 4.5 9.3L6.8 12.45C7.4 13.3 8.4 13.8 9.45 13.8H13.4C14.95 13.8 16.2 12.55 16.2 11V8.65"/>',
+  clean_sheets: '<path d="M10 2.7L15.4 4.8V8.95C15.4 12.45 13.1 14.9 10 16.5C6.9 14.9 4.6 12.45 4.6 8.95V4.8Z"/><path d="M7.35 9.45L9.2 11.3L12.75 7.75"/>',
+};
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+const esc = s => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const fmt = n => { const v = Number(n); return Number.isFinite(v) ? String(Math.round(v)) : "0"; };
+const fmtPpg = n => { const v = Number(n); return Number.isFinite(v) ? v.toFixed(2) : "0.00"; };
+
+function flagSrc(code) {
+  const c = String(code || "").toLowerCase();
+  return /^[a-z]{2}$/.test(c) ? `${FLAG_DIR}${c}.png` : "";
+}
+
+/* ============================================================
+   TROPHY SVG  (custom inline, premium gold gradient)
+   Unique gradient IDs via counter to avoid clashes.
+   ============================================================ */
+let _tid = 0;
+function trophySVG(count) {
+  const id = ++_tid;
+  const gG = `tg${id}`, gD = `td${id}`, gR = `tr${id}`, fS = `ts${id}`;
+  return `
+  <svg class="fut-trophy-svg" viewBox="0 0 180 180" aria-hidden="true">
+    <defs>
+      <linearGradient id="${gG}" x1="35" y1="20" x2="145" y2="165">
+        <stop offset="0%" stop-color="#fff3a6"/>
+        <stop offset="22%" stop-color="#f6c443"/>
+        <stop offset="48%" stop-color="#b87916"/>
+        <stop offset="72%" stop-color="#f3c64a"/>
+        <stop offset="100%" stop-color="#7a470d"/>
+      </linearGradient>
+      <linearGradient id="${gD}" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#7d4a10"/>
+        <stop offset="50%" stop-color="#f2bf3c"/>
+        <stop offset="100%" stop-color="#5b3308"/>
+      </linearGradient>
+      <radialGradient id="${gR}" cx="50%" cy="25%" r="65%">
+        <stop offset="0%" stop-color="#fff8bf" stop-opacity=".95"/>
+        <stop offset="45%" stop-color="#d99b25" stop-opacity=".45"/>
+        <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+      </radialGradient>
+      <filter id="${fS}" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#000" flood-opacity=".55"/>
+        <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#d9a431" flood-opacity=".45"/>
+      </filter>
+    </defs>
+    <ellipse cx="90" cy="154" rx="44" ry="10" fill="#090604" opacity=".65"/>
+    <g filter="url(#${fS})">
+      <path d="M48 54H25c-5 0-8 4-8 9 0 25 14 43 39 48l4-15c-16-4-26-16-27-28h18z" fill="url(#${gG})" stroke="#eec24e" stroke-width="1"/>
+      <path d="M132 54h23c5 0 8 4 8 9 0 25-14 43-39 48l-4-15c16-4 26-16 27-28h-18z" fill="url(#${gG})" stroke="#eec24e" stroke-width="1"/>
+      <path d="M48 34h84c-2 47-15 78-42 78S50 81 48 34z" fill="url(#${gG})" stroke="#fff0a3" stroke-width="2"/>
+      <path d="M58 43h64c-3 31-11 52-32 52S61 74 58 43z" fill="url(#${gR})" opacity=".55"/>
+      <path d="M78 111h24v25H78z" fill="url(#${gD})" stroke="#eec24e" stroke-width="1.5"/>
+      <path d="M59 136h62l8 19H51z" fill="url(#${gG})" stroke="#eec24e" stroke-width="1.5"/>
+      <path d="M48 155h84v11H48z" fill="#2b1705" stroke="#b98b2b" stroke-width="1.5"/>
+    </g>
+    <text class="fut-trophy-number" x="90" y="78" text-anchor="middle" dominant-baseline="middle">${esc(fmt(count))}</text>
+  </svg>`;
+}
+
+/* ============================================================
+   STAT CARD DATA  (always 8 cards → 4 rows × 2 cols)
+   ============================================================ */
+function buildStats(s) {
+  const record = `${fmt(s.wins)}-${fmt(s.draws)}-${fmt(s.losses)}`;
+  return [
+    { key: "season",       label: "Seasons",       icon: "season",       value: fmt(s.seasons_participated), isRecord: false },
+    { key: "record",       label: "Record",        icon: "record",       value: record,                     isRecord: true  },
+    { key: "ppg",          label: "PPG",           icon: "ppg",          value: fmtPpg(s.ppg),              isRecord: false },
+    { key: "apps",         label: "Apps",          icon: "apps",         value: fmt(s.apps),                isRecord: false },
+    { key: "points",       label: "Points",        icon: "points",       value: fmt(s.points),              isRecord: false },
+    { key: "goals",        label: "Goals",         icon: "goals",        value: fmt(s.goals),               isRecord: false },
+    { key: "goal_keeps",   label: "Goal Keeps",    icon: "goal_keeps",   value: fmt(s.goal_keeps),          isRecord: false },
+    { key: "clean_sheets", label: "Clean Sheets",  icon: "clean_sheets", value: fmt(s.clean_sheets),        isRecord: false },
+  ];
+}
+
+/* ============================================================
+   RENDER THE CARD
+   ============================================================ */
+function renderCard(player, stats) {
+  const positions = Array.isArray(player.positions) ? player.positions : [player.positions || "N/A"];
+  const flagUrl = flagSrc(player.flag_code);
+  const showTrophy = Number(player.seasons_won) > 0;
+  const statCards = buildStats(stats);
+
+  // Flag markup
+  const flagHTML = flagUrl
+    ? `<span class="fut-flag"><img src="${esc(flagUrl)}" alt="${esc(player.nationality)}" /></span>`
+    : `<span class="fut-flag"><span class="fut-flag-text">${esc((player.flag_code || "??").toUpperCase())}</span></span>`;
+
+  // Position pills
+  const pillsHTML = positions.map(p => `<span class="fut-pill">${esc(p.toUpperCase())}</span>`).join("");
+
+  // Stat cards — each is a direct child of .fut-stats grid
+  const statsHTML = statCards.map(c => {
+    const numVal = Number(String(c.value).replace(/,/g, ""));
+    const isZero = c.key !== "season" && c.key !== "record" && Number.isFinite(numVal) && numVal === 0;
+    const valClass = `fut-stat__value${c.isRecord ? " fut-stat__value--record" : ""}`;
+    return `
+      <article class="fut-stat${isZero ? " is-zero" : ""}" data-stat="${c.key}">
+        <span class="fut-stat__icon"><svg viewBox="0 0 20 20" fill="none">${STAT_ICONS[c.icon] || ""}</svg></span>
+        <span class="fut-stat__label">${esc(c.label)}</span>
+        <strong class="${valClass}">${esc(c.value)}</strong>
+      </article>`;
+  }).join("");
+
+  return `
+    <section class="fut-card" aria-label="${esc(player.name)} player badge">
+
+      <!-- 1. Header -->
+      <header class="fut-header">
+        <div class="fut-title">Mandarinas CF</div>
+        <div class="fut-subtitle">California Club de Futbol</div>
+      </header>
+
+      <!-- 2. Top row: OVR | Crest | Rank -->
+      <div class="fut-top-row">
+        <div class="fut-mini">
+          <span class="fut-mini__label">OVR</span>
+          <strong class="fut-mini__value">${esc(fmt(player.overall_rating))}</strong>
+          <small class="fut-mini__meta">Overall</small>
+        </div>
+        <div class="fut-crest">
+          <img src="${esc(CREST_SRC)}" alt="Mandarinas CF crest" />
+        </div>
+        <div class="fut-mini">
+          <span class="fut-mini__label">Rank</span>
+          <strong class="fut-mini__value">${esc(player.rank > 0 ? player.rank : "--")}</strong>
+          <small class="fut-mini__meta">${esc(fmtPpg(stats.ppg))} PPG</small>
+        </div>
+      </div>
+
+      <!-- 3. Hero: Trophy → Ball (flag + pills inside) → Name -->
+      <div class="fut-hero">
+        ${showTrophy ? `
+        <div class="fut-trophy-wrap">
+          ${trophySVG(player.seasons_won)}
+          <div class="fut-trophy-label">Seasons Won</div>
+        </div>` : ""}
+
+        <div class="fut-ball-stage">
+          <img class="fut-ball-img" src="${esc(BALL_SRC)}" alt="" />
+          <div class="fut-ball-overlay">
+            ${flagHTML}
+            <div class="fut-pills">${pillsHTML}</div>
+          </div>
+        </div>
+
+        <div class="fut-name">${esc(player.name)}</div>
+      </div>
+
+      <!-- 4. Stats grid — CSS Grid, 2 columns, direct children only -->
+      <div class="fut-stats">
+        ${statsHTML}
+      </div>
+
+    </section>`;
+}
+
+/* Mount the card */
+document.getElementById("card-mount").innerHTML = renderCard(PLAYER, STATS);
+
+/* ============================================================
+   TEXT-FIT  (shrink long names / values to fit their container)
+   ============================================================ */
+function fitText(el, minPx) {
+  if (!el || !el.isConnected) return;
+  el.style.removeProperty("font-size");
+  const w = el.clientWidth;
+  if (!w) return;
+  let sz = parseFloat(getComputedStyle(el).fontSize);
+  while ((el.scrollWidth > w + 1 || el.scrollHeight > el.clientHeight + 1) && sz > minPx) {
+    sz -= 1;
+    el.style.fontSize = sz + "px";
+  }
+}
+
+function fitAllText() {
+  const card = document.querySelector(".fut-card");
+  if (!card) return;
+  fitText(card.querySelector(".fut-name"), 10);
+  card.querySelectorAll(".fut-stat__value").forEach(v => fitText(v, 12));
+}
+
+/* Run after fonts load and on resize */
+if (document.fonts?.ready) document.fonts.ready.then(fitAllText);
+window.addEventListener("resize", fitAllText);
+requestAnimationFrame(() => requestAnimationFrame(fitAllText));
+
+/* ============================================================
+   EXPORT / SHARE
+   Clone → offscreen → fixed 900px → html2canvas → download/share
+   ============================================================ */
+async function exportCard() {
+  const toast = document.getElementById("toast");
+  const show = msg => { toast.textContent = msg; toast.classList.add("visible"); };
+  const hide = () => toast.classList.remove("visible");
+
+  show("Rendering…");
+
+  try {
+    // 1. Clone the live card
+    const original = document.querySelector(".fut-card");
+    const clone = original.cloneNode(true);
+    clone.classList.add("export-mode");
+
+    // 2. Place offscreen in an absolute container
+    const surface = document.createElement("div");
+    Object.assign(surface.style, {
+      position: "fixed",
+      top: "-9999px",
+      left: "0",
+      width: "900px",
+      zIndex: "-1",
+      pointerEvents: "none",
+      background: "transparent",
+    });
+    surface.appendChild(clone);
+    document.body.appendChild(surface);
+
+    // 3. Fit text in the export clone
+    fitText(clone.querySelector(".fut-name"), 14);
+    clone.querySelectorAll(".fut-stat__value").forEach(v => fitText(v, 18));
+
+    // 4. Wait for fonts + images
+    await document.fonts?.ready;
+    const imgs = [...clone.querySelectorAll("img")];
+    await Promise.all(imgs.map(img =>
+      img.complete ? Promise.resolve() : new Promise(r => { img.onload = r; img.onerror = r; })
+    ));
+
+    // Small extra settle time
+    await new Promise(r => setTimeout(r, 120));
+
+    // 5. Render with html2canvas
+    const canvas = await html2canvas(clone, {
+      backgroundColor: "#050302",
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      width: 900,
+      windowWidth: 900,
+    });
+
+    // 6. Clean up offscreen surface
+    surface.remove();
+
+    // 7. Download or share
+    const blob = await new Promise(r => canvas.toBlob(r, "image/png"));
+
+    if (navigator.canShare && navigator.canShare({ files: [new File([blob], "player-card.png", { type: "image/png" })] })) {
+      await navigator.share({
+        files: [new File([blob], "player-card.png", { type: "image/png" })],
+        title: `${PLAYER.name} — Mandarinas CF`,
+      });
+      show("Shared!");
+    } else {
+      // Fallback: download
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "player-card.png";
+      a.click();
+      URL.revokeObjectURL(a.href);
+      show("Saved!");
+    }
+  } catch (err) {
+    console.error("Export failed:", err);
+    show("Export failed");
+  }
+
+  setTimeout(hide, 2200);
+}
+
+document.getElementById("shareBtn").addEventListener("click", exportCard);
+</script>
+</body>
+</html>
