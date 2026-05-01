@@ -1,18 +1,558 @@
+/**
+ * player_badge.js — v2.1 (2026-04-30)
+ *
+ * Premium black-and-gold FUT-style player card.
+ * Self-contained: injects its own CSS, exposes the same public API
+ * as v1 so roster.js, player.js, and badge-preview.html work unchanged.
+ *
+ * PUBLIC API (all on window):
+ *   renderPlayerBadge(player, stats, options) → HTMLElement
+ *   mountPlayerBadge(target, player, stats, options) → HTMLElement
+ *   createPlayerBadgeMarkup(model) → string (raw HTML)
+ *   schedulePlayerBadgeFit(badge) → void
+ *   mcPlayerBadgeExample → { player, stats }
+ */
 (function () {
+  "use strict";
+
+  /* ------------------------------------------------------------------ */
+  /*  Constants                                                          */
+  /* ------------------------------------------------------------------ */
   const BALL_ART_PATH = "assets/images/player-badge/reference-ball-full.png";
+  const CREST_PATH = "assets/images/brand/mandarinas-crest-clean.png";
   let badgeSerial = 0;
+
   const scriptUrl =
     typeof document !== "undefined" && document.currentScript?.src
       ? new URL(document.currentScript.src, window.location.href)
       : null;
   const assetBaseUrl = scriptUrl ? new URL("../../../", scriptUrl) : null;
 
+  /* ================================================================== */
+  /*  CSS — injected once via <style id="mc-player-badge-css">           */
+  /*                                                                     */
+  /*  DESIGN RULES:                                                      */
+  /*  • Card does NOT try to fill 100svh.  It auto-sizes to content     */
+  /*    with a max-height cap so it never overflows the viewport.        */
+  /*  • Stat grid uses CSS Grid only.  No absolute / transform hacks.   */
+  /*  • Every dimension uses clamp() for fluid scaling.                  */
+  /*  • Zero-value stats stay visible but dimmed.                        */
+  /* ================================================================== */
+  const BADGE_CSS = /* css */ `
+/* ---- shell wrappers (roster / player page containers) ---- */
+.fut-card-shell,
+.badge-preview,
+.share-badge-container,
+.page-roster .player-badge-share-card {
+  width: 100%;
+  max-width: none;
+  padding-inline: clamp(4px, 1.5vw, 10px);
+  box-sizing: border-box;
+}
+
+.page-roster .player-badge-share-card {
+  margin: 0 auto;
+  display: grid;
+  gap: 0.5rem;
+  padding-block: 6px 4px;
+}
+
+.badge-preview,
+.page-roster .roster-player-badge {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.page-roster .player-badge-export-surface {
+  position: fixed;
+  top: -9999px;
+  left: 0;
+  width: 900px;
+  padding: 0;
+  display: grid;
+  justify-items: center;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ==============================================================
+   THE CARD
+   Height strategy: auto height, capped by max-height so it
+   never scrolls. The grid rows are: header | top-row | hero
+   (flexible) | stats.  The hero section shrinks to fit.
+   ============================================================== */
+.fut-card {
+  --cw: min(96vw, 460px);
+  --pd: clamp(6px, 1.2vh, 14px);
+  --gp: clamp(3px, 0.6vh, 8px);
+
+  /* typography tokens */
+  --fs-title:    clamp(20px, 4vh, 38px);
+  --fs-subtitle: clamp(6px, 1vh, 11px);
+  --fs-name:     clamp(15px, 2.4vh, 28px);
+  --fs-stat-val: clamp(15px, 2.4vh, 26px);
+  --fs-stat-lbl: clamp(6px, 0.9vh, 9px);
+  --fs-mini-val: clamp(18px, 3vh, 28px);
+  --fs-mini-lbl: clamp(7px, 0.9vh, 10px);
+  --fs-mini-met: clamp(6px, 0.8vh, 9px);
+
+  /* component tokens */
+  --sz-ball:   clamp(90px, 16vh, 190px);
+  --sz-crest:  clamp(60px, 15vw, 100px);
+  --sz-trophy: clamp(34px, 5.5vh, 60px);
+  --sz-flag:   clamp(28px, 4.5vh, 42px);
+  --sz-pill-w: clamp(58px, 15vw, 82px);
+  --sz-stat-h: clamp(42px, 6.5vh, 72px);
+  --sz-mini-h: clamp(54px, 8vh, 86px);
+
+  width: min(100%, var(--cw));
+  max-width: 100%;
+  max-height: calc(100svh - 60px - var(--app-tabbar-height, 0px));
+  margin-inline: auto;
+  padding: var(--pd);
+  overflow: hidden;
+  box-sizing: border-box;
+
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: var(--gp);
+
+  border-radius: clamp(18px, 2.5vw, 28px);
+  border: 2px solid #b58a2b;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(220,170,60,.22), transparent 35%),
+    linear-gradient(180deg, #1a1207 0%, #090604 100%);
+  color: #fff;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,236,183,.08),
+    inset 0 14px 20px rgba(255,219,120,.03),
+    0 24px 56px rgba(0,0,0,.38);
+}
+
+/* ---- header ---- */
+.fut-card-header {
+  display: grid;
+  gap: clamp(1px, 0.3vh, 3px);
+  text-align: center;
+}
+
+.fut-card-title {
+  color: #fff0bf;
+  font-family: "Anton", sans-serif;
+  font-size: var(--fs-title);
+  letter-spacing: .08em;
+  line-height: .92;
+  text-transform: uppercase;
+}
+
+.fut-card-subtitle {
+  color: #d3a83b;
+  font-family: "Montserrat", sans-serif;
+  font-size: var(--fs-subtitle);
+  font-weight: 800;
+  letter-spacing: .28em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+/* ---- top row: OVR | crest | rank ---- */
+.fut-top-row {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) var(--sz-crest) minmax(0,1fr);
+  align-items: center;
+  gap: clamp(4px, 0.8vh, 10px);
+}
+
+.fut-mini-card {
+  min-width: 0;
+  min-height: var(--sz-mini-h);
+  padding: clamp(4px, 0.7vh, 8px);
+  box-sizing: border-box;
+  border-radius: clamp(12px, 1.8vw, 18px);
+  border: 1px solid rgba(202,159,58,.48);
+  background: linear-gradient(180deg, #1a1208, #080503);
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: clamp(1px, 0.2vh, 3px);
+  text-align: center;
+}
+
+.fut-mini-label {
+  color: #d3a83b;
+  font-family: "Montserrat", sans-serif;
+  font-size: var(--fs-mini-lbl);
+  font-weight: 800;
+  letter-spacing: .2em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.fut-mini-value {
+  color: #fff8e8;
+  font-family: "Cinzel", serif;
+  font-size: var(--fs-mini-val);
+  font-weight: 900;
+  line-height: .95;
+}
+
+.fut-mini-meta {
+  color: rgba(255,238,195,.84);
+  font-family: "Montserrat", sans-serif;
+  font-size: var(--fs-mini-met);
+  font-weight: 700;
+  letter-spacing: .10em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.fut-crest-wrap { display: grid; place-items: center; min-width: 0; }
+.fut-crest { width: 100%; max-width: var(--sz-crest); height: auto; display: block; }
+
+/* ---- hero (trophy → ball → pills → name) ---- */
+.fut-hero {
+  min-height: 0;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: clamp(3px, 0.5vh, 6px);
+  overflow: hidden;
+}
+
+.fut-trophy-wrap {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+}
+
+.fut-trophy {
+  width: var(--sz-trophy);
+  height: var(--sz-trophy);
+  display: block;
+}
+
+.fut-trophy-number {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 46px;
+  font-weight: 900;
+  fill: #140b02;
+  stroke: #fff2a8;
+  stroke-width: .7px;
+  paint-order: stroke fill;
+}
+
+.fut-trophy-label {
+  color: #d6a938;
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(5px, 0.7vh, 8px);
+  font-weight: 900;
+  letter-spacing: .16em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.fut-ball-stage {
+  width: min(100%, var(--sz-ball));
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  border: 1px solid rgba(196,150,47,.18);
+  background: radial-gradient(circle at 35% 26%, rgba(255,223,139,.12), transparent 34%), #0e0906;
+}
+
+.fut-ball-image, .fut-hero-overlay { grid-area: 1/1; }
+
+.fut-ball-image {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: 50% 46%;
+  transform: scale(3.05); transform-origin: 50% 46%;
+  filter: brightness(.78) saturate(.8) contrast(1.08);
+  z-index: 0;
+}
+
+.fut-hero-overlay {
+  width: 100%; height: 100%;
+  min-width: 0; min-height: 0;
+  box-sizing: border-box;
+  padding: clamp(10px, 1.8vh, 18px) clamp(10px, 2.5vw, 16px);
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: clamp(4px, 0.6vh, 8px);
+  z-index: 1;
+}
+
+.fut-flag-wrap { display: grid; place-items: center; }
+
+.fut-player-flag,
+.fut-player-flag-image,
+.fut-player-name {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+.fut-player-flag {
+  width: var(--sz-flag); height: var(--sz-flag);
+  display: inline-grid; place-items: center;
+  border-radius: 999px; overflow: hidden;
+  border: 1px solid rgba(214,169,56,.76);
+  background: #110b05;
+}
+
+.fut-player-flag-image { width: 100%; height: 100%; display: block; object-fit: cover; }
+
+.fut-player-flag-fallback {
+  color: #fff0c7;
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(8px, 1.2vh, 12px);
+  font-weight: 800;
+  letter-spacing: .06em;
+}
+
+.fut-position-pills {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: clamp(4px, 0.5vh, 6px);
+}
+
+.fut-position-pill {
+  width: var(--sz-pill-w);
+  padding: clamp(3px, 0.4vh, 5px) 0;
+  border-radius: 999px;
+  border: 1px solid rgba(212,175,55,.46);
+  background: linear-gradient(180deg, rgba(26,17,10,.98), rgba(10,7,5,.98));
+  color: #f7ebc8;
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(8px, 0.95vh, 11px);
+  font-weight: 800;
+  letter-spacing: .10em;
+  line-height: 1;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.fut-player-name {
+  display: block;
+  max-inline-size: min(100%, 14ch);
+  min-width: 0;
+  color: #fff0c7;
+  font-family: "Cinzel", serif;
+  font-size: var(--fs-name);
+  font-weight: 900;
+  line-height: .94;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  text-align: center;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  max-height: 2em;
+  overflow: hidden;
+}
+
+/* ==============================================================
+   STATS GRID — CSS Grid only.  2 columns. Direct children.
+   FORBIDDEN: position:absolute, transform:translate, neg margins.
+   ============================================================== */
+.fut-stats-grid {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: var(--sz-stat-h);
+  gap: var(--gp);
+  align-content: start;
+  box-sizing: border-box;
+}
+
+.fut-stat-card {
+  width: 100%;
+  height: var(--sz-stat-h);
+  min-width: 0; min-height: 0;
+  box-sizing: border-box;
+  padding: clamp(3px, 0.5vh, 6px) clamp(4px, 0.8vw, 8px);
+  border-radius: clamp(10px, 1.5vw, 16px);
+  border: 1px solid rgba(202,159,58,.55);
+  background: linear-gradient(180deg, #1a1208, #080503);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1px, 0.15vh, 2px);
+  text-align: center;
+  position: static !important;
+  inset: auto !important;
+  margin: 0 !important;
+  transform: none !important;
+}
+
+.fut-stat-card.is-zero {
+  opacity: .42;
+  filter: grayscale(.4);
+}
+
+.fut-stat-icon {
+  width: clamp(10px, 1.4vh, 14px);
+  height: clamp(10px, 1.4vh, 14px);
+  color: #d7af4b;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.fut-stat-icon svg {
+  width: 100%; height: 100%;
+  stroke: currentColor;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.fut-stat-label {
+  width: 100%; min-width: 0;
+  color: #d3a83b;
+  font-family: "Montserrat", sans-serif;
+  font-size: var(--fs-stat-lbl);
+  font-weight: 800;
+  letter-spacing: .12em;
+  line-height: 1;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fut-stat-value {
+  width: 100%; max-width: 100%; min-width: 0;
+  color: #fff7e6;
+  font-family: "Cinzel", serif;
+  font-size: var(--fs-stat-val);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -.02em;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+.fut-stat-value.record,
+.fut-stat-value--record {
+  font-size: clamp(12px, 2vh, 20px);
+  letter-spacing: -.04em;
+}
+
+.fut-stat-value--compact {
+  font-size: clamp(14px, 2.2vh, 22px);
+}
+
+.fut-stat-value--text {
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(9px, 1.4vh, 14px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: .04em;
+  white-space: normal;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.fut-stat-value--long:not(.fut-stat-value--record):not(.fut-stat-value--text) {
+  font-size: clamp(13px, 2vh, 22px);
+}
+
+/* ============================================================
+   EXPORT MODE — fixed large dimensions for html2canvas
+   ============================================================ */
+.fut-card.export-mode {
+  --pd: 28px;
+  --gp: 16px;
+  --fs-title: 60px;
+  --fs-subtitle: 16px;
+  --fs-name: 42px;
+  --fs-stat-val: 40px;
+  --fs-stat-lbl: 13px;
+  --fs-mini-val: 36px;
+  --fs-mini-lbl: 12px;
+  --fs-mini-met: 10px;
+  --sz-ball: 280px;
+  --sz-crest: 160px;
+  --sz-trophy: 88px;
+  --sz-flag: 60px;
+  --sz-pill-w: 120px;
+  --sz-stat-h: 110px;
+  --sz-mini-h: 130px;
+
+  width: 900px !important;
+  max-width: 900px !important;
+  max-height: none !important;
+  overflow: visible !important;
+  margin: 0 !important;
+  border-radius: 42px;
+}
+
+.fut-card.export-mode .fut-top-row {
+  grid-template-columns: 1fr 160px 1fr;
+  gap: 20px;
+}
+
+.fut-card.export-mode .fut-mini-card {
+  min-height: 130px;
+  border-radius: 24px;
+}
+
+.fut-card.export-mode .fut-position-pill { font-size: 16px; }
+
+.fut-card.export-mode .fut-stats-grid {
+  gap: 16px !important;
+  grid-auto-rows: 110px;
+}
+
+.fut-card.export-mode .fut-stat-card {
+  height: 110px !important;
+  min-height: 110px !important;
+  border-radius: 22px;
+  padding: 10px;
+}
+
+.fut-card.export-mode .fut-stat-value.record,
+.fut-card.export-mode .fut-stat-value--record {
+  font-size: 34px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fut-card { animation: none !important; transition: none !important; }
+}
+`;
+
+  function injectCSS() {
+    if (typeof document === "undefined") return;
+    if (document.getElementById("mc-player-badge-css")) return;
+    const style = document.createElement("style");
+    style.id = "mc-player-badge-css";
+    style.textContent = BADGE_CSS;
+    (document.head || document.documentElement).appendChild(style);
+  }
+
+  injectCSS();
+
+  /* ------------------------------------------------------------------ */
+  /*  Utilities                                                          */
+  /* ------------------------------------------------------------------ */
   function nextFrame(callback) {
     if (typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
       callback();
       return;
     }
-
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(callback);
     });
@@ -28,10 +568,7 @@
   }
 
   function normalizeText(value, fallback) {
-    if (value == null) {
-      return fallback;
-    }
-
+    if (value == null) return fallback;
     const text = String(value).trim();
     return text || fallback;
   }
@@ -42,18 +579,9 @@
   }
 
   function assetUrl(path) {
-    if (!path) {
-      return "";
-    }
-
-    if (assetBaseUrl) {
-      return new URL(path.replace(/^\/+/, ""), assetBaseUrl).href;
-    }
-
-    if (typeof window !== "undefined") {
-      return new URL(path.replace(/^\/+/, ""), window.location.href).href;
-    }
-
+    if (!path) return "";
+    if (assetBaseUrl) return new URL(path.replace(/^\/+/, ""), assetBaseUrl).href;
+    if (typeof window !== "undefined") return new URL(path.replace(/^\/+/, ""), window.location.href).href;
     return path;
   }
 
@@ -72,21 +600,18 @@
     return Number.isFinite(number) ? String(Math.round(number)) : "0";
   }
 
+  /* ------------------------------------------------------------------ */
+  /*  Flag resolution                                                    */
+  /* ------------------------------------------------------------------ */
   function resolveFlagCode(player) {
     const directCode = normalizeText(player?.flag_code || player?.flagCode, "").toUpperCase();
-
-    if (/^[A-Z]{2}$/.test(directCode)) {
-      return directCode;
-    }
+    if (/^[A-Z]{2}$/.test(directCode)) return directCode;
 
     const globalCode = window.MandarinasLogic?.nationalityCode?.(
       player?.nationality || player?.country || ""
     );
     const normalizedGlobalCode = normalizeText(globalCode, "").toUpperCase();
-
-    if (/^[A-Z]{2}$/.test(normalizedGlobalCode)) {
-      return normalizedGlobalCode;
-    }
+    if (/^[A-Z]{2}$/.test(normalizedGlobalCode)) return normalizedGlobalCode;
 
     const inferred = normalizeText(player?.nationality || player?.country, "").toUpperCase();
     return /^[A-Z]{2}$/.test(inferred) ? inferred : "";
@@ -99,47 +624,44 @@
 
   function fallbackFlagCode(code, label) {
     const normalizedCode = normalizeText(code, "").toUpperCase();
-
-    if (/^[A-Z]{2}$/.test(normalizedCode)) {
-      return normalizedCode;
-    }
-
-    return normalizeText(label, "")
-      .replace(/[^A-Za-z]/g, "")
-      .slice(0, 2)
-      .toUpperCase();
+    if (/^[A-Z]{2}$/.test(normalizedCode)) return normalizedCode;
+    return normalizeText(label, "").replace(/[^A-Za-z]/g, "").slice(0, 2).toUpperCase();
   }
 
   function badgeFlagMarkup(code, label) {
     const normalizedCode = normalizeText(code, "").toUpperCase();
     const fallback = fallbackFlagCode(normalizedCode, label);
-
-    if (!normalizedCode && !fallback) {
-      return "";
-    }
-
+    if (!normalizedCode && !fallback) return "";
     const src = flagAssetPath(normalizedCode);
 
     return `
-      <span class="flag-icon flag-icon--badge flag-icon--glossy${normalizedCode ? "" : " flag-icon--fallback"}" data-flag-code="${escapeHtml((normalizedCode || fallback).toLowerCase())}" aria-hidden="true" title="${escapeHtml(label || fallback)}">
+      <span class="fut-player-flag" data-flag-code="${escapeHtml((normalizedCode || fallback).toLowerCase())}" title="${escapeHtml(label || fallback)}" aria-hidden="true">
         ${
           src
-            ? `<img class="flag-icon-image" src="${escapeHtml(src)}" alt="" loading="eager" decoding="async" onerror="this.hidden=true; this.parentElement.classList.add('flag-icon--fallback');" />`
-            : ""
+            ? `
+              <span class="fut-player-flag-fallback" hidden>${escapeHtml(fallback || "??")}</span>
+              <img
+                class="fut-player-flag-image"
+                src="${escapeHtml(src)}"
+                alt=""
+                loading="eager"
+                decoding="async"
+                onerror="this.hidden=true; if (this.previousElementSibling) this.previousElementSibling.hidden=false;"
+              />
+            `
+            : `<span class="fut-player-flag-fallback">${escapeHtml(fallback || "??")}</span>`
         }
-        <span class="flag-icon-fallback">${escapeHtml(fallback || "??")}</span>
       </span>
     `;
   }
 
+  /* ------------------------------------------------------------------ */
+  /*  Position helpers                                                   */
+  /* ------------------------------------------------------------------ */
   function positionList(player) {
     if (Array.isArray(player?.positions) && player.positions.length) {
-      return player.positions
-        .slice(0, 4)
-        .map((value) => normalizeText(value, "").toUpperCase())
-        .filter(Boolean);
+      return player.positions.slice(0, 4).map((v) => normalizeText(v, "").toUpperCase()).filter(Boolean);
     }
-
     const fallback = normalizeText(player?.position_label || player?.primary_position, "").toUpperCase();
     return fallback ? [fallback] : [];
   }
@@ -152,15 +674,14 @@
   function positionPillsMarkup(player) {
     const positions = positionList(player);
     const values = positions.length ? positions : ["N/A"];
-
     return values
-      .map(
-        (value) =>
-          `<span class="badge-position-pill" title="${escapeHtml(value)}">${escapeHtml(value)}</span>`
-      )
+      .map((v) => `<span class="fut-position-pill" title="${escapeHtml(v)}">${escapeHtml(v)}</span>`)
       .join("");
   }
 
+  /* ------------------------------------------------------------------ */
+  /*  Trophy SVG                                                         */
+  /* ------------------------------------------------------------------ */
   function trophyMarkup(value, idPrefix) {
     const safeId = normalizeText(idPrefix, `badge-trophy-${++badgeSerial}`).replace(/[^a-zA-Z0-9_-]/g, "");
     const cupGoldId = `${safeId}-cupGold`;
@@ -170,8 +691,8 @@
     const trophyValue = formatWholeNumber(Math.max(0, normalizeNumber(value, 0)));
 
     return `
-      <div class="trophy-wrap" aria-label="Seasons won">
-        <svg class="elite-trophy" viewBox="0 0 180 180" role="img" aria-hidden="true">
+      <div class="fut-trophy-wrap" aria-label="Seasons won">
+        <svg class="fut-trophy" viewBox="0 0 180 180" role="img" aria-hidden="true">
           <defs>
             <linearGradient id="${cupGoldId}" x1="35" y1="20" x2="145" y2="165">
               <stop offset="0%" stop-color="#fff3a6"></stop>
@@ -180,57 +701,41 @@
               <stop offset="72%" stop-color="#f3c64a"></stop>
               <stop offset="100%" stop-color="#7a470d"></stop>
             </linearGradient>
-
             <linearGradient id="${darkGoldId}" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stop-color="#7d4a10"></stop>
               <stop offset="50%" stop-color="#f2bf3c"></stop>
               <stop offset="100%" stop-color="#5b3308"></stop>
             </linearGradient>
-
             <radialGradient id="${cupGlowId}" cx="50%" cy="25%" r="65%">
               <stop offset="0%" stop-color="#fff8bf" stop-opacity=".95"></stop>
               <stop offset="45%" stop-color="#d99b25" stop-opacity=".45"></stop>
               <stop offset="100%" stop-color="#000000" stop-opacity="0"></stop>
             </radialGradient>
-
             <filter id="${goldShadowId}" x="-30%" y="-30%" width="160%" height="160%">
               <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#000" flood-opacity=".55"></feDropShadow>
               <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#d9a431" flood-opacity=".45"></feDropShadow>
             </filter>
           </defs>
-
           <ellipse cx="90" cy="154" rx="44" ry="10" fill="#090604" opacity=".65"></ellipse>
-
           <g filter="url(#${goldShadowId})">
-            <path class="trophy-handle" d="M48 54H25c-5 0-8 4-8 9 0 25 14 43 39 48l4-15c-16-4-26-16-27-28h18z"></path>
-            <path class="trophy-handle" d="M132 54h23c5 0 8 4 8 9 0 25-14 43-39 48l-4-15c16-4 26-16 27-28h-18z"></path>
-
-            <path
-              class="trophy-cup"
-              d="M48 34h84c-2 47-15 78-42 78S50 81 48 34z"
-              fill="url(#${cupGoldId})"
-              stroke="#fff0a3"
-              stroke-width="2"
-            ></path>
-
-            <path
-              d="M58 43h64c-3 31-11 52-32 52S61 74 58 43z"
-              fill="url(#${cupGlowId})"
-              opacity=".55"
-            ></path>
-
+            <path d="M48 54H25c-5 0-8 4-8 9 0 25 14 43 39 48l4-15c-16-4-26-16-27-28h18z" fill="url(#${cupGoldId})" stroke="#eec24e" stroke-width="1"></path>
+            <path d="M132 54h23c5 0 8 4 8 9 0 25-14 43-39 48l-4-15c16-4 26-16 27-28h-18z" fill="url(#${cupGoldId})" stroke="#eec24e" stroke-width="1"></path>
+            <path d="M48 34h84c-2 47-15 78-42 78S50 81 48 34z" fill="url(#${cupGoldId})" stroke="#fff0a3" stroke-width="2"></path>
+            <path d="M58 43h64c-3 31-11 52-32 52S61 74 58 43z" fill="url(#${cupGlowId})" opacity=".55"></path>
             <path d="M78 111h24v25H78z" fill="url(#${darkGoldId})" stroke="#eec24e" stroke-width="1.5"></path>
             <path d="M59 136h62l8 19H51z" fill="url(#${cupGoldId})" stroke="#eec24e" stroke-width="1.5"></path>
             <path d="M48 155h84v11H48z" fill="#2b1705" stroke="#b98b2b" stroke-width="1.5"></path>
           </g>
-
-          <text class="trophy-number" x="90" y="78" text-anchor="middle" dominant-baseline="middle">${escapeHtml(trophyValue)}</text>
+          <text class="fut-trophy-number" x="90" y="78" text-anchor="middle" dominant-baseline="middle">${escapeHtml(trophyValue)}</text>
         </svg>
-        <div class="trophy-label">Seasons Won</div>
+        <div class="fut-trophy-label">Seasons Won</div>
       </div>
     `;
   }
 
+  /* ------------------------------------------------------------------ */
+  /*  Stat icons (stroke-based, 20×20 viewBox)                          */
+  /* ------------------------------------------------------------------ */
   function statIconMarkup(kind) {
     const icons = {
       season: `
@@ -268,21 +773,6 @@
         <path d="M11.2 9.35L12.8 11.95L11.85 14.15" />
         <path d="M8.15 14.15H11.85" />
       `,
-      wins: `
-        <path d="M6 4.35H14V7.45C14 10.05 12.2 12.2 10 12.2C7.8 12.2 6 10.05 6 7.45Z" />
-        <path d="M6 5.45H4.85C4.16 5.45 3.6 6.01 3.6 6.7C3.6 8.17 4.78 9.35 6.25 9.35H6" />
-        <path d="M14 5.45H15.15C15.84 5.45 16.4 6.01 16.4 6.7C16.4 8.17 15.22 9.35 13.75 9.35H14" />
-        <path d="M10 12.2V15.2" />
-        <path d="M7.75 17.1H12.25" />
-      `,
-      draws: `
-        <path d="M4.4 7H15.6" />
-        <path d="M4.4 12.85H15.6" />
-      `,
-      losses: `
-        <path d="M6.2 6.2L13.8 13.8" />
-        <path d="M13.8 6.2L6.2 13.8" />
-      `,
       goal_keeps: `
         <path d="M7.1 4.95V9.65" />
         <path d="M9.45 4.2V8.8" />
@@ -297,17 +787,34 @@
     };
 
     const icon = icons[kind];
-    if (!icon) {
-      return "";
-    }
+    if (!icon) return "";
 
     return `
-      <span class="badge-stat-icon" aria-hidden="true">
+      <span class="fut-stat-icon" aria-hidden="true">
         <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
           ${icon}
         </svg>
       </span>
     `;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Stat-card data normalization                                       */
+  /* ------------------------------------------------------------------ */
+  function normalizeCardKey(value) {
+    return normalizeText(value, "stat").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  }
+
+  function recordValue(stats) {
+    return `${formatWholeNumber(stats?.wins ?? 0)}-${formatWholeNumber(stats?.draws ?? 0)}-${formatWholeNumber(stats?.losses ?? 0)}`;
+  }
+
+  function hasStatSource(source, keys) {
+    return keys.some((key) => (
+      Object.prototype.hasOwnProperty.call(source, key) &&
+      source[key] !== undefined &&
+      source[key] !== null
+    ));
   }
 
   function normalizeBadgeCard(card) {
@@ -317,31 +824,31 @@
         : typeof card?.value === "string"
           ? normalizeText(card.value, "0")
           : formatWholeNumber(card?.value);
-    const normalizedKey = normalizeText(card?.key, "stat")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "");
+    const normalizedKey = normalizeCardKey(card?.key);
     const normalizedValueKind = normalizeText(card?.valueKind, "numeric")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "");
+      .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    const numericValue = Number(String(formattedValue).replace(/,/g, ""));
+    const zeroLikeValue =
+      normalizedKey !== "season" &&
+      normalizedKey !== "record" &&
+      Number.isFinite(numericValue) &&
+      numericValue === 0;
+
     const valueClassName = [
-      "badge-stat-value",
-      "stat-value",
-      `badge-stat-value--${normalizedKey || "stat"}`,
-      `badge-stat-value--${normalizedValueKind || "numeric"}`,
-      formattedValue.length >= 8 ? "badge-stat-value--long" : "",
-    ]
-      .filter(Boolean)
-      .join(" ");
+      "fut-stat-value",
+      normalizedKey === "record" ? "record" : "",
+      normalizedKey === "season" ? "season" : "",
+      `fut-stat-value--${normalizedKey || "stat"}`,
+      `fut-stat-value--${normalizedValueKind || "numeric"}`,
+      formattedValue.length >= 8 ? "fut-stat-value--long" : "",
+    ].filter(Boolean).join(" ");
+
     const cardClassName = [
-      "badge-stat-card",
-      "stat-card",
-      `badge-stat-card--${normalizedKey || "stat"}`,
-      `badge-stat-card--${normalizedValueKind || "numeric"}`,
-    ]
-      .filter(Boolean)
-      .join(" ");
+      "fut-stat-card",
+      zeroLikeValue ? "is-zero" : "",
+      `fut-stat-card--${normalizedKey || "stat"}`,
+      `fut-stat-card--${normalizedValueKind || "numeric"}`,
+    ].filter(Boolean).join(" ");
 
     return {
       key: normalizeText(card?.key, "stat"),
@@ -354,168 +861,157 @@
     };
   }
 
-  function isZeroLikeBadgeValue(value) {
-    if (typeof value === "number") {
-      return Number.isFinite(value) && value === 0;
-    }
-
-    const normalized = normalizeText(value, "");
-    if (!normalized) {
-      return true;
-    }
-
-    const parsed = Number(normalized.replace(/,/g, ""));
-    return Number.isFinite(parsed) && parsed === 0;
-  }
-
-  function shouldRenderBadgeCard(card) {
-    const key = normalizeText(card?.key, "stat")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-
-    if (key === "season" || key === "record") {
-      return true;
-    }
-
-    if (Object.prototype.hasOwnProperty.call(card || {}, "value")) {
-      return !isZeroLikeBadgeValue(card.value);
-    }
-
-    return !isZeroLikeBadgeValue(card?.formattedValue);
-  }
-
   function buildBadgeStatCards(stats, options) {
     const source = stats && typeof stats === "object" ? stats : {};
-    const summaryCards = Array.isArray(options?.summaryCards)
-      ? options.summaryCards.filter(Boolean).filter(shouldRenderBadgeCard).map(normalizeBadgeCard)
-      : [];
+    const summaryCardMap = new Map(
+      (Array.isArray(options?.summaryCards) ? options.summaryCards : [])
+        .filter(Boolean)
+        .map((card) => [normalizeCardKey(card?.key), card])
+    );
+    const seasonCard = summaryCardMap.get("season");
+    const recordCard = summaryCardMap.get("record");
+    const ppgCard = summaryCardMap.get("ppg");
+    const appsCard = summaryCardMap.get("apps");
+    const cards = [];
+    const includeSummaryCards = summaryCardMap.size > 0;
+    const hasSeasonData = includeSummaryCards || hasStatSource(source, ["seasons_participated"]);
+    const hasRecordData = includeSummaryCards || hasStatSource(source, ["wins", "draws", "losses"]);
+    const hasPpgData = includeSummaryCards || hasStatSource(source, ["ppg", "points_per_game"]);
+    const hasAppsData = includeSummaryCards || hasStatSource(source, ["apps", "attendance", "days_attended"]);
+    const hasPointsData = hasStatSource(source, ["points", "total_points"]);
+    const hasGoalsData = hasStatSource(source, ["goals"]);
+    const hasGoalKeepsData = hasStatSource(source, ["goal_keeps", "goalKeeps", "goal_keep_points_earned"]);
+    const hasCleanSheetsData = hasStatSource(source, ["clean_sheets", "cleanSheets"]);
 
-    if (summaryCards.length) {
-      return [
-        ...summaryCards,
-        normalizeBadgeCard({
-          key: "points",
-          label: "Points",
-          icon: "points",
-          value: source.points ?? source.total_points ?? 0,
-        }),
-        normalizeBadgeCard({
-          key: "goals",
-          label: "Goals",
-          icon: "goals",
-          value: source.goals ?? 0,
-        }),
-        normalizeBadgeCard({
-          key: "goal-keeps",
-          label: "Goal Keeps",
-          icon: "goal_keeps",
-          value: source.goal_keeps ?? source.goalKeeps ?? source.goal_keep_points_earned ?? 0,
-        }),
-        normalizeBadgeCard({
-          key: "clean-sheets",
-          label: "Clean Sheets",
-          icon: "clean_sheets",
-          value: source.clean_sheets ?? source.cleanSheets ?? 0,
-        }),
-      ].filter((card) => shouldRenderBadgeCard(card));
+    if (hasSeasonData) {
+      cards.push(normalizeBadgeCard({
+        key: "season",
+        label: seasonCard?.label || "Seasons",
+        icon: "season",
+        value: seasonCard && Object.prototype.hasOwnProperty.call(seasonCard, "value")
+          ? seasonCard.value : source.seasons_participated ?? 0,
+        formattedValue: seasonCard && Object.prototype.hasOwnProperty.call(seasonCard, "formattedValue")
+          ? seasonCard.formattedValue : formatWholeNumber(source.seasons_participated ?? 0),
+        valueKind: seasonCard?.valueKind || "text",
+      }));
     }
 
-    const hasFullStandings =
-      source.wins != null || source.draws != null || source.losses != null || source.points != null;
-    const cards = hasFullStandings
-      ? [
-          { key: "points", label: "Points", icon: "points", value: source.points ?? source.total_points ?? 0 },
-          { key: "apps", label: "Apps", icon: "apps", value: source.apps ?? source.attendance ?? source.days_attended ?? 0 },
-          { key: "goals", label: "Goals", icon: "goals", value: source.goals ?? 0 },
-          { key: "wins", label: "Wins", icon: "wins", value: source.wins ?? 0 },
-          { key: "draws", label: "Draws", icon: "draws", value: source.draws ?? 0 },
-          { key: "losses", label: "Losses", icon: "losses", value: source.losses ?? 0 },
-          {
-            key: "goal-keeps",
-            label: "Goal Keeps",
-            icon: "goal_keeps",
-            value: source.goal_keeps ?? source.goalKeeps ?? source.goal_keep_points_earned ?? 0,
-          },
-          {
-            key: "clean-sheets",
-            label: "Clean Sheets",
-            icon: "clean_sheets",
-            value: source.clean_sheets ?? source.cleanSheets ?? 0,
-          },
-        ]
-      : [
-          { key: "apps", label: "Apps", icon: "apps", value: source.apps ?? source.attendance ?? source.days_attended ?? 0 },
-          { key: "goals", label: "Goals", icon: "goals", value: source.goals ?? 0 },
-          {
-            key: "goal-keeps",
-            label: "Goal Keeps",
-            icon: "goal_keeps",
-            value: source.goal_keeps ?? source.goalKeeps ?? source.goal_keep_points_earned ?? 0,
-          },
-          {
-            key: "clean-sheets",
-            label: "Clean Sheets",
-            icon: "clean_sheets",
-            value: source.clean_sheets ?? source.cleanSheets ?? 0,
-          },
-        ];
+    if (hasRecordData) {
+      cards.push(normalizeBadgeCard({
+        key: "record",
+        label: recordCard?.label || "Record",
+        icon: "record",
+        value: recordCard && Object.prototype.hasOwnProperty.call(recordCard, "value")
+          ? recordCard.value : recordValue(source),
+        formattedValue: recordCard && Object.prototype.hasOwnProperty.call(recordCard, "formattedValue")
+          ? recordCard.formattedValue : recordValue(source),
+        valueKind: recordCard?.valueKind || "compact",
+      }));
+    }
 
-    return cards.filter(shouldRenderBadgeCard).map(normalizeBadgeCard);
+    if (hasPpgData) {
+      cards.push(normalizeBadgeCard({
+        key: "ppg",
+        label: ppgCard?.label || "PPG",
+        icon: "ppg",
+        value: ppgCard && Object.prototype.hasOwnProperty.call(ppgCard, "value")
+          ? ppgCard.value : formatPpg(source.ppg ?? source.points_per_game),
+        formattedValue: ppgCard && Object.prototype.hasOwnProperty.call(ppgCard, "formattedValue")
+          ? ppgCard.formattedValue : formatPpg(source.ppg ?? source.points_per_game),
+        valueKind: ppgCard?.valueKind || "compact",
+      }));
+    }
+
+    if (hasAppsData) {
+      cards.push(normalizeBadgeCard({
+        key: "apps",
+        label: appsCard?.label || "Apps",
+        icon: "apps",
+        value: appsCard && Object.prototype.hasOwnProperty.call(appsCard, "value")
+          ? appsCard.value : source.apps ?? source.attendance ?? source.days_attended ?? 0,
+        formattedValue: appsCard && Object.prototype.hasOwnProperty.call(appsCard, "formattedValue")
+          ? appsCard.formattedValue
+          : formatWholeNumber(source.apps ?? source.attendance ?? source.days_attended ?? 0),
+      }));
+    }
+
+    if (hasPointsData) {
+      cards.push(normalizeBadgeCard({
+        key: "points",
+        label: "Points",
+        icon: "points",
+        value: source.points ?? source.total_points ?? 0,
+      }));
+    }
+
+    if (hasGoalsData) {
+      cards.push(normalizeBadgeCard({
+        key: "goals",
+        label: "Goals",
+        icon: "goals",
+        value: source.goals ?? 0,
+      }));
+    }
+
+    if (hasGoalKeepsData) {
+      cards.push(normalizeBadgeCard({
+        key: "goal-keeps",
+        label: "Goal Keeps",
+        icon: "goal_keeps",
+        value: source.goal_keeps ?? source.goalKeeps ?? source.goal_keep_points_earned ?? 0,
+      }));
+    }
+
+    if (hasCleanSheetsData) {
+      cards.push(normalizeBadgeCard({
+        key: "clean-sheets",
+        label: "Clean Sheets",
+        icon: "clean_sheets",
+        value: source.clean_sheets ?? source.cleanSheets ?? 0,
+      }));
+    }
+
+    return cards;
   }
 
+  /* ------------------------------------------------------------------ */
+  /*  Text fitting (shrink long names / values to fit container)         */
+  /* ------------------------------------------------------------------ */
   function fitTextBlock(node, minimumSize) {
-    if (!node || typeof window === "undefined" || !node.isConnected) {
-      return;
-    }
-
+    if (!node || typeof window === "undefined" || !node.isConnected) return;
     node.style.removeProperty("font-size");
-
     const availableWidth = node.clientWidth;
-    if (!availableWidth) {
-      return;
-    }
-
+    if (!availableWidth) return;
     let fontSize = Number.parseFloat(window.getComputedStyle(node).fontSize);
-    if (!Number.isFinite(fontSize)) {
-      return;
-    }
+    if (!Number.isFinite(fontSize)) return;
 
     while (
       (node.scrollWidth > availableWidth + 1 || node.scrollHeight > node.clientHeight + 1) &&
       fontSize > minimumSize
     ) {
-      fontSize -= 1;
+      fontSize -= 0.5;
       node.style.fontSize = `${fontSize}px`;
     }
   }
 
   function fitBadgeTypography(badge) {
-    if (!badge || !badge.isConnected) {
-      return;
-    }
-
-    fitTextBlock(badge.querySelector(".badge-ball-name"), 10);
-    badge.querySelectorAll(".badge-stat-value").forEach((node) => {
-      let minimumSize = 20;
-
-      if (node.classList.contains("badge-stat-value--record")) {
-        minimumSize = 15;
-      } else if (node.classList.contains("badge-stat-value--text")) {
-        minimumSize = 10;
-      } else if (node.classList.contains("badge-stat-value--compact")) {
-        minimumSize = 16;
+    if (!badge || !badge.isConnected) return;
+    fitTextBlock(badge.querySelector(".fut-player-name"), 9);
+    badge.querySelectorAll(".fut-stat-value").forEach((node) => {
+      let minimumSize = 10;
+      if (node.classList.contains("record") || node.classList.contains("fut-stat-value--compact")) {
+        minimumSize = 9;
+      } else if (node.classList.contains("fut-stat-value--text")) {
+        minimumSize = 8;
+      } else if (node.classList.contains("fut-stat-value--long")) {
+        minimumSize = 9;
       }
-
       fitTextBlock(node, minimumSize);
     });
   }
 
   function scheduleBadgeFit(badge) {
-    if (!badge || badge.dataset.badgeFitScheduled === "true") {
-      return;
-    }
-
+    if (!badge || badge.dataset.badgeFitScheduled === "true") return;
     badge.dataset.badgeFitScheduled = "true";
     nextFrame(() => {
       delete badge.dataset.badgeFitScheduled;
@@ -524,39 +1020,21 @@
   }
 
   function scheduleAllBadgeFits(root) {
-    if (typeof document === "undefined") {
-      return;
-    }
-
+    if (typeof document === "undefined") return;
     const scope = root && root.querySelectorAll ? root : document;
-    if (scope.matches && scope.matches(".game-player-badge")) {
-      scheduleBadgeFit(scope);
-    }
-
-    scope.querySelectorAll(".game-player-badge").forEach((badge) => {
-      scheduleBadgeFit(badge);
-    });
+    if (scope.matches && scope.matches(".fut-card")) scheduleBadgeFit(scope);
+    scope.querySelectorAll(".fut-card").forEach((badge) => scheduleBadgeFit(badge));
   }
 
+  /* ------------------------------------------------------------------ */
+  /*  Auto-observer (DOM mutations, fonts, resize)                       */
+  /* ------------------------------------------------------------------ */
   function observeBadgeMounts() {
-    if (
-      typeof window === "undefined" ||
-      typeof document === "undefined" ||
-      window.__mcPlayerBadgeObserverReady
-    ) {
-      return;
-    }
-
+    if (typeof window === "undefined" || typeof document === "undefined" || window.__mcPlayerBadgeObserverReady) return;
     window.__mcPlayerBadgeObserverReady = true;
 
     if (document.readyState === "loading") {
-      document.addEventListener(
-        "DOMContentLoaded",
-        () => {
-          scheduleAllBadgeFits();
-        },
-        { once: true }
-      );
+      document.addEventListener("DOMContentLoaded", () => scheduleAllBadgeFits(), { once: true });
     } else {
       scheduleAllBadgeFits();
     }
@@ -565,121 +1043,113 @@
       const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
           mutation.addedNodes.forEach((node) => {
-            if (node instanceof Element) {
-              scheduleAllBadgeFits(node);
-            }
+            if (node instanceof Element) scheduleAllBadgeFits(node);
           });
         });
       });
-
-      observer.observe(document.documentElement, {
-        childList: true,
-        subtree: true,
-      });
+      observer.observe(document.documentElement, { childList: true, subtree: true });
     }
 
     if (document.fonts?.ready?.then) {
-      document.fonts.ready.then(() => {
-        scheduleAllBadgeFits();
-      });
+      document.fonts.ready.then(() => scheduleAllBadgeFits());
     }
 
-    window.addEventListener("resize", () => {
-      scheduleAllBadgeFits();
-    });
+    window.addEventListener("resize", () => scheduleAllBadgeFits());
   }
 
+  /* ------------------------------------------------------------------ */
+  /*  Markup builder                                                     */
+  /* ------------------------------------------------------------------ */
   function createBadgeMarkup(model) {
-    const crestUrl = escapeHtml(assetUrl("assets/images/brand/mandarinas-crest-clean.png"));
+    const crestUrl = escapeHtml(assetUrl(CREST_PATH));
     const ballArtUrl = escapeHtml(assetUrl(BALL_ART_PATH));
-    const positionCount = Math.min(Math.max(positionList(model.player).length, 1), 4);
+    const positions = positionList(model.player);
+    const positionCount = Math.min(Math.max(positions.length, 1), 4);
+    const flagMarkup =
+      model.flagCode || model.flagTitle
+        ? `<div class="fut-flag-wrap">${badgeFlagMarkup(model.flagCode, model.flagTitle)}</div>`
+        : "";
+
     const statCardsMarkup = model.statCards
       .map(
         (card) => `
-          <div class="${escapeHtml(card.cardClassName)}" data-stat-key="${escapeHtml(card.key)}" data-value-kind="${escapeHtml(card.valueKind)}">
+          <article class="${escapeHtml(card.cardClassName)}" data-stat-key="${escapeHtml(card.key)}" data-value-kind="${escapeHtml(card.valueKind)}">
             ${statIconMarkup(card.icon)}
-            <span class="badge-stat-label">${escapeHtml(card.label)}</span>
+            <div class="fut-stat-label">${escapeHtml(card.label)}</div>
             <strong class="${escapeHtml(card.valueClassName)}" title="${escapeHtml(card.value)}">${escapeHtml(card.value)}</strong>
-          </div>
+          </article>
         `
       )
       .join("");
 
-    const flagMarkup = model.flagCode || model.flagTitle
-      ? `
-          <div class="ball-flag player-flag">
-            ${badgeFlagMarkup(model.flagCode, model.flagTitle)}
-          </div>
-        `
-      : "";
-
     return `
-      <div class="game-player-badge player-card" data-stat-count="${model.statCards.length}">
-        <div class="premium-badge-wordmark">
-          <div class="premium-badge-kicker">Mandarinas CF</div>
-          <div class="premium-badge-subkicker">California Club de Futbol</div>
-        </div>
+      <section class="fut-card" aria-label="${escapeHtml(model.name)} player badge">
+        <header class="fut-card-header">
+          <div class="fut-card-title">Mandarinas CF</div>
+          <div class="fut-card-subtitle">California Club de Futbol</div>
+        </header>
 
-        <div class="premium-badge-header">
-          <div class="badge-side-panel badge-side-panel-left">
-            <span class="badge-side-label">OVR</span>
-            <strong>${escapeHtml(model.overall)}</strong>
-            <small>Overall</small>
+        <section class="fut-top-row" aria-label="Club badge summary">
+          <article class="fut-mini-card fut-mini-card--overall">
+            <span class="fut-mini-label">OVR</span>
+            <strong class="fut-mini-value">${escapeHtml(model.overall)}</strong>
+            <small class="fut-mini-meta">Overall</small>
+          </article>
+
+          <div class="fut-crest-wrap">
+            <img class="fut-crest" src="${crestUrl}" alt="Mandarinas CF crest" loading="eager" decoding="async" />
           </div>
 
-          <div class="badge-crest-shell">
-            <img class="badge-crest" src="${crestUrl}" alt="Mandarinas CF crest" loading="eager" />
-          </div>
+          <article class="fut-mini-card fut-mini-card--rank">
+            <span class="fut-mini-label">Rank</span>
+            <strong class="fut-mini-value">${escapeHtml(model.rank)}</strong>
+            <small class="fut-mini-meta">${escapeHtml(model.ppgSummary)}</small>
+          </article>
+        </section>
 
-          <div class="badge-side-panel badge-side-panel-right">
-            <span class="badge-side-label">Rank</span>
-            <strong>${escapeHtml(model.rank)}</strong>
-            <small>${escapeHtml(model.ppg)} PPG</small>
-          </div>
-        </div>
+        <section class="fut-hero" aria-label="Player identity">
+          ${model.showTrophy ? trophyMarkup(model.seasonsWon, model.trophyId) : ""}
 
-        ${model.showTrophy ? trophyMarkup(model.seasonsWon, model.trophyId) : ""}
-
-        <div class="badge-ball-stage">
-          <div class="badge-ball-crop">
-            <img
-              class="badge-ball-image"
-              src="${ballArtUrl}"
-              alt=""
-              loading="eager"
-            />
-            <div class="badge-ball-overlay badge-ball-overlay--${positionCount}">
+          <div class="fut-ball-stage">
+            <img class="fut-ball-image" src="${ballArtUrl}" alt="" loading="eager" decoding="async" />
+            <div class="fut-hero-overlay">
               ${flagMarkup}
-              <div class="ball-positions ball-positions--${positionCount}" data-count="${positionCount}" title="${escapeHtml(model.positionTitle)}">
+              <div class="fut-position-pills" data-count="${positionCount}" title="${escapeHtml(model.positionTitle)}">
                 ${positionPillsMarkup(model.player)}
               </div>
-              <div class="badge-ball-name player-name" title="${escapeHtml(model.name)}">${escapeHtml(model.name)}</div>
             </div>
           </div>
-        </div>
 
-        <div class="premium-badge-stats stats-grid" data-count="${model.statCards.length}">
+          <div class="fut-player-name" title="${escapeHtml(model.name)}">${escapeHtml(model.name)}</div>
+        </section>
+
+        <section class="fut-stats-grid" aria-label="Player stats">
           ${statCardsMarkup}
-        </div>
-      </div>
+        </section>
+      </section>
     `;
   }
 
+  /* ------------------------------------------------------------------ */
+  /*  Public API                                                         */
+  /* ------------------------------------------------------------------ */
   function renderPlayerBadge(player, stats, options) {
+    const ppgSource = stats && typeof stats === "object" ? stats : {};
+    const hasPpgData = hasStatSource(ppgSource, ["ppg", "points_per_game"]);
+    const ppgValue = hasPpgData ? formatPpg(stats?.ppg ?? stats?.points_per_game) : "--";
     const data = {
       player,
-      overall: formatWholeNumber(
-        player?.overall_rating ?? player?.overall ?? player?.skill_rating ?? 0
-      ),
+      overall: formatWholeNumber(player?.overall_rating ?? player?.overall ?? player?.skill_rating ?? 0),
       rank: formatRank(player?.rank ?? stats?.rank),
-      ppg: formatPpg(stats?.ppg ?? stats?.points_per_game),
+      ppg: ppgValue,
+      ppgSummary: hasPpgData ? `${ppgValue} PPG` : "PPG unavailable",
       flagCode: resolveFlagCode(player),
       flagTitle: normalizeText(player?.nationality || player?.country, ""),
       name: normalizeText(player?.name, "N/A"),
       positionTitle: formatPosition(player),
       seasonsWon: stats?.seasons_won ?? player?.seasons_won ?? 0,
       showTrophy:
-        Boolean(options?.showTrophy) &&
+        (options?.showTrophy !== false) &&
         normalizeNumber(stats?.seasons_won ?? player?.seasons_won, 0) > 0,
       trophyId: `mc-badge-trophy-${++badgeSerial}`,
       statCards: buildBadgeStatCards(stats, options),
@@ -688,36 +1158,24 @@
     const host = document.createElement("div");
     host.innerHTML = createBadgeMarkup(data).trim();
     const badge = host.firstElementChild;
-    const nameNode = badge?.querySelector(".badge-ball-name");
-
-    if (nameNode) {
-      if (data.name.length > 26) {
-        nameNode.style.setProperty("--badge-ball-name-size", "clamp(0.68rem, 2vw, 0.86rem)");
-      } else if (data.name.length > 20) {
-        nameNode.style.setProperty("--badge-ball-name-size", "clamp(0.76rem, 2.2vw, 0.94rem)");
-      } else if (data.name.length > 18) {
-        nameNode.style.setProperty("--badge-ball-name-size", "clamp(0.82rem, 2.3vw, 0.98rem)");
-      } else if (data.name.length > 14) {
-        nameNode.style.setProperty("--badge-ball-name-size", "clamp(0.9rem, 2.45vw, 1.04rem)");
-      }
-    }
-
     scheduleBadgeFit(badge);
     return badge;
   }
 
   function mountPlayerBadge(target, player, stats, options) {
-    if (!target) {
-      return null;
-    }
-
+    if (!target) return null;
     const badge = renderPlayerBadge(player, stats, options);
     target.replaceChildren(badge);
+    fitBadgeTypography(badge);
     scheduleBadgeFit(badge);
     return badge;
   }
 
+  /* ------------------------------------------------------------------ */
+  /*  Bootstrap                                                          */
+  /* ------------------------------------------------------------------ */
   observeBadgeMounts();
+
   window.renderPlayerBadge = renderPlayerBadge;
   window.mountPlayerBadge = mountPlayerBadge;
   window.createPlayerBadgeMarkup = createBadgeMarkup;
@@ -745,6 +1203,7 @@
       clean_sheets: 0,
       points_per_game: 5.52,
       seasons_won: 8,
+      seasons_participated: 8,
     },
   };
 })();
