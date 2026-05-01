@@ -691,7 +691,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const state = matchdayWindowState(matchday);
 
     if (previewMode) {
-      return "Open access is on right now so busses can test the ratings flow.";
+      return "Preview access is on. Saving here still updates the saved live rating records.";
     }
 
     if (!matchday.kickoff_at) {
@@ -957,7 +957,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ratingNote.textContent = !submissionTablesReady
       ? "Saving is disabled until live rating saving is switched on."
       : previewMode
-        ? "Open access is on right now so busses can test the ratings flow."
+        ? "Preview access is on. Saving here still updates the saved live rating records."
         : submissionState.ratingsOpen
           ? `Ratings stay open until ${formatLongDate(submissionState.ratingsCloseAt)}.`
           : "Ratings are not open for this matchday right now.";
@@ -990,7 +990,7 @@ document.addEventListener("DOMContentLoaded", () => {
     seasonSelect.disabled = !previewMode;
 
     playerPanelCopy.textContent = previewMode
-      ? "Choose your name from this saved matchday. Open access keeps the full roster available for testing."
+      ? "Choose your name from this saved matchday. Preview access keeps the full roster available, and saves still update the saved live records."
       : "Choose your name from the current roster. Ratings stay separate from stats, so either form can be handled on its own.";
 
     const scheduleHref = activeSeasonId ? `./schedule.html?season_id=${activeSeasonId}` : "./schedule.html";
@@ -1023,7 +1023,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       heroCopy.textContent = previewMode
-        ? `${activeBundle.season.name} ratings desk is open for busses testing. Open any matchday, pick a player, and inspect the rating queue.`
+        ? `${activeBundle.season.name} ratings desk is open for busses testing. Open any matchday, pick a player, and inspect the rating queue. Preview saves still update the saved live records.`
         : selectedMatchdayId
           ? `${activeBundle.season.name} player ratings are live for the current matchday. Pick yourself and work through the queue whenever ratings are open.`
           : `${activeBundle.season.name} player ratings are waiting for the next live window.`;
