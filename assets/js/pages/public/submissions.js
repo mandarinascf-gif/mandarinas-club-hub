@@ -1388,7 +1388,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     suggestionsCopy.textContent = previewMode
-      ? "Test suggestion posting, replies, and likes on the saved matchday board."
+      ? "Preview access is on. Posts, replies, and likes here still update the saved live board for this matchday."
       : `Share one clear idea for Matchday ${matchday.matchday_number}, then reply or like the threads that matter most.`;
 
     suggestionBoardCopy.textContent = threadTotal
@@ -1422,7 +1422,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     suggestionNote.textContent = previewMode
-      ? `Posting as ${playerDisplayName(player)} while preview access is open.`
+      ? `Posting as ${playerDisplayName(player)} in preview mode. This still updates the saved live board.`
       : `Posting as ${playerDisplayName(player)} on Matchday ${matchday.matchday_number}.`;
   }
 
@@ -1746,6 +1746,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const statSubmission = statSubmissionForPlayer(player.id);
+    const submissionState = matchdayWindowState(matchday);
     const targets = ratingTargetsForPlayer(player);
     const formSummary = formSummaryForPlayer(player.id);
     const peerSnapshot = peerSnapshotForPlayer(player.id);
@@ -1758,6 +1759,25 @@ document.addEventListener("DOMContentLoaded", () => {
     const peerGradeCopy = peerSnapshot.averageGrade !== null
       ? `${formatAverageGrade(peerSnapshot.averageGrade)} / 99 peer average so far`
       : "No teammate ratings have landed on this card yet.";
+    const statTag = statSubmission
+      ? "Stat line saved"
+      : submissionState.statsOpen
+        ? "Stat line open"
+        : submissionState.ratingsOpen
+          ? "Stat line closed"
+          : "Matchday closed";
+    const statState = statSubmission
+      ? "Saved"
+      : submissionState.statsOpen
+        ? "Open"
+        : "Closed";
+    const statCopy = statSubmission
+      ? "Your numbers are on the board."
+      : submissionState.statsOpen
+        ? "Goals, keeps, and clean sheet still editable."
+        : submissionState.ratingsOpen
+          ? "Stats are locked, but teammate ratings can still be submitted."
+          : "This matchday no longer accepts live reports.";
 
     selectedPlayerCard.innerHTML = `
       <div class="submission-identity-card">
@@ -1768,7 +1788,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <p class="section-copy">${escapeHtml(matchday.kickoff_at ? formatDateTime(matchday.kickoff_at) : `Matchday ${matchday.matchday_number}`)}</p>
             <div class="compact-badges">
               ${teamBadge}
-              <span class="tag-pill">${statSubmission ? "Stat line saved" : "Stat line open"}</span>
+              <span class="tag-pill">${escapeHtml(statTag)}</span>
             </div>
           </div>
           <div class="submission-grade-orbit">
@@ -1784,8 +1804,8 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="submission-identity-stat-grid">
           <article class="submission-stat-tile">
             <span>Stat line</span>
-            <strong>${escapeHtml(statSubmission ? "Saved" : "Open")}</strong>
-            <small>${escapeHtml(statSubmission ? "Your numbers are on the board." : "Goals, keeps, and clean sheet still editable.")}</small>
+            <strong>${escapeHtml(statState)}</strong>
+            <small>${escapeHtml(statCopy)}</small>
           </article>
           <article class="submission-stat-tile">
             <span>Rating queue</span>
@@ -1908,8 +1928,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (previewMode) {
       statsNote.textContent = statSubmission
-        ? "Stats saved. Busses can keep testing the Ratings tab separately."
-        : "Open access is on right now so busses can test stat saving at any time.";
+        ? "Stats saved. Preview access stays open, and changes here still update the saved live record."
+        : "Preview access is on. Saving here still updates the saved live stat record.";
       return;
     }
 
@@ -2087,7 +2107,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ratingNote.textContent = !ratingTablesReady
       ? "Live rating saving is not switched on yet."
       : previewMode
-        ? "Open access is on right now so busses can test the full report flow."
+        ? "Preview access is on. Saving ratings here still updates the saved live matchday records."
         : submissionState.ratingsOpen
           ? `Ratings stay open until ${formatLongDate(submissionState.ratingsCloseAt)}, even if you never saved stats.`
           : "Ratings are not open for this matchday right now.";
@@ -2155,7 +2175,7 @@ document.addEventListener("DOMContentLoaded", () => {
     windowNote.textContent = (!statTablesReady || !ratingTablesReady)
       ? "The night desk is open in view mode while live saving is being switched on."
       : previewMode
-        ? "Open access is on right now so busses can test the full night-report flow."
+        ? "Preview access is on for busses testing. Saves here still update the saved live matchday records."
         : state.statsOpen && state.ratingsOpen
           ? `Stats and ratings are open right now. Stats close ${formatLongDate(state.statsCloseAt)} and ratings close ${formatLongDate(state.ratingsCloseAt)}.`
         : state.ratingsOpen
@@ -2192,10 +2212,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     heroCopy.textContent = previewMode
       ? viewingSuggestions
-        ? "Choose a completed night, pick your name first, then test suggestion posts, replies, and likes."
+        ? "Choose a completed night, pick your name first, then test suggestion posts, replies, and likes. Preview saves still update the live saved board."
         : viewingRatings
-          ? "Choose a completed night, pick your name first, then test teammate ratings with the live club rating."
-          : "Choose a completed night, pick your name first, then test a full night report with stats and teammate ratings."
+          ? "Choose a completed night, pick your name first, then test teammate ratings with the live club rating. Preview saves still update saved records."
+          : "Choose a completed night, pick your name first, then test a full night report with stats and teammate ratings. Preview saves still update saved records."
       : matchday
         ? viewingSuggestions
           ? "Choose your name first, then use the suggestion board to raise ideas, reply to threads, or like the notes that matter."
@@ -2209,7 +2229,7 @@ document.addEventListener("DOMContentLoaded", () => {
             : "Open a matchday from Fixtures, then choose your name to open the full night report.";
 
     playerCopy.textContent = previewMode
-      ? "Open the desk by choosing your name from the players who appeared on this saved matchday."
+      ? "Open the desk by choosing your name from the players who appeared on this saved matchday. Preview saves still update the saved live record."
       : "Open the desk by choosing your name from the players who were on the field for this matchday.";
 
     seasonField.hidden = !previewMode;
@@ -2396,7 +2416,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
       await loadSubmissionsForMatchday();
       renderAll();
-      setStatus("Your stat line has been saved.", "success");
+      setStatus(
+        previewMode
+          ? "Preview save complete. The live stat line was updated."
+          : "Your stat line has been saved.",
+        "success"
+      );
     } catch (error) {
       setStatus(readableSubmissionError(error), "error");
     } finally {
@@ -2468,7 +2493,12 @@ document.addEventListener("DOMContentLoaded", () => {
       await loadSubmissionsForMatchday();
       selectedRateeId = nextTargetId();
       renderAll();
-      setStatus(`Rating saved for ${playerDisplayName(target)}.`, "success");
+      setStatus(
+        previewMode
+          ? `Preview save complete. ${playerDisplayName(target)}'s live rating record was updated.`
+          : `Rating saved for ${playerDisplayName(target)}.`,
+        "success"
+      );
     } catch (error) {
       setStatus(readableSubmissionError(error), "error");
     } finally {
@@ -2531,7 +2561,12 @@ document.addEventListener("DOMContentLoaded", () => {
       suggestionBodyInput.value = "";
       await loadDiscussionForMatchday();
       renderSuggestions();
-      setStatus("Suggestion posted to the matchday board.", "success");
+      setStatus(
+        previewMode
+          ? "Preview post complete. The live suggestion board was updated."
+          : "Suggestion posted to the matchday board.",
+        "success"
+      );
     } catch (error) {
       setStatus(readableSubmissionError(error), "error");
     } finally {
@@ -2583,7 +2618,12 @@ document.addEventListener("DOMContentLoaded", () => {
       activeReplySuggestionId = null;
       await loadDiscussionForMatchday();
       renderSuggestions();
-      setStatus("Reply posted to the suggestion thread.", "success");
+      setStatus(
+        previewMode
+          ? "Preview reply complete. The live suggestion board was updated."
+          : "Reply posted to the suggestion thread.",
+        "success"
+      );
     } catch (error) {
       setStatus(readableSubmissionError(error), "error");
     } finally {
@@ -2628,7 +2668,12 @@ document.addEventListener("DOMContentLoaded", () => {
           throw error;
         }
 
-        setStatus("Like removed from the suggestion board.", "success");
+        setStatus(
+          previewMode
+            ? "Preview unlike complete. The live suggestion board was updated."
+            : "Like removed from the suggestion board.",
+          "success"
+        );
       } else {
         const payload =
           target.type === "reply"
@@ -2640,7 +2685,12 @@ document.addEventListener("DOMContentLoaded", () => {
           throw error;
         }
 
-        setStatus("Like saved to the suggestion board.", "success");
+        setStatus(
+          previewMode
+            ? "Preview like complete. The live suggestion board was updated."
+            : "Like saved to the suggestion board.",
+          "success"
+        );
       }
 
       await loadDiscussionForMatchday();
