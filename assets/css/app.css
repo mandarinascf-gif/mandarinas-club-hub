@@ -42,11 +42,16 @@ html {
   font-size: 16px;
   scroll-padding-top: calc(env(safe-area-inset-top) + 7.5rem);
   background: #09111d;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
   background: var(--bg);
   color: var(--text);
   font:
@@ -54,7 +59,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body.modal-open {
@@ -3459,7 +3464,62 @@ body.manager-touch::before {
 
 @media (max-width: 640px) {
   html {
-    font-size: 17px;
+    font-size: 16px;
+  }
+
+  .site-nav,
+  .page {
+    inline-size: 100%;
+    max-inline-size: 100dvw;
+  }
+
+  .site-nav-inner,
+  .page,
+  .page > *,
+  .panel,
+  .section-block,
+  .site-modal-card,
+  .page-header,
+  .page-header-main,
+  .summary-grid,
+  .summary-card,
+  .master-detail,
+  .detail-stack,
+  .detail-panel,
+  .field,
+  .actions,
+  .actions > * {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .page-header h1,
+  .page-header h2,
+  .page-header p,
+  .summary-card > span,
+  .summary-card strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .site-nav-inner {
+    padding-inline: clamp(0.75rem, 3vw, 0.95rem);
+  }
+
+  .site-logo {
+    gap: 0.65rem;
+    font-size: clamp(1rem, 4.4vw, 1.1rem);
+  }
+
+  .logo-dot {
+    width: 2.55rem;
+    height: 2.55rem;
+  }
+
+  .nav-mode-badge {
+    min-height: 3.1rem;
+    padding: 0.55rem 0.95rem;
+    font-size: 0.92rem;
   }
 
   :is(.page-roster, .page-player) .roster-orbit-badge {
@@ -3581,9 +3641,40 @@ body.manager-touch::before {
 
   .page {
     padding:
-      var(--space-4)
-      var(--space-4)
-      calc(env(safe-area-inset-bottom) + var(--space-6) + var(--app-tabbar-height));
+      var(--space-3)
+      clamp(0.7rem, 3vw, 0.9rem)
+      calc(env(safe-area-inset-bottom) + var(--space-5) + var(--app-tabbar-height));
+    overflow-x: clip;
+  }
+
+  .page-flow,
+  .video-page-grid,
+  .feature-grid,
+  .quick-action-grid,
+  .request-stack,
+  .workspace-shell,
+  .workspace-frame,
+  .workspace-toolbar,
+  .detail-list,
+  .standings-card-list {
+    gap: var(--space-3);
+  }
+
+  .workspace-toolbar,
+  .panel,
+  .section-block,
+  .site-modal-card,
+  .detail-card {
+    padding: var(--space-4);
+  }
+
+  .player-badge-toolbar {
+    max-width: calc(100vw - 1rem);
+  }
+
+  .page-roster .player-badge-share-card {
+    max-width: calc(100vw - 1rem);
+    padding: 6px 0 4px;
   }
 
   .compact-row-main,
@@ -5854,6 +5945,78 @@ body.manager-touch::before {
 
   .video-card-list {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --app-tabbar-height: 6rem;
+  }
+
+  .manager-touch::before {
+    opacity: 0.18;
+  }
+
+  .manager-touch .panel,
+  .manager-touch .section-block,
+  .manager-touch .site-modal-card,
+  .manager-touch .workspace-toolbar,
+  .manager-touch .workspace-frame,
+  .manager-touch .workspace-shell,
+  .manager-touch .disclosure-card,
+  .manager-touch .table-shell,
+  .manager-touch .table-wrap,
+  .manager-touch .standings-card,
+  .manager-touch .metric-pill,
+  .manager-touch .detail-item,
+  .manager-touch .match-row,
+  .manager-touch .player-card,
+  .manager-touch .season-card,
+  .manager-touch .matchday-card,
+  .manager-touch .team-sheet,
+  .manager-touch .compact-row,
+  .manager-touch .leader-row,
+  .manager-touch .timeline-item,
+  .manager-touch .detail-card,
+  .manager-touch .list-item,
+  .manager-touch fieldset,
+  .manager-touch details,
+  .manager-touch .status-line,
+  .manager-touch .empty-state {
+    box-shadow: 0 10px 22px rgba(2, 6, 12, 0.14);
+  }
+
+  .manager-touch .workspace-shell,
+  .manager-touch .workspace-frame {
+    border-color: rgba(93, 118, 143, 0.22);
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .manager-touch .table-shell,
+  .manager-touch .table-wrap {
+    border-color: rgba(93, 118, 143, 0.34);
+  }
+
+  .nav-links {
+    left: max(0.375rem, env(safe-area-inset-left));
+    right: max(0.375rem, env(safe-area-inset-right));
+    width: auto;
+    max-width: 38rem;
+    margin-inline: auto;
+    transform: none;
+    gap: 0.25rem;
+    padding: 0.35rem;
+    bottom: calc(env(safe-area-inset-bottom) + 0.35rem);
+  }
+
+  .nav-links .nav-link {
+    min-height: 3.3rem;
+    padding: 0.42rem 0.22rem;
+    font-size: clamp(0.68rem, 2.7vw, 0.78rem);
+    line-height: 1.04;
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
   }
 }
 
