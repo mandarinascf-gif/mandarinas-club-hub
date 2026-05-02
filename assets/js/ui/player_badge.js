@@ -227,6 +227,22 @@
   text-align: center;
 }
 
+.fut-mini-card--rank[role="button"] {
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.fut-mini-card--rank[role="button"]:focus-visible {
+  outline: none;
+  border-color: rgba(255,232,165,.96);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,238,188,.18),
+    0 0 0 2px rgba(255,211,91,.26);
+}
+
 .fut-mini-label {
   color: #d3a83b;
   font-family: "Montserrat", sans-serif;
@@ -1140,6 +1156,21 @@
     return normalizeText(badge?.dataset?.rankPpg, "--");
   }
 
+  function nextBadgeRankMode(badge) {
+    const availableModes = badgeRankModes(badge);
+    if (availableModes.length <= 1) {
+      return availableModes[0] || "ppg";
+    }
+
+    const activeMode = normalizeText(badge?.dataset?.rankMode, availableModes[0] || "ppg").toLowerCase();
+    const activeIndex = availableModes.indexOf(activeMode);
+    if (activeIndex < 0) {
+      return availableModes[0];
+    }
+
+    return availableModes[(activeIndex + 1) % availableModes.length];
+  }
+
   function updateBadgeRankSelectorState(badge) {
     const activeMode = normalizeText(badge?.dataset?.rankMode, "ppg").toLowerCase();
     badge.querySelectorAll("[data-rank-select]").forEach((node) => {
@@ -1156,6 +1187,21 @@
       node.setAttribute("aria-label", message);
       node.setAttribute("title", message);
     });
+
+    const toggleNode = badge.querySelector("[data-rank-toggle]");
+    if (toggleNode) {
+      const nextMode = nextBadgeRankMode(badge);
+      const availableModes = badgeRankModes(badge);
+      const canToggle = availableModes.length > 1;
+      const toggleMessage = canToggle
+        ? `Rank box selected. Tap to show ${rankModeLabel(nextMode)}`
+        : `${rankModeLabel(activeMode)} selected`;
+      toggleNode.setAttribute("aria-label", toggleMessage);
+      toggleNode.setAttribute("title", toggleMessage);
+      if (toggleNode.getAttribute("role") === "button") {
+        toggleNode.setAttribute("aria-pressed", canToggle ? "true" : "false");
+      }
+    }
   }
 
   function applyBadgeRankMode(badge, mode) {
@@ -1194,7 +1240,8 @@
 
     badges.forEach((badge) => {
       const selectors = Array.from(badge.querySelectorAll("[data-rank-select]"));
-      if (!selectors.length) return;
+      const toggle = badge.querySelector("[data-rank-toggle]");
+      if (!selectors.length && !toggle) return;
 
       applyBadgeRankMode(badge, badge.dataset.rankMode);
 
@@ -1221,6 +1268,20 @@
           activate();
         });
       });
+
+      if (toggle && toggle.getAttribute("role") === "button") {
+        const toggleRankMode = () => applyBadgeRankMode(badge, nextBadgeRankMode(badge));
+
+        toggle.addEventListener("click", toggleRankMode);
+        toggle.addEventListener("keydown", (event) => {
+          if (event.key !== "Enter" && event.key !== " ") {
+            return;
+          }
+
+          event.preventDefault();
+          toggleRankMode();
+        });
+      }
     });
   }
 
@@ -1381,7 +1442,11 @@
             <img class="fut-crest" src="${crestUrl}" alt="Mandarinas CF crest" loading="eager" decoding="async" />
           </div>
 
-          <article class="fut-mini-card fut-mini-card--rank">
+          <article
+            class="fut-mini-card fut-mini-card--rank"
+            data-rank-toggle
+            ${rankSwitchingEnabled ? 'role="button" tabindex="0"' : ""}
+          >
             <span class="fut-mini-label">Rank</span>
             <strong class="fut-mini-value" data-rank-value>${escapeHtml(model.activeRank)}</strong>
             <small class="fut-mini-meta" data-rank-meta>${escapeHtml(model.activeRankSummary)}</small>
