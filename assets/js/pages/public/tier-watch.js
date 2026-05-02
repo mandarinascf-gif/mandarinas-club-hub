@@ -168,36 +168,68 @@ document.addEventListener("DOMContentLoaded", () => {
     return window.matchMedia("(max-width: 719px)").matches ? 5 : 7;
   }
 
+  function queueGoalKeeps(row) {
+    return Number(row?.goal_keeps ?? row?.goal_keep_points_earned ?? row?.goalie_points ?? 0);
+  }
+
+  function queueRowsMatching(rows, selector, value) {
+    return (rows || []).filter((entry) => selector(entry) === value);
+  }
+
   function formatQueueReason(row, queueRows) {
     const attended = Number(row?.games_attended || 0);
     const totalPoints = Number(row?.total_points || 0);
-    const ppg = Number(row?.points_per_game || 0).toFixed(2);
+    const goals = Number(row?.goals || 0);
+    const goalKeeps = queueGoalKeeps(row);
+    const cleanSheets = Number(row?.clean_sheets || 0);
     const noShows = Number(row?.no_shows || 0);
     const lateCancels = Number(row?.late_cancels || 0);
     const queueMode = row?.rotation_queue_mode || activeQueueMode;
 
     if (queueMode === "final") {
-      const samePoints = (queueRows || []).filter(
-        (entry) => Number(entry?.total_points || 0) === totalPoints
+      const samePoints = queueRowsMatching(
+        queueRows,
+        (entry) => Number(entry?.total_points || 0),
+        totalPoints
       );
 
       if (samePoints.length === 1) {
         return `${totalPoints} point${totalPoints === 1 ? "" : "s"} puts them here.`;
       }
 
-      const samePointsPpg = samePoints.filter(
-        (entry) => Number(entry?.points_per_game || 0).toFixed(2) === ppg
+      const samePointsGoals = queueRowsMatching(
+        samePoints,
+        (entry) => Number(entry?.goals || 0),
+        goals
       );
 
-      if (samePointsPpg.length === 1) {
-        return "Tied on points, ahead on PPG.";
+      if (samePointsGoals.length === 1) {
+        return "Tied on points, ahead on goals.";
       }
 
-      return "Tied on points; later tiebreaks decide order.";
+      const samePointsGoalKeeps = queueRowsMatching(samePointsGoals, queueGoalKeeps, goalKeeps);
+
+      if (samePointsGoalKeeps.length === 1) {
+        return "Tied on points and goals, ahead on goal keeps.";
+      }
+
+      const samePointsCleanSheets = queueRowsMatching(
+        samePointsGoalKeeps,
+        (entry) => Number(entry?.clean_sheets || 0),
+        cleanSheets
+      );
+
+      if (samePointsCleanSheets.length === 1) {
+        return "Tied on points, goals, and goal keeps, ahead on clean sheets.";
+      }
+
+      return "Tied on points; later season totals decide order.";
     }
 
-    const sameAttendance = (queueRows || []).filter(
-      (entry) => Number(entry?.games_attended || 0) === attended
+    const sameAttendance = queueRowsMatching(
+      queueRows,
+      (entry) => Number(entry?.games_attended || 0),
+      attended
     );
 
     if (sameAttendance.length === 1) {
@@ -214,15 +246,37 @@ document.addEventListener("DOMContentLoaded", () => {
       return "Tied on appearances, ahead on points.";
     }
 
-    const sameAttendancePointsPpg = sameAttendancePoints.filter(
-      (entry) => Number(entry?.points_per_game || 0).toFixed(2) === ppg
+    const sameAttendancePointsGoals = queueRowsMatching(
+      sameAttendancePoints,
+      (entry) => Number(entry?.goals || 0),
+      goals
     );
 
-    if (sameAttendancePointsPpg.length === 1) {
-      return "Tied on appearances and points, ahead on PPG.";
+    if (sameAttendancePointsGoals.length === 1) {
+      return "Tied on appearances and points, ahead on goals.";
     }
 
-    const sameNoShows = sameAttendancePointsPpg.filter(
+    const sameAttendancePointsGoalKeeps = queueRowsMatching(
+      sameAttendancePointsGoals,
+      queueGoalKeeps,
+      goalKeeps
+    );
+
+    if (sameAttendancePointsGoalKeeps.length === 1) {
+      return "Tied on appearances, points, and goals, ahead on goal keeps.";
+    }
+
+    const sameAttendancePointsCleanSheets = queueRowsMatching(
+      sameAttendancePointsGoalKeeps,
+      (entry) => Number(entry?.clean_sheets || 0),
+      cleanSheets
+    );
+
+    if (sameAttendancePointsCleanSheets.length === 1) {
+      return "Tied on appearances, points, goals, and goal keeps, ahead on clean sheets.";
+    }
+
+    const sameNoShows = sameAttendancePointsCleanSheets.filter(
       (entry) => Number(entry?.no_shows || 0) === noShows
     );
 
@@ -246,10 +300,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function formatQueueMeta(row) {
     const attended = Number(row?.games_attended || 0);
     const totalPoints = Number(row?.total_points || 0);
-    const ppg = Number(row?.points_per_game || 0).toFixed(2);
+    const goals = Number(row?.goals || 0);
 
     if ((row?.rotation_queue_mode || activeQueueMode) === "final") {
-      return `${totalPoints} pts · ${ppg} PPG`;
+      return `${totalPoints} pts · ${goals} goal${goals === 1 ? "" : "s"}`;
     }
 
     return `${attended} attended${totalPoints > 0 ? ` · ${totalPoints} pts` : ""}`;
@@ -470,11 +524,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const queueMap = new Map(queueRows.map((row, index) => [row.player_id, index + 1]));
     const visibleRows = queueRows.slice(0, queueVisibleLimit());
     const hiddenRows = queueRows.slice(visibleRows.length);
-    const queueIntroCopy =
-      activeQueueMode === "final"
-        ? "Flex tier only. On the final matchday, points go first, then PPG."
-        : "Flex tier only. Think of this as the updated buddy-system line: fewer appearances go first.";
-
     if (!queueRows.length) {
       queueTableWrap.innerHTML = `
         <div class="empty-state">No flex players in the queue yet. Players appear here once the season starts.</div>
@@ -811,7 +860,10 @@ document.addEventListener("DOMContentLoaded", () => {
         normalizeTierRow(row)
       );
       renderTierBoards();
-      heroCopy.textContent = `${bundle.season.name} shows the live line for flex-tier players first. If you remember the old buddy system, this is the updated version with a short note on why each player is next.`;
+      heroCopy.textContent =
+        activeQueueMode === "final"
+          ? `${bundle.season.name} shows the live line for flex-tier players first. On the final matchday, season points lead the order and tied players are split by goals, goal keeps, and clean sheets.`
+          : `${bundle.season.name} shows the live line for flex-tier players first. Fewer appearances stay at the front, and tied players are split by season points, goals, goal keeps, and clean sheets.`;
       setTierStatus();
     } catch (error) {
       standingsByPlayerId = new Map();
