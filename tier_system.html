@@ -78,7 +78,7 @@
       <h2>How weekly access works</h2>
       <ol>
         <li>Core players get first claim on the available roster spots.</li>
-        <li>Flex players are then ordered by fewer season appearances first.</li>
+        <li>Flex players are then ordered by fewer season appearances first, with season totals breaking ties.</li>
         <li>Sub fills whatever spots are still open.</li>
         <li>On matchday, the confirmed roster moves into team assignment and stat tracking.</li>
       </ol>
@@ -102,8 +102,9 @@
       <h2>Queue example</h2>
       <p>
         If ten Flex spots are open, the players with the fewest season appearances go first.
-        A player with 3 games is ahead of a player with 5 games. If two players are tied, the app
-        keeps them in the queue order it already has for that season.
+        A player with 3 games is ahead of a player with 5 games. If two players are tied on appearances,
+        the app breaks that tie with season totals: points first, then goals, goal keeps, clean sheets,
+        and the remaining season stats.
       </p>
       <ol>
         <li>Alex has 3 games, so Alex is near the front.</li>
