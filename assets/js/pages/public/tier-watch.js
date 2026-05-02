@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
     fullName,
     stripSubPrefix,
     formatStatusLabel,
+    normalizeTierValue,
     tierIconMarkup,
     trendIconMarkup,
     readableError,
@@ -91,7 +92,31 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function currentTier(row) {
-    return row.tier_status || row.default_status || "sub";
+    return normalizeTierValue(row?.tier_status || row?.default_status, "sub");
+  }
+
+  function normalizeTierRow(row) {
+    if (!row) {
+      return row;
+    }
+
+    const defaultStatus = normalizeTierValue(row.default_status, "sub");
+    const tierStatus = normalizeTierValue(row.tier_status, defaultStatus);
+    const preliminarySuggestedStatus = normalizeTierValue(
+      row.preliminary_recommended_tier_status || row.recommended_tier_status,
+      tierStatus
+    );
+
+    return {
+      ...row,
+      default_status: defaultStatus,
+      tier_status: tierStatus,
+      recommended_tier_status: normalizeTierValue(
+        row.recommended_tier_status,
+        preliminarySuggestedStatus
+      ),
+      preliminary_recommended_tier_status: preliminarySuggestedStatus,
+    };
   }
 
   function displayName(row) {
@@ -754,13 +779,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const bundle = await fetchSeasonBundle(activeSeasonId);
+      const normalizedTierRows = (bundle.tiers || []).map((row) => normalizeTierRow(row));
       const historicalContext = await fetchHistoricalTierAttendance(
         seasons,
         activeSeasonId,
-        (bundle.tiers || []).map((row) => row.player_id)
+        normalizedTierRows.map((row) => row.player_id)
       );
       const rowsWithHistory = summarizeHistoricalAttendance(
-        bundle.tiers || [],
+        normalizedTierRows,
         seasons,
         activeSeasonId,
         historicalContext.matchdays,
@@ -781,7 +807,9 @@ document.addEventListener("DOMContentLoaded", () => {
         bundle.matchdays || [],
         bundle.matches || []
       );
-      tierRows = applyTierSuggestionSlots(rowsWithHistory, suggestionSlotLimit);
+      tierRows = applyTierSuggestionSlots(rowsWithHistory, suggestionSlotLimit).map((row) =>
+        normalizeTierRow(row)
+      );
       renderTierBoards();
       heroCopy.textContent = `${bundle.season.name} shows the live line for rotation-tier players first. If you remember the old buddy system, this is the updated version with a short note on why each player is next.`;
       setTierStatus();
