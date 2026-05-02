@@ -42,9 +42,9 @@
       <section class="panel page-header">
         <div class="page-header-main">
           <div class="section-label">Club · Flex Tier Queue</div>
-          <h1>Who is next?</h1>
+          <h1>Who plays next?</h1>
           <p id="hero-copy">
-            This is the live line for flex-tier players. If you remember the old buddy system, this is the updated version of that line.
+            This is the waiting list for flex-tier players. The person at the top gets the next open spot. After they play, they move to the back of the line.
           </p>
           <div class="field">
             <label for="season-select">Season</label>
@@ -91,8 +91,9 @@
       </section>
 
       <section class="panel">
-        <div class="section-label">Live</div>
-        <h2>Who is next</h2>
+        <div class="section-label">Live waiting list</div>
+        <h2>The line</h2>
+        <p class="section-copy">The player at the top has priority for the next available spot. Position is based on how many games you've played this season — fewer games means you're closer to the front.</p>
         <div class="status-line" id="tier-status-line">Loading the flex queue...</div>
         <div class="table-shell tw-table-wrap" id="queue-table-wrap"></div>
       </section>
@@ -109,21 +110,28 @@
       </section>
 
       <section class="panel">
-        <div class="section-label">Why This Order Exists</div>
-        <h2>Queue rules</h2>
-        <details class="disclosure-card" open>
-          <summary class="disclosure-summary">
-            <div class="disclosure-copy">
-              <div class="disclosure-title">Open the queue explanation</div>
-              <div class="micro-note">See how attendance, recent form, and balance shape the line.</div>
+        <div class="section-label">How it works</div>
+        <h2>Simple rules</h2>
+        <div class="quick-action-grid">
+          <div class="list-item">
+            <div class="list-item-main">
+              <div class="list-item-title">Fewer games = front of line</div>
+              <div class="compact-row-copy">If you've played 2 games and someone else played 4, you go first.</div>
             </div>
-          </summary>
-          <div class="disclosure-body">
-            <p class="section-copy">
-              The live queue stays public and readable on purpose. Flex players move through the line based on season availability, current points context, and balance rules from the current tier system. Recommendations stay separate so the live answer stays clear.
-            </p>
           </div>
-        </details>
+          <div class="list-item">
+            <div class="list-item-main">
+              <div class="list-item-title">Ties break on points</div>
+              <div class="compact-row-copy">Same number of games? The player with fewer points gets priority.</div>
+            </div>
+          </div>
+          <div class="list-item">
+            <div class="list-item-main">
+              <div class="list-item-title">Final matchday is different</div>
+              <div class="compact-row-copy">On the last night of the season, the line flips — highest points go first.</div>
+            </div>
+          </div>
+        </div>
       </section>
     </main>
 
