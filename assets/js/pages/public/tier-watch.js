@@ -773,7 +773,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function loadSeason() {
-    setTierStatus("Loading the rotation queue...", "loading");
+    setTierStatus("Loading the flex queue...", "loading");
     queueTableWrap.innerHTML = "";
     suggestionTableWrap.innerHTML = "";
 
@@ -811,7 +811,7 @@ document.addEventListener("DOMContentLoaded", () => {
         normalizeTierRow(row)
       );
       renderTierBoards();
-      heroCopy.textContent = `${bundle.season.name} shows the live line for rotation-tier players first. If you remember the old buddy system, this is the updated version with a short note on why each player is next.`;
+      heroCopy.textContent = `${bundle.season.name} shows the live line for flex-tier players first. If you remember the old buddy system, this is the updated version with a short note on why each player is next.`;
       setTierStatus();
     } catch (error) {
       standingsByPlayerId = new Map();
