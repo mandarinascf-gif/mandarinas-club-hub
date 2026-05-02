@@ -47,6 +47,7 @@
     badgeIconMarkup,
     tierIconMarkup,
     trendIconMarkup,
+    normalizeTierValue,
     normalizePlayerDesiredTier,
     historicalSeasonIds,
     attendanceStatus,
@@ -153,6 +154,35 @@
     const normalizedSeason = normalizeSeasonTeamDisplay(season);
     activeTeamDisplayConfig = applyTeamDisplayConfig(normalizedSeason?.team_display_config || null);
     return normalizedSeason;
+  }
+
+  function normalizeSeasonTierStatus(value, fallback = "flex") {
+    return normalizeTierValue(value, fallback);
+  }
+
+  function normalizeTierViewRow(row) {
+    if (!row) {
+      return row;
+    }
+
+    const defaultStatus = normalizeSeasonTierStatus(row.default_status, "sub");
+    const tierStatus = normalizeSeasonTierStatus(row.tier_status, defaultStatus);
+    const preliminarySuggestedStatus = normalizeSeasonTierStatus(
+      row.preliminary_recommended_tier_status || row.recommended_tier_status,
+      tierStatus
+    );
+
+    return {
+      ...row,
+      default_status: defaultStatus,
+      tier_status: tierStatus,
+      registration_tier: normalizeSeasonTierStatus(row.registration_tier, defaultStatus),
+      preliminary_recommended_tier_status: preliminarySuggestedStatus,
+      recommended_tier_status: normalizeSeasonTierStatus(
+        row.recommended_tier_status,
+        preliminarySuggestedStatus
+      ),
+    };
   }
 
   function readableError(error) {
@@ -266,7 +296,7 @@
         supabaseClient
           .from("season_players")
           .select(
-            "id, tier_status, is_eligible, player:players(id, first_name, last_name, nickname, nationality, birth_date, positions, skill_rating, desired_tier, status, dominant_foot, created_at)"
+            "id, tier_status, registration_tier, is_eligible, player:players(id, first_name, last_name, nickname, nationality, birth_date, positions, skill_rating, desired_tier, status, dominant_foot, created_at)"
           )
           .eq("season_id", seasonId)
           .limit(5000),
@@ -313,7 +343,7 @@
       ({ data: seasonPlayers, error: playersError } = await supabaseClient
         .from("season_players")
         .select(
-          "id, tier_status, is_eligible, player:players(id, first_name, last_name, nickname, nationality, birth_date, positions, skill_rating, status, dominant_foot, created_at)"
+          "id, tier_status, registration_tier, is_eligible, player:players(id, first_name, last_name, nickname, nationality, birth_date, positions, skill_rating, status, dominant_foot, created_at)"
         )
         .eq("season_id", seasonId));
     }
@@ -338,11 +368,19 @@
 
     const players = (seasonPlayers || [])
       .map((row) => {
-        const registryPlayer = normalizePlayerDesiredTier(row.player, "rotation");
+        const registryPlayer = normalizePlayerDesiredTier(row.player, "flex");
+        const seasonStatus = normalizeSeasonTierStatus(row.tier_status, registryPlayer.desired_tier);
+        const registrationTier = normalizeSeasonTierStatus(
+          row.registration_tier,
+          registryPlayer.desired_tier
+        );
         return {
           ...registryPlayer,
           season_player_id: row.id,
-          status: row.tier_status,
+          status: registryPlayer.desired_tier,
+          season_status: seasonStatus,
+          tier_status: seasonStatus,
+          registration_tier: registrationTier,
           base_status: registryPlayer.desired_tier,
           is_eligible: row.is_eligible,
         };
@@ -394,8 +432,8 @@
       matches,
       assignments,
       playerStats,
-      tiers: tiers || [],
-      rotationPriority: rotationPriority || [],
+      tiers: (tiers || []).map((row) => normalizeTierViewRow(row)),
+      rotationPriority: (rotationPriority || []).map((row) => normalizeTierViewRow(row)),
     };
   }
 
@@ -529,7 +567,7 @@
 
   function buildAllTimeStandings(players, seasons, matchdays, matches, assignments, playerStats) {
     const normalizedPlayers = (players || []).map((player) =>
-      normalizePlayerDesiredTier(player, "rotation")
+      normalizePlayerDesiredTier(player, "flex")
     );
     const standingsSeed = new Map(
       normalizedPlayers.map((player) => [
@@ -963,6 +1001,7 @@
     badgeIconMarkup,
     tierIconMarkup,
     trendIconMarkup,
+    normalizeTierValue,
     formatDateTime,
     formatDay,
     formatLongDate,
