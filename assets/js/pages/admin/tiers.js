@@ -216,17 +216,16 @@
       function queueReasonText(row) {
         const attended = Number(row?.games_attended || 0);
         const totalPoints = Number(row?.total_points || 0);
-        const ppg = Number(row?.points_per_game || 0).toFixed(2);
 
         if ((row?.rotation_queue_mode || activeQueueMode) === "final") {
-          return `Final matchday queue uses season points first. This player is on ${totalPoints} point${
+          return `Final matchday queue uses season points first. Tied points fall back to goals, goal keeps, clean sheets, and the rest of the season totals. This player is on ${totalPoints} point${
             totalPoints === 1 ? "" : "s"
-          } and ${ppg} PPG.`;
+          }.`;
         }
 
         return `Regular matchdays keep lower attendance first. This player has attended ${attended} matchday${
           attended === 1 ? "" : "s"
-        }; tied attendance falls back to points, PPG, wins, draws, losses, goals, goalkeeping, then clean sheets.`;
+        }; tied attendance falls back to points, goals, goal keeps, clean sheets, and the rest of the season totals.`;
       }
 
       function renderQueueCards(rows, queueMap) {
@@ -495,8 +494,8 @@
                 <h3>Current Flex Queue</h3>
                 <p>${escapeHtml(
                   activeQueueMode === "final"
-                    ? "Current flex players only. The next open spot is on the final matchday, so #1 follows season points first, then PPG, wins, draws, losses, goals, goalkeeping, and clean sheets."
-                    : "Current flex players only. Fewer season-to-date attended games come first, and tied attendance falls back to points, PPG, wins, draws, losses, goals, goalkeeping, then clean sheets."
+                    ? "Current flex players only. The next open spot is on the final matchday, so #1 follows season points first, then goals, goal keeps, clean sheets, and the rest of the season totals."
+                    : "Current flex players only. Fewer season-to-date attended games come first, and tied attendance falls back to points, goals, goal keeps, clean sheets, and the rest of the season totals."
                 )}</p>
               </div>
             </div>
