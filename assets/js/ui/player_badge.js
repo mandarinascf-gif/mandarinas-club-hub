@@ -85,10 +85,17 @@
    never scrolls. The grid rows are: header | top-row | hero
    (flexible) | stats.  The hero section shrinks to fit.
    ============================================================== */
+@property --fut-card-border-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
 .fut-card {
   --cw: min(96vw, 460px);
   --pd: clamp(6px, 1.2vh, 14px);
   --gp: clamp(3px, 0.6vh, 8px);
+  --fut-card-border-angle: 0deg;
 
   /* typography tokens */
   --fs-title:    clamp(20px, 4vh, 38px);
@@ -116,13 +123,15 @@
   padding: var(--pd);
   overflow: hidden;
   box-sizing: border-box;
+  position: relative;
+  isolation: isolate;
 
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   gap: var(--gp);
 
   border-radius: clamp(18px, 2.5vw, 28px);
-  border: 2px solid #b58a2b;
+  border: 2px solid transparent;
   background:
     radial-gradient(circle at 50% 0%, rgba(220,170,60,.22), transparent 35%),
     linear-gradient(180deg, #1a1207 0%, #090604 100%);
@@ -131,6 +140,42 @@
     inset 0 0 0 1px rgba(255,236,183,.08),
     inset 0 14px 20px rgba(255,219,120,.03),
     0 24px 56px rgba(0,0,0,.38);
+  animation: fut-card-halo-pulse 7s ease-in-out infinite;
+}
+
+.fut-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 2px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--fut-card-border-angle),
+    rgba(255,240,191,.92) 0deg,
+    rgba(212,175,55,.22) 52deg,
+    rgba(255,164,47,.84) 98deg,
+    rgba(255,240,191,.12) 148deg,
+    rgba(255,196,82,.82) 214deg,
+    rgba(255,240,191,.14) 276deg,
+    rgba(212,175,55,.28) 320deg,
+    rgba(255,240,191,.92) 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 0;
+  animation: fut-card-border-orbit 10s linear infinite;
+}
+
+.fut-card > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* ---- header ---- */
@@ -481,6 +526,31 @@
   font-size: clamp(13px, 2vh, 22px);
 }
 
+@keyframes fut-card-border-orbit {
+  from { --fut-card-border-angle: 0deg; }
+  to { --fut-card-border-angle: 360deg; }
+}
+
+@keyframes fut-card-halo-pulse {
+  0%, 100% {
+    box-shadow:
+      inset 0 0 0 1px rgba(255,236,183,.08),
+      inset 0 14px 20px rgba(255,219,120,.03),
+      0 24px 56px rgba(0,0,0,.38),
+      0 0 0 1px rgba(255,214,107,.10),
+      0 0 24px rgba(240,176,55,.10);
+  }
+
+  50% {
+    box-shadow:
+      inset 0 0 0 1px rgba(255,236,183,.12),
+      inset 0 18px 24px rgba(255,219,120,.06),
+      0 30px 70px rgba(0,0,0,.44),
+      0 0 0 1px rgba(255,214,107,.24),
+      0 0 40px rgba(240,176,55,.20);
+  }
+}
+
 /* ============================================================
    EXPORT MODE — fixed large dimensions for html2canvas
    ============================================================ */
@@ -509,6 +579,10 @@
   overflow: visible !important;
   margin: 0 !important;
   border-radius: 42px;
+}
+
+.fut-card.export-mode::after {
+  content: none;
 }
 
 .fut-card.export-mode .fut-top-row {
@@ -541,7 +615,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .fut-card { animation: none !important; transition: none !important; }
+  .fut-card,
+  .fut-card::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 `;
 
