@@ -523,14 +523,14 @@
   }
 
   function compareBadgeStandings(left, right) {
-    const pointsDiff = Number(right?.total_points || 0) - Number(left?.total_points || 0);
-    if (pointsDiff !== 0) {
-      return pointsDiff;
-    }
-
     const ppgDiff = badgePointsPerGame(right) - badgePointsPerGame(left);
     if (Math.abs(ppgDiff) > 0.0001) {
       return ppgDiff;
+    }
+
+    const pointsDiff = Number(right?.total_points || 0) - Number(left?.total_points || 0);
+    if (pointsDiff !== 0) {
+      return pointsDiff;
     }
 
     const appsDiff = Number(right?.days_attended || 0) - Number(left?.days_attended || 0);
