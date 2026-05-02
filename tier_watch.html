@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png" />
-    <link rel="stylesheet" href="./assets/css/app.css?v=20260501h" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260502a" />
     <title>Club · Flex Tier Queue</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/js/core/club_logic.js?v=20260501e"></script>
@@ -83,9 +83,9 @@
             <span class="summary-copy">Fill remaining openings</span>
           </div>
           <div class="summary-card">
-            <span>Tier changes suggested</span>
+            <span>Review cases</span>
             <strong id="change-count">0</strong>
-            <span class="summary-copy">Based on attendance</span>
+            <span class="summary-copy">Current vs suggested next</span>
           </div>
         </div>
       </section>
@@ -99,13 +99,14 @@
       </section>
 
       <section class="panel" id="suggestion-summary-panel">
-        <div class="section-label">Recommendations</div>
-        <h2>Should anyone move up or down?</h2>
+        <div class="section-label">Recommendation center</div>
+        <h2>What tier does the app suggest next?</h2>
         <p id="suggestion-panel-copy">
-          The app tracks attendance and suggests tier changes when the data supports it.
+          <strong>Now</strong> is the active tier today. <strong>Suggested next</strong> is the attendance-based recommendation the manager can review.
         </p>
+        <div class="summary-pill-grid" id="suggestion-summary-pills" aria-live="polite"></div>
         <button class="secondary-button" type="button" id="open-tier-suggestion-modal">
-          View recommendations
+          Open recommendation center
         </button>
       </section>
 
@@ -140,7 +141,7 @@
       <div class="club-footer-copy">Club · Flex Tier Queue</div>
     </footer>
 
-    <script src="./assets/js/pages/public/tier-watch.js?v=20260501f"></script>
+    <script src="./assets/js/pages/public/tier-watch.js?v=20260502a"></script>
     <div class="site-modal" id="tier-suggestion-modal" hidden>
       <div class="site-modal-backdrop" data-modal-close></div>
       <div
@@ -151,10 +152,10 @@
       >
         <div class="site-modal-head">
           <div>
-            <div class="section-label">Based on attendance data</div>
-            <h2 class="site-modal-title" id="tier-suggestion-modal-title">Tier Recommendations</h2>
+            <div class="section-label">Read this first</div>
+            <h2 class="site-modal-title" id="tier-suggestion-modal-title">Tier Recommendation Center</h2>
             <p class="site-modal-copy" id="tier-suggestion-modal-copy">
-              Players are ranked by recent form first, then season attendance, then history across past seasons.
+              Start with Changes if you only want to see movement. Now is active today. Suggested next is the attendance-based recommendation.
             </p>
           </div>
           <button class="ghost-button" type="button" data-modal-close>Close</button>
@@ -164,15 +165,17 @@
             id="tier-search"
             class="search-input"
             type="search"
-            placeholder="Search players..."
+            placeholder="Search players, tiers, or notes..."
           />
           <div class="filter-row" id="tier-filter-row">
+            <button class="chip-button" type="button" data-filter="changes">Changes</button>
             <button class="chip-button active" type="button" data-filter="all">All</button>
             <button class="chip-button" type="button" data-filter="core">Core</button>
             <button class="chip-button" type="button" data-filter="flex">Flex</button>
             <button class="chip-button" type="button" data-filter="sub">Sub</button>
           </div>
         </div>
+        <div class="site-modal-body" id="tier-table-summary"></div>
         <div class="table-shell tw-table-wrap" id="tier-table-wrap"></div>
       </div>
     </div>
