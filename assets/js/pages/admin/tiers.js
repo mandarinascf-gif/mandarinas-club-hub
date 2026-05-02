@@ -35,6 +35,20 @@
       const applyTierSuggestionSlots = logic.applyTierSuggestionSlots || ((rows) => [...(rows || [])]);
       const tierSuggestionEvidence =
         logic.tierSuggestionEvidence || ((row) => row?.suggestion_evidence || "");
+      const normalizeTierValue =
+        logic.normalizeTierValue ||
+        ((value, fallback = "flex") => {
+          const normalized = normalizeText(value).toLowerCase();
+          const compact = normalized.replace(/[\s/-]+/g, "_");
+
+          if (normalized === "core" || normalized === "flex" || normalized === "sub") {
+            return normalized;
+          }
+
+          if (compact === "rotation") return "flex";
+          if (compact === "flex_sub") return "sub";
+          return fallback;
+        });
 
       let seasons = [];
       let selectedSeasonId = Number(params.get("season_id")) || null;
@@ -120,13 +134,38 @@
         return stripSubPrefix(player.nickname) || fullName(player);
       }
 
+      function normalizeTierRow(row) {
+        if (!row) {
+          return row;
+        }
+
+        const defaultStatus = normalizeTierValue(row.default_status, "sub");
+        const tierStatus = normalizeTierValue(row.tier_status || defaultStatus, defaultStatus);
+        const recommendedTier = normalizeTierValue(
+          row.recommended_tier_status || row.preliminary_recommended_tier_status || tierStatus,
+          tierStatus
+        );
+
+        return {
+          ...row,
+          default_status: defaultStatus,
+          tier_status: tierStatus,
+          preliminary_recommended_tier_status: normalizeTierValue(
+            row.preliminary_recommended_tier_status || recommendedTier,
+            recommendedTier
+          ),
+          recommended_tier_status: recommendedTier,
+        };
+      }
+
       function currentTier(row) {
-        return row.tier_status || row.default_status || "sub";
+        return normalizeTierValue(row.tier_status || row.default_status, "sub");
       }
 
       function formatStatusLabel(value) {
-        if (!value) return "Flex";
-        return value.charAt(0).toUpperCase() + value.slice(1);
+        const normalized = normalizeTierValue(value, "");
+        if (!normalized) return "Flex";
+        return normalized.charAt(0).toUpperCase() + normalized.slice(1);
       }
 
       function formatSpotValue(value) {
@@ -159,11 +198,11 @@
       function suggestionWeight(status) {
         const lookup = {
           core: 0,
-          rotation: 1,
-          flex_sub: 2,
+          flex: 1,
+          sub: 2,
         };
 
-        return lookup[status] ?? 3;
+        return lookup[normalizeTierValue(status, "")] ?? 3;
       }
 
       function suggestionEvidenceText(row) {
@@ -715,26 +754,27 @@
             seasonPlayerStats = playerStatRows || [];
           }
 
+          const normalizedBoardRows = (boardRows || []).map((row) => normalizeTierRow(row));
           const historicalContext = await fetchHistoricalTierContext(
-            (boardRows || []).map((row) => row.player_id)
+            normalizedBoardRows.map((row) => row.player_id)
           );
           const rowsWithHistory = summarizeHistoricalAttendance(
-            boardRows || [],
+            normalizedBoardRows,
             seasons,
             selectedSeasonId,
             historicalContext.matchdays,
             historicalContext.matches,
             historicalContext.playerStats
-          );
+          ).map((row) => normalizeTierRow(row));
 
           standingsByPlayerId = buildStandingsByPlayerId(
-            (boardRows || []).map((row) => ({
+            normalizedBoardRows.map((row) => ({
               id: row.player_id,
               first_name: row.first_name,
               last_name: row.last_name,
               nickname: row.nickname,
               nationality: row.nationality,
-              status: row.tier_status,
+              status: currentTier(row),
             })),
             seasonAssignments,
             seasonPlayerStats,
@@ -743,7 +783,9 @@
             selectedSeason
           );
           activeQueueMode = rotationQueueMode(selectedSeason, seasonMatchdays || [], seasonMatches);
-          tierRows = applyTierSuggestionSlots(rowsWithHistory, suggestionSlotLimit);
+          tierRows = applyTierSuggestionSlots(rowsWithHistory, suggestionSlotLimit).map((row) =>
+            normalizeTierRow(row)
+          );
           renderBoard();
           setStatus();
         } catch (error) {
