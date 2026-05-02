@@ -468,9 +468,9 @@
         eligibleCountStat.textContent = String(eligibleCount);
         selectedSeasonPill.textContent = selectedSeason ? selectedSeason.name : "No season selected";
         heroCopy.textContent = selectedSeason
-          ? `${selectedSeason.name} keeps the live rotation queue separate from future tier recommendations. Recommendations always fill a weighted ${formatSpotValue(
+          ? `${selectedSeason.name} keeps the live flex queue separate from future tier recommendations. Recommendations always fill a weighted ${formatSpotValue(
               suggestionSlotLimit
-            )}-spot plan where Core uses 1 full spot and two Rotation players share 1 spot. Each explanation shows recent, season, and historical attendance scores so the recommendation has clear evidence behind it. Those scores reward attendance and penalize late cancels and no-shows.`
+            )}-spot plan where Core uses 1 full spot and two Flex players share 1 spot. Each explanation shows recent, season, and historical attendance scores so the recommendation has clear evidence behind it. Those scores reward attendance and penalize late cancels and no-shows.`
           : "The live queue and future tier recommendations are separate. Recommendations always fill a weighted 36-spot plan.";
         boardCopy.textContent = selectedSeason
           ? `${selectedSeason.name} is the active season lens. Queue order stays season-to-date. Recommendations below lean on the most recent 8-match run, use full-season guardrails, and always land on a weighted ${formatSpotValue(
@@ -482,21 +482,21 @@
           priorityStrip.innerHTML = `
             <div class="subtable-head">
               <div>
-                <h3>Current Rotation Queue</h3>
-                <p>Current rotation players only. This list stays season-to-date and does not depend on the suggestion mix.</p>
+                <h3>Current Flex Queue</h3>
+                <p>Current flex players only. This list stays season-to-date and does not depend on the suggestion mix.</p>
               </div>
             </div>
-            <div class="empty-state">No live Rotation queue yet. Once the season has eligible Rotation players, this will show who is next up using the current queue rules for the next open spot.</div>
+            <div class="empty-state">No live flex queue yet. Once the season has eligible flex players, this will show who is next up using the current queue rules for the next open spot.</div>
           `;
         } else {
           priorityStrip.innerHTML = `
             <div class="subtable-head">
               <div>
-                <h3>Current Rotation Queue</h3>
+                <h3>Current Flex Queue</h3>
                 <p>${escapeHtml(
                   activeQueueMode === "final"
-                    ? "Current rotation players only. The next open spot is on the final matchday, so #1 follows season points first, then PPG, wins, draws, losses, goals, goalkeeping, and clean sheets."
-                    : "Current rotation players only. Fewer season-to-date attended games come first, and tied attendance falls back to points, PPG, wins, draws, losses, goals, goalkeeping, then clean sheets."
+                    ? "Current flex players only. The next open spot is on the final matchday, so #1 follows season points first, then PPG, wins, draws, losses, goals, goalkeeping, and clean sheets."
+                    : "Current flex players only. Fewer season-to-date attended games come first, and tied attendance falls back to points, PPG, wins, draws, losses, goals, goalkeeping, then clean sheets."
                 )}</p>
               </div>
             </div>
