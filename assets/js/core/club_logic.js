@@ -576,12 +576,13 @@
 
   function normalizeTierValue(value, fallback = "flex") {
     const normalized = normalizeText(value).toLowerCase();
+    const compact = normalized.replace(/[\s/-]+/g, "_");
     if (normalized === "core" || normalized === "flex" || normalized === "sub") {
       return normalized;
     }
     // Legacy migration: map old tier names to new ones
-    if (normalized === "rotation") return "flex";
-    if (normalized === "flex_sub") return "sub";
+    if (compact === "rotation") return "flex";
+    if (compact === "flex_sub") return "sub";
     return fallback;
   }
 
