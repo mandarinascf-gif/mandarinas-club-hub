@@ -298,23 +298,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function compactLineupName(name) {
-    const trimmed = String(name || "").trim();
-
-    if (trimmed.length <= 11) {
-      return trimmed;
-    }
-
-    const parts = trimmed.split(/\s+/).filter(Boolean);
-
-    if (parts.length > 1) {
-      const compact = `${parts[0]} ${parts[parts.length - 1].charAt(0)}.`;
-
-      if (compact.length <= 11) {
-        return compact;
-      }
-    }
-
-    return `${trimmed.slice(0, 10).trimEnd()}…`;
+    return String(name || "").trim().replace(/\s+/g, " ");
   }
 
   function normalizeLineupPositionCode(value) {
