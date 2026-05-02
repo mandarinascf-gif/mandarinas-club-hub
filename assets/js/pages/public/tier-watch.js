@@ -230,24 +230,27 @@ document.addEventListener("DOMContentLoaded", () => {
     return `${attended} attended${totalPoints > 0 ? ` · ${totalPoints} pts` : ""}`;
   }
 
-  function renderQueueRows(rows, queueRows, queueMap, labelPrefix = "Q") {
+  function renderQueueRows(rows, queueRows, queueMap, labelPrefix = "#") {
     return rows
       .map((row) => {
         const queuePosition = queueMap.get(row.player_id);
+        const attended = Number(row?.games_attended || 0);
+        const isNext = queuePosition === 1;
+        const positionLabel = isNext ? "Next up" : `#${queuePosition} in line`;
 
         return `
-          <article class="queue-compact-row ${queuePosition === 1 ? "queue-compact-row-top" : ""}">
+          <article class="queue-compact-row ${isNext ? "queue-compact-row-top" : ""}">
             <div class="queue-compact-rank">
-              <span class="queue-pill">${escapeHtml(`${labelPrefix}${queuePosition}`)}</span>
+              <span class="queue-pill">${escapeHtml(String(queuePosition))}</span>
             </div>
             <div class="queue-compact-main">
               <div class="queue-compact-line">
                 <h3 class="queue-compact-name">${escapeHtml(displayName(row))}</h3>
-                <span class="queue-compact-meta">${escapeHtml(formatQueueMeta(row))}</span>
+                <span class="queue-compact-meta">${escapeHtml(positionLabel)}</span>
               </div>
               ${
-                queuePosition === 1
-                  ? '<div class="queue-compact-eyebrow">Next spot</div>'
+                isNext
+                  ? '<div class="queue-compact-eyebrow">Gets the next open spot</div>'
                   : ""
               }
               ${
@@ -255,7 +258,11 @@ document.addEventListener("DOMContentLoaded", () => {
                   ? `<div class="table-player-sub">${escapeHtml(fullName(row))}</div>`
                   : ""
               }
-              <p class="queue-compact-reason">${escapeHtml(formatQueueReason(row, queueRows))}</p>
+              <p class="queue-compact-reason">${escapeHtml(
+                attended === 0
+                  ? "Hasn't played yet this season"
+                  : `${attended} game${attended === 1 ? "" : "s"} played this season`
+              )}</p>
             </div>
           </article>
         `;
@@ -445,24 +452,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!queueRows.length) {
       queueTableWrap.innerHTML = `
-        <div class="subtable-head">
-          <div>
-            <h3>Live rotation order</h3>
-            <p>This list only shows rotation-tier players, in the same live order used for the next open spot.</p>
-          </div>
-        </div>
-        <div class="empty-state">No live rotation queue yet.</div>
+        <div class="empty-state">No flex players in the queue yet. Players appear here once the season starts.</div>
       `;
       return;
     }
 
     queueTableWrap.innerHTML = `
-      <div class="subtable-head">
-        <div>
-          <h3>Live rotation order</h3>
-          <p>${escapeHtml(queueIntroCopy)}</p>
-        </div>
-      </div>
       <div class="queue-compact-table">
         ${renderQueueRows(visibleRows, queueRows, queueMap)}
       </div>
@@ -472,10 +467,10 @@ document.addEventListener("DOMContentLoaded", () => {
             <details class="disclosure-card queue-disclosure">
               <summary class="disclosure-summary">
                 <div class="disclosure-copy">
-                  <div class="disclosure-title">Full queue</div>
-                  <div class="manual-note">Show the remaining ${hiddenRows.length} rotation player${
+                  <div class="disclosure-title">Show full line</div>
+                  <div class="manual-note">${hiddenRows.length} more player${
                     hiddenRows.length === 1 ? "" : "s"
-                  } only if you need the rest of the line.</div>
+                  } waiting</div>
                 </div>
               </summary>
               <div class="disclosure-body">
