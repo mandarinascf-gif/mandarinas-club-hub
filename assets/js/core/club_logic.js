@@ -1252,15 +1252,16 @@
       return "sub";
     }
 
-    const seasonScore = Number(row?.attendance_score || 0);
+    const overallAverage = Number(row?.overall_attendance_average || 0);
+    const overallGames = Number(row?.overall_games_attended || 0);
+    const overallNoShows = Number(row?.overall_no_shows || 0);
     const seasonGames = Number(row?.games_attended || 0);
-    const seasonNoShows = Number(row?.no_shows || 0);
 
-    if (seasonScore >= 8 && seasonGames >= 4 && seasonNoShows <= 1) {
+    if (overallAverage >= 1.4 && overallGames >= 6 && seasonGames >= 2 && overallNoShows <= 1) {
       return "core";
     }
 
-    if (seasonScore >= 2 && seasonGames >= 1 && seasonNoShows <= 2) {
+    if (overallAverage >= 0.75 && overallGames >= 2 && seasonGames >= 1 && overallNoShows <= 2) {
       return "flex";
     }
 
@@ -1276,26 +1277,33 @@
       return tierDiff;
     }
 
-    const scoreDiff = Number(right.attendance_score || 0) - Number(left.attendance_score || 0);
+    const overallAverageDiff =
+      Number(right.overall_attendance_average || 0) -
+      Number(left.overall_attendance_average || 0);
+    if (overallAverageDiff) {
+      return overallAverageDiff;
+    }
+
+    const scoreDiff =
+      Number(right.overall_attendance_score || 0) - Number(left.overall_attendance_score || 0);
     if (scoreDiff) {
       return scoreDiff;
     }
 
-    const gamesDiff = Number(right.games_attended || 0) - Number(left.games_attended || 0);
+    const gamesDiff = Number(right.overall_games_attended || 0) - Number(left.overall_games_attended || 0);
     if (gamesDiff) {
       return gamesDiff;
+    }
+
+    const seasonScoreDiff = Number(right.attendance_score || 0) - Number(left.attendance_score || 0);
+    if (seasonScoreDiff) {
+      return seasonScoreDiff;
     }
 
     const historicalScoreDiff =
       Number(right.historical_attendance_score || 0) - Number(left.historical_attendance_score || 0);
     if (historicalScoreDiff) {
       return historicalScoreDiff;
-    }
-
-    const historicalGamesDiff =
-      Number(right.historical_games_attended || 0) - Number(left.historical_games_attended || 0);
-    if (historicalGamesDiff) {
-      return historicalGamesDiff;
     }
 
     const recentScoreDiff =
@@ -1604,6 +1612,28 @@
         historical_late_cancels: 0,
         historical_no_shows: 0,
         historical_attendance_score: 0,
+        overall_games_attended: Number(row.games_attended || 0),
+        overall_games_available: Number(row.games_available || 0),
+        overall_late_cancels: Number(row.late_cancels || 0),
+        overall_no_shows: Number(row.no_shows || 0),
+        overall_tracked_matchdays:
+          Number(row.games_attended || 0) +
+          Number(row.games_available || 0) +
+          Number(row.late_cancels || 0) +
+          Number(row.no_shows || 0),
+        overall_attendance_score: Number(row.attendance_score || 0),
+        overall_attendance_average:
+          Number(row.games_attended || 0) +
+            Number(row.games_available || 0) +
+            Number(row.late_cancels || 0) +
+            Number(row.no_shows || 0) >
+          0
+            ? Number(row.attendance_score || 0) /
+              (Number(row.games_attended || 0) +
+                Number(row.games_available || 0) +
+                Number(row.late_cancels || 0) +
+                Number(row.no_shows || 0))
+            : 0,
       }));
     }
 
@@ -1656,11 +1686,31 @@
         summary.historical_games_available -
         summary.historical_late_cancels -
         summary.historical_no_shows * 2;
+      const overallGamesAttended =
+        Number(row.games_attended || 0) + Number(summary.historical_games_attended || 0);
+      const overallGamesAvailable =
+        Number(row.games_available || 0) + Number(summary.historical_games_available || 0);
+      const overallLateCancels =
+        Number(row.late_cancels || 0) + Number(summary.historical_late_cancels || 0);
+      const overallNoShows =
+        Number(row.no_shows || 0) + Number(summary.historical_no_shows || 0);
+      const overallTrackedMatchdays =
+        overallGamesAttended + overallGamesAvailable + overallLateCancels + overallNoShows;
+      const overallAttendanceScore = Number(row.attendance_score || 0) + historicalAttendanceScore;
+      const overallAttendanceAverage =
+        overallTrackedMatchdays > 0 ? overallAttendanceScore / overallTrackedMatchdays : 0;
 
       return {
         ...row,
         ...summary,
         historical_attendance_score: historicalAttendanceScore,
+        overall_games_attended: overallGamesAttended,
+        overall_games_available: overallGamesAvailable,
+        overall_late_cancels: overallLateCancels,
+        overall_no_shows: overallNoShows,
+        overall_tracked_matchdays: overallTrackedMatchdays,
+        overall_attendance_score: overallAttendanceScore,
+        overall_attendance_average: overallAttendanceAverage,
       };
     });
   }
@@ -1691,6 +1741,10 @@
   }
 
   function tierSuggestionEvidence(row) {
+    const overallGames = Number(row.overall_games_attended || 0);
+    const overallTracked = Number(row.overall_tracked_matchdays || 0);
+    const overallScore = Number(row.overall_attendance_score || 0);
+    const overallAverage = Number(row.overall_attendance_average || 0);
     const recentGames = Number(row.recent_games_attended || 0);
     const recentScore = Number(row.recent_attendance_score || 0);
     const seasonGames = Number(row.games_attended || 0);
@@ -1722,6 +1776,9 @@
       historyFlags.push(`${historicalNoShows} ${pluralize(historicalNoShows, "no-show")}`);
     }
 
+    const overallPart = `Overall ${overallGames} attended across ${overallTracked} tracked matchdays, score ${overallScore}, avg ${overallAverage.toFixed(
+      2
+    )}`;
     const seasonPart = `Season ${seasonGames} attended, score ${seasonScore}${
       seasonFlags.length ? `, ${seasonFlags.join(", ")}` : ""
     }`;
@@ -1730,7 +1787,7 @@
     }`;
     const recentPart = `Recent ${recentGames}/8, score ${recentScore}`;
 
-    return `${seasonPart} · ${historyPart} · ${recentPart}`;
+    return `${overallPart} · ${seasonPart} · ${historyPart} · ${recentPart}`;
   }
 
   function tierSuggestionNote(row, currentTier, slotLimit) {
@@ -1741,7 +1798,7 @@
     }
 
     if (row.recommended_tier_status === "core" && currentTier !== "core") {
-      return `Promotion case. Overall season attendance is strong enough to claim a full core spot inside the weighted ${mixLabel}.`;
+      return `Promotion case. Overall attendance history is strong enough to claim a full core spot inside the weighted ${mixLabel}.`;
     }
 
     if (
@@ -1752,7 +1809,7 @@
     }
 
     if (row.recommended_tier_status === "flex" && currentTier === "sub") {
-      return `Upward case. Overall season attendance now supports a flex half-spot in the weighted ${mixLabel}.`;
+      return `Upward case. Overall attendance history now supports a flex half-spot in the weighted ${mixLabel}.`;
     }
 
     if (
@@ -1763,7 +1820,7 @@
     }
 
     if (row.recommended_tier_status === "sub" && currentTier !== "sub") {
-      return "Downward case. Overall season attendance is no longer clearing the current tier line.";
+      return "Downward case. Overall attendance history is no longer clearing the current tier line.";
     }
 
     return row.movement_note || "Stable in current tier range.";
