@@ -368,14 +368,20 @@ document.addEventListener("DOMContentLoaded", () => {
       return leftRank - rightRank;
     }
 
-    const leftScore = Number(left.attendance_score || 0);
-    const rightScore = Number(right.attendance_score || 0);
+    const leftAverage = Number(left.overall_attendance_average || 0);
+    const rightAverage = Number(right.overall_attendance_average || 0);
+    if (rightAverage !== leftAverage) {
+      return rightAverage - leftAverage;
+    }
+
+    const leftScore = Number(left.overall_attendance_score || 0);
+    const rightScore = Number(right.overall_attendance_score || 0);
     if (rightScore !== leftScore) {
       return rightScore - leftScore;
     }
 
-    const leftGames = Number(left.games_attended || 0);
-    const rightGames = Number(right.games_attended || 0);
+    const leftGames = Number(left.overall_games_attended || 0);
+    const rightGames = Number(right.overall_games_attended || 0);
     if (rightGames !== leftGames) {
       return rightGames - leftGames;
     }
@@ -585,7 +591,7 @@ document.addEventListener("DOMContentLoaded", () => {
     )} of ${formatSpotValue(suggestionSlotLimit)} weighted spots and suggests ${moveTotal} tier change${
       moveTotal === 1 ? "" : "s"
     }.`;
-    suggestionModalCopy.textContent = `Recommendations use season score first, historical score second, and recent form last to break close calls inside the ${formatSpotValue(
+    suggestionModalCopy.textContent = `Recommendations use the combined overall attendance record first, then season, historical, and recent form detail to break close calls inside the ${formatSpotValue(
       suggestionSlotLimit
     )}-spot plan.`;
     openSuggestionModalButton.disabled = tierRows.length === 0;
@@ -795,6 +801,18 @@ document.addEventListener("DOMContentLoaded", () => {
               <strong>${escapeHtml(
                 row.suggestion_spot_value ? formatSpotValue(row.suggestion_spot_value) : "—"
               )}</strong>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Overall Attendance</span>
+              <strong>${escapeHtml(row.overall_games_attended || 0)}</strong>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Overall Score</span>
+              <strong>${escapeHtml(row.overall_attendance_score || 0)}</strong>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Overall Avg</span>
+              <strong>${escapeHtml(Number(row.overall_attendance_average || 0).toFixed(2))}</strong>
             </div>
             <div class="detail-item">
               <span class="detail-label">Season Attendance</span>
