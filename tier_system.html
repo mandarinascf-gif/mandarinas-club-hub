@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png" />
-    <link rel="stylesheet" href="./assets/css/app.css?v=20260501h" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260502a" />
   <title>Club · How Tiers Work</title>
   <script src="./assets/js/core/runtime_config.js?v=20260427a"></script>
   <script src="./assets/js/ui/shell.js?v=20260427a" defer></script>
@@ -140,6 +140,34 @@
     </section>
 
     <section class="panel">
+      <div class="section-label">Read it fast</div>
+      <h2>How to read the recommendation screen</h2>
+      <div class="quick-action-grid">
+        <div class="list-item">
+          <div class="list-item-main">
+            <div class="list-item-title">1. Now = your active tier today</div>
+            <div class="compact-row-copy">This is the tier the season is using right now.</div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="list-item-main">
+            <div class="list-item-title">2. Suggested next = where the data would place you</div>
+            <div class="compact-row-copy">It shows how the plan would look if the manager rebuilt tiers today from attendance evidence.</div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="list-item-main">
+            <div class="list-item-title">3. Why = short reason plus what helps next</div>
+            <div class="compact-row-copy">The app explains the call in plain language and tells you the next attendance step that strengthens your case.</div>
+          </div>
+        </div>
+      </div>
+      <p style="margin-top: var(--space-md);">
+        Recommendations are review notes for the manager. They are not automatic changes to your tier.
+      </p>
+    </section>
+
+    <section class="panel">
       <div class="section-label">Rough thresholds</div>
       <h2>What does it take?</h2>
       <p>These aren't hard cutoffs — the app weighs everything together — but as a rough guide:</p>
@@ -207,7 +235,7 @@
       <details>
         <summary>Where can I see my recommendation?</summary>
         <p>
-          Go to the <a href="./tier_watch.html">Queue page</a> and tap "View recommendations." You can search for your name, see your current and suggested tier, and tap "View why" for the full explanation.
+          Go to the <a href="./tier_watch.html">Queue page</a> and open the recommendation center. You can search for your name, compare your current tier with the suggested next tier, and open the full breakdown if you want the detailed evidence.
         </p>
       </details>
       <details>
