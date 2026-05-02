@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png" />
-    <link rel="stylesheet" href="./assets/css/app.css?v=20260501h" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260502a" />
     <title>Busses · Planner</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/js/core/club_logic.js?v=20260501e"></script>
@@ -39,13 +39,13 @@
           <div class="section-label">Busses · Planner</div>
           <h1>Tier workspace</h1>
           <p id="hero-copy">
-            This page keeps the live queue separate from the future recommendation plan. Read the queue
-            first, then review recommended changes.
+            Use this workspace in two passes: the live queue answers who gets the next flex spot now,
+            and the recommendation plan answers what the next tier mix should be.
           </p>
         </div>
         <div class="actions">
           <a class="primary-button" href="#priority-strip">Open live queue</a>
-          <a class="secondary-button" href="#tier-grid">Open recommendation board</a>
+          <a class="secondary-button" href="#tier-grid">Open recommendation plan</a>
           <a class="secondary-button" href="./matchday.html">Back to matchday</a>
         </div>
       </section>
@@ -60,14 +60,14 @@
             <span class="summary-copy">Current planning context</span>
           </div>
           <div class="summary-card">
-            <span>Weighted spot plan</span>
+            <span>Plan fill</span>
             <strong id="spot-mix-stat">0 / 36</strong>
-            <span class="summary-copy">Suggested season mix</span>
+            <span class="summary-copy">Weighted next-tier plan</span>
           </div>
           <div class="summary-card">
-            <span>Recommended changes</span>
+            <span>Review cases</span>
             <strong id="change-count-stat">0</strong>
-            <span class="summary-copy">Current vs suggested</span>
+            <span class="summary-copy">Saved tier vs suggested next</span>
           </div>
           <div class="summary-card">
             <span>Players evaluated</span>
@@ -81,8 +81,9 @@
         <div class="section-label">Controls</div>
         <h2>Choose a Campaign</h2>
         <p id="board-copy">
-          Queue order uses season totals. Recommendations compare recent, season, and historical
-          attendance and always land on a weighted 36-spot plan.
+          Start with Changes to review movement cases. The live queue is season-to-date; the
+          recommendation plan is a separate next-tier view built from recent, season, and historical
+          attendance.
         </p>
         <p>Selected season: <strong id="selected-season-pill">No season selected</strong></p>
 
@@ -97,6 +98,7 @@
         </div>
 
         <div class="filter-row" id="filter-row">
+          <button class="filter-chip" type="button" data-filter="changes">Changes</button>
           <button class="filter-chip active" type="button" data-filter="all">All</button>
           <button class="filter-chip" type="button" data-filter="core">Core</button>
           <button class="filter-chip" type="button" data-filter="flex">Flex</button>
@@ -115,8 +117,27 @@
 
       <section class="panel">
         <div class="section-label">Recommendations</div>
-        <h2>Recommended Tier Plan</h2>
-        <p>Use this list for review. It is the forward-looking recommendation, not the live queue.</p>
+        <h2>Recommended Next-Tier Plan</h2>
+        <p>Review this board for next-tier planning. It is separate from today's queue and does not apply changes automatically.</p>
+        <div class="summary-pill-grid" id="recommendation-legend-pills">
+          <div class="summary-pill">
+            <strong>Saved</strong>
+            <span>Tier in the squad record</span>
+          </div>
+          <div class="summary-pill">
+            <strong>Live now</strong>
+            <span>Tier active in this season</span>
+          </div>
+          <div class="summary-pill">
+            <strong>Suggested next</strong>
+            <span>Attendance-based recommendation</span>
+          </div>
+          <div class="summary-pill">
+            <strong>Plan slot</strong>
+            <span>1 for Core, 0.5 for Flex</span>
+          </div>
+        </div>
+        <div class="summary-pill-grid" id="recommendation-summary-pills" aria-live="polite"></div>
         <div class="table-shell tier-admin-table-wrap" id="tier-grid" aria-live="polite"></div>
       </section>
     </main>
@@ -125,6 +146,6 @@
       <div class="club-footer-copy">Busses · Planner</div>
     </footer>
 
-    <script src="./assets/js/pages/admin/tiers.js?v=20260501d"></script>
+    <script src="./assets/js/pages/admin/tiers.js?v=20260502a"></script>
   </body>
 </html>
