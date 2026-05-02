@@ -2039,6 +2039,17 @@ table {
   gap: var(--space-2);
 }
 
+#suggestion-summary-pills,
+#recommendation-legend-pills,
+#recommendation-summary-pills {
+  margin-top: var(--space-3);
+}
+
+#tier-table-summary {
+  margin-top: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
 .summary-pill {
   display: inline-flex;
   align-items: center;
