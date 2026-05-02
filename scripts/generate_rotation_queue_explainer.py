@@ -134,7 +134,7 @@ EXAMPLES = [
 ]
 
 PRACTICAL_NOTES = [
-    "Core and Flex/Sub players are not part of the rotation queue. The queue is rotation-tier only.",
+    "Core and Sub players are not part of the rotation queue. The queue is rotation-tier only.",
     "Eligibility matters. A rotation player marked ineligible is excluded even if they would otherwise rank near the top.",
     "The queue shown in the app is season-specific. Changing seasons changes the queue context, statistics, and final-matchday calculation.",
     "If a player asks why they moved, the quickest explanation is usually either fewer appearances on a regular week or stronger season results on the final week.",
@@ -237,7 +237,7 @@ def add_header_and_footer(document: Document) -> None:
     p = header.paragraphs[0]
     p.alignment = WD_ALIGN_PARAGRAPH.LEFT
     p.paragraph_format.space_after = Pt(8)
-    run = p.add_run("Mandarinas Club Hub | Rotation Queue Explainer")
+    run = p.add_run("Mandarinas Club Hub | Flex Queue Explainer")
     run.font.name = "Arial"
     run.font.size = Pt(8.5)
     run.font.color.rgb = MUTED_COLOR
@@ -257,7 +257,7 @@ def add_header_and_footer(document: Document) -> None:
 def add_intro(document: Document) -> None:
     title = document.add_paragraph(style="Title")
     title.alignment = WD_ALIGN_PARAGRAPH.LEFT
-    title.add_run("Mandarinas Club Hub Rotation Queue")
+    title.add_run("Mandarinas Club Hub Flex Queue")
 
     subtitle = document.add_paragraph(style="Subtitle")
     subtitle.alignment = WD_ALIGN_PARAGRAPH.LEFT
@@ -580,7 +580,7 @@ def draw_header_footer(canvas, doc) -> None:
     top = height - 0.56 * inch
     canvas.setFont("Helvetica", 8.5)
     canvas.setFillColor(colors.HexColor("#606C76"))
-    canvas.drawString(left, top, "Mandarinas Club Hub | Rotation Queue Explainer")
+    canvas.drawString(left, top, "Mandarinas Club Hub | Flex Queue Explainer")
     canvas.setStrokeColor(colors.HexColor("#D9E2DA"))
     canvas.setLineWidth(0.7)
     canvas.line(left, top - 6, right, top - 6)
@@ -598,11 +598,11 @@ def build_pdf() -> None:
         rightMargin=0.95 * inch,
         topMargin=1.0 * inch,
         bottomMargin=0.75 * inch,
-        title="Mandarinas Club Hub Rotation Queue",
+        title="Mandarinas Club Hub Flex Queue",
         author="OpenAI Codex",
     )
     story = []
-    story.append(Paragraph("Mandarinas Club Hub Rotation Queue", styles_map["title"]))
+    story.append(Paragraph("Mandarinas Club Hub Flex Queue", styles_map["title"]))
     story.append(
         Paragraph(
             "Plain-English explanation of how the live club app orders eligible rotation players for the next open spot.",

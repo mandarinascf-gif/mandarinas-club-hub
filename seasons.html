@@ -179,7 +179,7 @@
                     <input id="core-spots" name="core-spots" type="number" min="0" max="60" value="18" required />
                   </div>
                   <div class="field">
-                    <label for="rotation-spots">Rotation spots</label>
+                    <label for="rotation-spots">Flex spots</label>
                     <input id="rotation-spots" name="rotation-spots" type="number" min="0" max="60" value="10" required />
                   </div>
                   <div class="field">
@@ -249,7 +249,7 @@
 
               <p id="season-status-line" class="status-line">Loading club data...</p>
               <p class="micro-note">
-                Core and Rotation targets define the intended mix. Queue start matchday tells the
+                Core and Flex targets define the intended mix. Queue start matchday tells the
                 model where the current queue logic should begin.
               </p>
             </form>
@@ -266,13 +266,13 @@
 
             <div class="actions">
               <button class="secondary-button" type="button" id="roster-refresh-button">Reload roster</button>
-              <button class="secondary-button" type="button" id="seed-roster-button">Add current Core + Rotation</button>
+              <button class="secondary-button" type="button" id="seed-roster-button">Add current Core + Flex</button>
               <button class="secondary-button" type="button" id="sync-season-tier-button">Use full squad tier status</button>
               <a class="secondary-button" id="open-tiers-link" href="./tiers.html">Open planner</a>
               <a class="secondary-button" href="./squad.html#player-list-panel">Open full squad</a>
             </div>
             <p class="micro-note" id="roster-bulk-note">
-              For now, bulk add uses the full squad current / next-season tier and only pulls players marked Core or Rotation.
+              For now, bulk add uses the full squad current / next-season tier and only pulls players marked Core or Flex.
             </p>
             <div class="field">
               <label>Manage season squad</label>
@@ -296,7 +296,7 @@
                       <input id="selected-core-spots" type="number" min="0" max="60" value="18" disabled />
                     </div>
                     <div class="field">
-                      <label for="selected-rotation-spots">Rotation spots</label>
+                      <label for="selected-rotation-spots">Flex spots</label>
                       <input id="selected-rotation-spots" type="number" min="0" max="60" value="10" disabled />
                     </div>
                     <div class="field">
@@ -365,16 +365,16 @@
                       <label for="season-roster-registration-tier">Requested season tier</label>
                       <select id="season-roster-registration-tier">
                         <option value="core">Core</option>
-                        <option value="rotation" selected>Rotation</option>
-                        <option value="flex_sub">Flex/Sub</option>
+                        <option value="flex" selected>Flex</option>
+                        <option value="sub">Sub</option>
                       </select>
                     </div>
                     <div class="field">
                       <label for="season-roster-tier-status">This season tier</label>
                       <select id="season-roster-tier-status">
                         <option value="core">Core</option>
-                        <option value="rotation" selected>Rotation</option>
-                        <option value="flex_sub">Flex/Sub</option>
+                        <option value="flex" selected>Flex</option>
+                        <option value="sub">Sub</option>
                       </select>
                     </div>
                     <div class="field">

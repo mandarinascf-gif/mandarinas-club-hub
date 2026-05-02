@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const rotationQueueMode = logic.rotationQueueMode || (() => "regular");
   const buildRotationQueueRows =
     logic.buildRotationQueueRows ||
-    ((rows) => [...(rows || [])].filter((row) => row.tier_status === "rotation" && row.is_eligible));
+    ((rows) => [...(rows || [])].filter((row) => row.tier_status === "flex" && row.is_eligible));
   const applyTierSuggestionSlots = logic.applyTierSuggestionSlots || ((rows) => [...(rows || [])]);
   const tierSuggestionEvidence =
     logic.tierSuggestionEvidence || ((row) => row?.suggestion_evidence || "");
@@ -52,7 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const tierSearch = document.getElementById("tier-search");
   const detailModal = document.getElementById("tier-detail-modal");
 
-  const TIER_ORDER = Object.freeze({ core: 0, rotation: 1, flex_sub: 2 });
+  const TIER_ORDER = Object.freeze({ core: 0, flex: 1, sub: 2 });
   const DEFAULT_SORT_DIRECTIONS = Object.freeze({
     player: "asc",
     current: "asc",
@@ -91,7 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function currentTier(row) {
-    return row.tier_status || row.default_status || "flex_sub";
+    return row.tier_status || row.default_status || "sub";
   }
 
   function displayName(row) {
@@ -420,10 +420,10 @@ document.addEventListener("DOMContentLoaded", () => {
       tierRows.filter((row) => row.recommended_tier_status === "core").length
     );
     rotationCount.textContent = String(
-      tierRows.filter((row) => row.recommended_tier_status === "rotation").length
+      tierRows.filter((row) => row.recommended_tier_status === "flex").length
     );
     flexCount.textContent = String(
-      tierRows.filter((row) => row.recommended_tier_status === "flex_sub").length
+      tierRows.filter((row) => row.recommended_tier_status === "sub").length
     );
     changeCount.textContent = String(
       tierRows.filter((row) => currentTier(row) !== row.recommended_tier_status).length
@@ -440,8 +440,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const hiddenRows = queueRows.slice(visibleRows.length);
     const queueIntroCopy =
       activeQueueMode === "final"
-        ? "Rotation tier only. On the final matchday, points go first, then PPG."
-        : "Rotation tier only. Think of this as the updated buddy-system line: fewer appearances go first.";
+        ? "Flex tier only. On the final matchday, points go first, then PPG."
+        : "Flex tier only. Think of this as the updated buddy-system line: fewer appearances go first.";
 
     if (!queueRows.length) {
       queueTableWrap.innerHTML = `

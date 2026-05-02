@@ -1255,6 +1255,8 @@ summary {
   color: var(--success);
 }
 
+.status-pill.flex,
+.tier-pill.flex,
 .status-pill.rotation,
 .tier-pill.rotation,
 .state-pill.scheduled,
@@ -1266,6 +1268,8 @@ summary {
   color: var(--warning);
 }
 
+.status-pill.sub,
+.tier-pill.sub,
 .status-pill.flex_sub,
 .tier-pill.flex_sub,
 .state-pill.pending,

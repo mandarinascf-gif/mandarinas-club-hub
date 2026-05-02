@@ -95,7 +95,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function normalizeDirectoryPlayer(player) {
-    const desiredTier = normalizeText(player?.desired_tier || player?.status || "rotation").toLowerCase();
+    const desiredTier = normalizeText(player?.desired_tier || player?.status || "flex").toLowerCase();
     return {
       ...player,
       desired_tier: desiredTier,
@@ -118,7 +118,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         Array.isArray(row?.preferred_positions) && row.preferred_positions.length
           ? row.preferred_positions.map((value) => normalizeText(value).toUpperCase())
           : ["MID"],
-      requested_tier: normalizeText(row?.requested_tier || "rotation").toLowerCase(),
+      requested_tier: normalizeText(row?.requested_tier || "flex").toLowerCase(),
       status: normalizeText(row?.status || "pending").toLowerCase(),
       note: normalizeText(row?.note || ""),
     };
@@ -313,10 +313,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (status === "core") {
       return 0;
     }
-    if (status === "rotation") {
+    if (status === "flex") {
       return 1;
     }
-    if (status === "flex_sub") {
+    if (status === "sub") {
       return 2;
     }
     return 3;
@@ -701,7 +701,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     totalPlayersEl.textContent = String(allPlayers.length);
     corePlayersEl.textContent = String(allPlayers.filter((player) => player.status === "core").length);
     rotationPlayersEl.textContent = String(
-      allPlayers.filter((player) => player.status === "rotation").length
+      allPlayers.filter((player) => player.status === "flex").length
     );
   }
 
@@ -757,14 +757,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   function syncExistingRequestTierFromSelection() {
     const selectedPlayerIdValue = Number(existingDirectoryPlayerSelect.value);
     const player = requestableDirectoryPlayers().find((entry) => entry.id === selectedPlayerIdValue);
-    const fallbackTier = player?.desired_tier || player?.status || "rotation";
+    const fallbackTier = player?.desired_tier || player?.status || "flex";
     existingTierSelect.value = fallbackTier;
   }
 
   function resetNewRequestForm() {
     newRequestForm.reset();
     newPositionSelect.value = "MID";
-    newTierSelect.value = "rotation";
+    newTierSelect.value = "flex";
   }
 
   function renderRosterRequestTools() {
@@ -1126,7 +1126,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       nickname: normalizeText(player.nickname || "") || null,
       nationality: player.nationality,
       preferred_positions: Array.isArray(player.positions) && player.positions.length ? player.positions : ["MID"],
-      requested_tier: normalizeText(existingTierSelect.value || player.status || "rotation").toLowerCase(),
+      requested_tier: normalizeText(existingTierSelect.value || player.status || "flex").toLowerCase(),
       note: normalizeText(existingNoteInput.value) || null,
       status: "pending",
     });
@@ -1170,7 +1170,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const nickname = normalizeText(newNicknameInput.value);
     const nationality = normalizeText(newNationalityInput.value);
     const contact = normalizeText(newContactInput.value);
-    const requestedTier = normalizeText(newTierSelect.value || "rotation").toLowerCase();
+    const requestedTier = normalizeText(newTierSelect.value || "flex").toLowerCase();
     const position = normalizeText(newPositionSelect.value || "MID").toUpperCase();
     const note = normalizeText(newNoteInput.value);
     const requesterName = normalizeText(`${firstName} ${lastName}`);

@@ -402,7 +402,7 @@
           ? selectedReplacement.row?.tier_status
           : (selectedReplacement?.player?.desired_tier || selectedReplacement?.player?.status);
 
-        replacementTierStatusSelect.value = fallbackTier || "rotation";
+        replacementTierStatusSelect.value = fallbackTier || "flex";
       }
 
       function renderReplacementTools() {
@@ -453,7 +453,7 @@
                         `<option value="directory:${player.id}">${escapeHtml(displayName(player))} · ${escapeHtml(
                           player.nationality || "Full squad player"
                         )} · current/next-season ${escapeHtml(
-                          player.status === "flex_sub" ? "Flex/Sub" : formatStatusLabel(player.status)
+                          player.status === "sub" ? "Sub" : formatStatusLabel(player.status)
                         )}</option>`
                     )
                     .join("")}
@@ -499,7 +499,7 @@
           return;
         }
 
-        const tierStatus = normalizeText(replacementTierStatusSelect.value || player.status || "rotation").toLowerCase();
+        const tierStatus = normalizeText(replacementTierStatusSelect.value || player.status || "flex").toLowerCase();
         const attendanceStatus = normalizeText(replacementAttendanceStatusSelect.value || "available").toLowerCase();
 
         replacementAddButton.disabled = true;
@@ -796,8 +796,8 @@
       }
 
       function formatStatusLabel(value) {
-        if (value === "flex_sub") {
-          return "Flex/Sub";
+        if (value === "sub") {
+          return "Sub";
         }
 
         return value.charAt(0).toUpperCase() + value.slice(1);
@@ -876,8 +876,8 @@
           return "";
         }
 
-        if (row.bucket === "rotation") {
-          return `Rotation #${row.queuePosition}`;
+        if (row.bucket === "flex") {
+          return `Flex #${row.queuePosition}`;
         }
 
         if (row.bucket === "depth") {
@@ -896,14 +896,14 @@
           return "Priority in";
         }
 
-        return row.bucket === "rotation" ? "Next up" : "Waiting";
+        return row.bucket === "flex" ? "Next up" : "Waiting";
       }
 
       function priorityStatSummary(player, row = rosterPlanRow(player.id)) {
         const metrics = priorityMetrics(player.id);
         const standingMetrics = rotationStandingsMetrics(player.id);
         const usesStandingsPoints =
-          (row?.bucket === "rotation" || player.status === "rotation") &&
+          (row?.bucket === "flex" || player.status === "flex") &&
           activeRotationQueueMode === "final";
 
         return {
@@ -1021,11 +1021,11 @@
           availablePlayers.filter((player) => player.status === "core" && priorityMetrics(player.id).is_eligible)
         );
         const rotationPlayers = sortRotationCandidates(
-          availablePlayers.filter((player) => player.status === "rotation" && priorityMetrics(player.id).is_eligible)
+          availablePlayers.filter((player) => player.status === "flex" && priorityMetrics(player.id).is_eligible)
         );
         const depthPlayers = sortDepthCandidates(
           availablePlayers.filter((player) => {
-            if (player.status === "core" || player.status === "rotation") {
+            if (player.status === "core" || player.status === "flex") {
               return false;
             }
 
@@ -1062,7 +1062,7 @@
           planRows.push({
             player,
             slotLabel: `Queue #${index + 1}`,
-            bucket: "rotation",
+            bucket: "flex",
             queuePosition: index + 1,
             selected,
             order: order++,
@@ -1096,7 +1096,7 @@
           byPlayerId,
           selectedCount: selectedIds.size,
           selectedCoreCount: planRows.filter((row) => row.selected && row.bucket === "core").length,
-          selectedRotationCount: planRows.filter((row) => row.selected && row.bucket === "rotation").length,
+          selectedRotationCount: planRows.filter((row) => row.selected && row.bucket === "flex").length,
           selectedDepthCount: planRows.filter((row) => row.selected && row.bucket === "depth").length,
           waitingCount: planRows.filter((row) => !row.selected).length,
           openSpots: Math.max(ROSTER_CAP - selectedIds.size, 0),
@@ -1106,9 +1106,9 @@
 
       function buildRosterDisplayPlan() {
         const corePlayers = sortCoreCandidates(players.filter((player) => player.status === "core"));
-        const rotationPlayers = sortRotationCandidates(players.filter((player) => player.status === "rotation"));
+        const rotationPlayers = sortRotationCandidates(players.filter((player) => player.status === "flex"));
         const depthPlayers = sortDepthCandidates(
-          players.filter((player) => player.status !== "core" && player.status !== "rotation")
+          players.filter((player) => player.status !== "core" && player.status !== "flex")
         );
 
         const planRows = [];
@@ -1127,7 +1127,7 @@
         rotationPlayers.forEach((player, index) => {
           planRows.push({
             player,
-            bucket: "rotation",
+            bucket: "flex",
             queuePosition: index + 1,
             selected: false,
             order: order++,
@@ -1858,16 +1858,16 @@
           }
 
           clubPlayers = (directoryRows || [])
-            .map((row) => normalizePlayerDesiredTier(row, "rotation"))
+            .map((row) => normalizePlayerDesiredTier(row, "flex"))
             .sort((left, right) => compareNames(left, right));
           seasonRosterRows = (seasonPlayerRows || [])
             .map((row) => {
-              const registryPlayer = normalizePlayerDesiredTier(row.player, "rotation");
+              const registryPlayer = normalizePlayerDesiredTier(row.player, "flex");
               return {
                 ...row,
                 player: registryPlayer,
                 registration_tier: normalizeText(
-                  row.registration_tier || registryPlayer.desired_tier || row.tier_status || "rotation"
+                  row.registration_tier || registryPlayer.desired_tier || row.tier_status || "flex"
                 ).toLowerCase(),
                 payment_status: normalizeText(row.payment_status || "unknown").toLowerCase(),
                 is_eligible: row.is_eligible !== false,
@@ -2468,7 +2468,7 @@
             <strong>${escapeHtml(rosterPlan.selectedCoreCount)}</strong>
           </div>
           <div class="summary-card">
-            <span>Rotation in</span>
+            <span>Flex in</span>
             <strong>${escapeHtml(rosterPlan.selectedRotationCount)}</strong>
           </div>
           <div class="summary-card">

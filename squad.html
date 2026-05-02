@@ -120,8 +120,8 @@
           <div class="filter-row" id="filter-row">
             <button class="filter-chip active" type="button" data-filter="all">All</button>
             <button class="filter-chip" type="button" data-filter="core">Core</button>
-            <button class="filter-chip" type="button" data-filter="rotation">Rotation</button>
-            <button class="filter-chip" type="button" data-filter="flex_sub">Flex/Sub</button>
+            <button class="filter-chip" type="button" data-filter="flex">Flex</button>
+            <button class="filter-chip" type="button" data-filter="sub">Sub</button>
           </div>
 
           <section class="section-block">
@@ -129,7 +129,7 @@
               <div>
                 <h3 class="section-title">Season prep</h3>
                 <p class="section-copy" id="season-prep-copy">
-                  Update each player's current or next-season tier here. Season Centre can then bulk-add only the players currently marked Core or Rotation.
+                  Update each player's current or next-season tier here. Season Centre can then bulk-add only the players currently marked Core or Flex.
                 </p>
               </div>
               <a class="secondary-button" href="./seasons.html#active-roster">Open seasons</a>
@@ -187,8 +187,8 @@
                     <label for="status-select">Current / next-season tier</label>
                     <select id="status-select" name="status-select">
                       <option value="core" selected>Core</option>
-                      <option value="rotation">Rotation</option>
-                      <option value="flex_sub">Flex/Sub</option>
+                      <option value="flex">Flex</option>
+                      <option value="sub">Sub</option>
                     </select>
                   </div>
                   <div class="field">
@@ -237,7 +237,7 @@
 
               <p id="status-line" class="status-line">Loading club data...</p>
               <p class="micro-note">
-                Next step after full squad prep: open Season Centre and use <strong>Add current Core + Rotation</strong>.
+                Next step after full squad prep: open Season Centre and use <strong>Add current Core + Flex</strong>.
               </p>
             </form>
           </section>

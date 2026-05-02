@@ -51,14 +51,14 @@ alter table public.season_players
 
 update public.season_players
 set registration_tier = case
-  when lower(coalesce(registration_tier, '')) in ('core', 'rotation', 'flex_sub')
+  when lower(coalesce(registration_tier, '')) in ('core', 'flex', 'sub')
     then lower(registration_tier)
-  when lower(coalesce(tier_status, '')) in ('core', 'rotation', 'flex_sub')
+  when lower(coalesce(tier_status, '')) in ('core', 'flex', 'sub')
     then lower(tier_status)
-  else 'rotation'
+  else 'flex'
 end
 where registration_tier is null
-   or lower(coalesce(registration_tier, '')) not in ('core', 'rotation', 'flex_sub');
+   or lower(coalesce(registration_tier, '')) not in ('core', 'flex', 'sub');
 
 update public.season_players
 set payment_status = case
@@ -70,7 +70,7 @@ where payment_status is null
    or lower(coalesce(payment_status, '')) not in ('unknown', 'pending', 'paid', 'comped');
 
 alter table public.season_players
-  alter column registration_tier set default 'rotation',
+  alter column registration_tier set default 'flex',
   alter column registration_tier set not null,
   alter column payment_status set default 'unknown',
   alter column payment_status set not null;
@@ -84,7 +84,7 @@ begin
   ) then
     alter table public.season_players
       add constraint season_players_registration_tier_allowed check (
-        registration_tier in ('core', 'rotation', 'flex_sub')
+        registration_tier in ('core', 'flex', 'sub')
       );
   end if;
 

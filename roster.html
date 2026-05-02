@@ -31,7 +31,7 @@
           <a class="nav-link active" href="./roster.html">Squad</a>
           <a class="nav-link" href="./public_standings.html">Standings</a>
           <a class="nav-link" href="./submissions.html" title="Submit your matchday stats">Report</a>
-          <a class="nav-link nav-link-extra" href="./tier_watch.html" title="Rotation tier waiting list">Queue</a>
+          <a class="nav-link nav-link-extra" href="./tier_watch.html" title="Flex tier waiting list">Queue</a>
           <a class="nav-link nav-link-extra" href="./videos.html">Videos</a>
         </div>
       </div>
@@ -65,7 +65,7 @@
             <span class="summary-copy">Selected season squad</span>
           </div>
           <div class="summary-card">
-            <span>Rotation tier players</span>
+            <span>Flex tier players</span>
             <strong id="rotation-players">0</strong>
             <span class="summary-copy">Active week-to-week depth</span>
           </div>
@@ -111,8 +111,8 @@
             <div class="roster-filter-group">
               <button class="filter-chip active" type="button" data-filter="tier" data-value="all">All</button>
               <button class="filter-chip" type="button" data-filter="tier" data-value="core">Core</button>
-              <button class="filter-chip" type="button" data-filter="tier" data-value="rotation">Rotation</button>
-              <button class="filter-chip" type="button" data-filter="tier" data-value="flex_sub">Flex/Sub</button>
+              <button class="filter-chip" type="button" data-filter="tier" data-value="flex">Flex</button>
+              <button class="filter-chip" type="button" data-filter="tier" data-value="sub">Sub</button>
             </div>
           </div>
 
@@ -158,8 +158,8 @@
                 <label for="roster-request-existing-tier">Requested season tier</label>
                 <select id="roster-request-existing-tier">
                   <option value="core">Core</option>
-                  <option value="rotation" selected>Rotation</option>
-                  <option value="flex_sub">Flex/Sub</option>
+                  <option value="flex" selected>Flex</option>
+                  <option value="sub">Sub</option>
                 </select>
               </div>
               <div class="field">
@@ -220,8 +220,8 @@
                   <label for="roster-request-new-tier">Requested season tier</label>
                   <select id="roster-request-new-tier">
                     <option value="core">Core</option>
-                    <option value="rotation" selected>Rotation</option>
-                    <option value="flex_sub">Flex/Sub</option>
+                    <option value="flex" selected>Flex</option>
+                    <option value="sub">Sub</option>
                   </select>
                 </div>
               </div>

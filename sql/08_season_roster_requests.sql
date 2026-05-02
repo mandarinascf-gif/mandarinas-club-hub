@@ -15,7 +15,7 @@ create table if not exists public.season_roster_requests (
   nickname text,
   nationality text not null,
   preferred_positions text[] not null default array['MID']::text[],
-  requested_tier text not null default 'rotation',
+  requested_tier text not null default 'flex',
   note text,
   status text not null default 'pending',
   review_note text,
@@ -50,7 +50,7 @@ create table if not exists public.season_roster_requests (
     and preferred_positions <@ array['GK', 'DEF', 'MID', 'ATT']::text[]
   ),
   constraint season_roster_requests_requested_tier_allowed check (
-    requested_tier in ('core', 'rotation', 'flex_sub')
+    requested_tier in ('core', 'flex', 'sub')
   ),
   constraint season_roster_requests_status_allowed check (
     status in ('pending', 'approved', 'denied')

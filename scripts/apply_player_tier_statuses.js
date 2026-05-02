@@ -70,12 +70,12 @@ function displayLabel(player) {
 function targetTierForPlayer(player) {
   const label = canonicalize(displayLabel(player));
   if (ROTATION_LABELS.has(label)) {
-    return "rotation";
+    return "flex";
   }
   if (CORE_LABELS.has(label)) {
     return "core";
   }
-  return "flex_sub";
+  return "sub";
 }
 
 async function supabaseRequest(path, options = {}) {

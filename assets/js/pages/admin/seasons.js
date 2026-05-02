@@ -138,7 +138,7 @@
       }
 
       function normalizeDesiredTierPlayer(player) {
-        const desiredTier = normalizeText(player?.desired_tier || player?.status || "rotation").toLowerCase();
+        const desiredTier = normalizeText(player?.desired_tier || player?.status || "flex").toLowerCase();
         return {
           ...player,
           desired_tier: desiredTier,
@@ -356,11 +356,11 @@
       }
 
       function formatTierLabel(value) {
-        if (value === "flex_sub") {
-          return "Flex/Sub";
+        if (value === "sub") {
+          return "Sub";
         }
 
-        return value ? value.charAt(0).toUpperCase() + value.slice(1) : "Rotation";
+        return value ? value.charAt(0).toUpperCase() + value.slice(1) : "Flex";
       }
 
       function seasonViewHash(view) {
@@ -608,14 +608,14 @@
             count: rows.filter((row) => row.tier_status === "core").length,
           },
           {
-            key: "rotation",
-            label: "Rotation",
-            count: rows.filter((row) => row.tier_status === "rotation").length,
+            key: "flex",
+            label: "Flex",
+            count: rows.filter((row) => row.tier_status === "flex").length,
           },
           {
-            key: "flex_sub",
-            label: "Flex/Sub",
-            count: rows.filter((row) => row.tier_status === "flex_sub").length,
+            key: "sub",
+            label: "Sub",
+            count: rows.filter((row) => row.tier_status === "sub").length,
           },
           {
             key: "inactive",
@@ -647,12 +647,12 @@
           return row.tier_status === "core";
         }
 
-        if (activeSeasonRosterFilter === "rotation") {
-          return row.tier_status === "rotation";
+        if (activeSeasonRosterFilter === "flex") {
+          return row.tier_status === "flex";
         }
 
-        if (activeSeasonRosterFilter === "flex_sub") {
-          return row.tier_status === "flex_sub";
+        if (activeSeasonRosterFilter === "sub") {
+          return row.tier_status === "sub";
         }
 
         if (activeSeasonRosterFilter === "payment_check") {
@@ -802,7 +802,7 @@
         return {
           ...row,
           registration_tier: normalizeText(
-            row.registration_tier || row.tier_status || "rotation"
+            row.registration_tier || row.tier_status || "flex"
           ).toLowerCase(),
           payment_status: normalizePaymentStatus(row.payment_status),
           is_eligible: row.is_eligible !== false,
@@ -823,7 +823,7 @@
             Array.isArray(row.preferred_positions) && row.preferred_positions.length
               ? row.preferred_positions.map((value) => normalizeText(value).toUpperCase())
               : ["MID"],
-          requested_tier: normalizeText(row.requested_tier || "rotation").toLowerCase(),
+          requested_tier: normalizeText(row.requested_tier || "flex").toLowerCase(),
           status: normalizeText(row.status || "pending").toLowerCase(),
           note: normalizeText(row.note || ""),
           review_note: normalizeText(row.review_note || ""),
@@ -1056,14 +1056,14 @@
       function syncRosterAddDefaultsFromSelection() {
         const playerId = Number(seasonRosterAddSelect.value);
         const player = clubPlayers.find((entry) => entry.id === playerId);
-        const fallbackTier = player?.desired_tier || player?.status || "rotation";
+        const fallbackTier = player?.desired_tier || player?.status || "flex";
 
         seasonRosterRegistrationTierSelect.value = fallbackTier;
         seasonRosterTierStatusSelect.value = fallbackTier;
       }
 
       function tierOptionsMarkup(selectedValue) {
-        return ["core", "rotation", "flex_sub"]
+        return ["core", "flex", "sub"]
           .map(
             (value) =>
               `<option value="${value}" ${
@@ -1094,7 +1094,7 @@
           return;
         }
 
-        if (!["core", "rotation", "flex_sub"].includes(nextTier) || player.status === nextTier) {
+        if (!["core", "flex", "sub"].includes(nextTier) || player.status === nextTier) {
           return;
         }
 
@@ -1189,7 +1189,7 @@
         const matchdays = selectedSeason.matchdays || [];
         const seasonRosterCount = (selectedSeason.seasonPlayers || []).length;
         selectedSeasonPill.textContent = selectedSeason.name;
-        matchdayBoardCopy.textContent = `${selectedSeason.name} has ${seasonRosterCount} active season-squad players who can appear in Match Centre, League Table, Planner, and club screens. Tier targets are ${selectedSeason.core_spots} Core and ${selectedSeason.rotation_spots} Rotation, with the current queue model starting at matchday ${selectedSeason.model_start_matchday || 1}. ${
+        matchdayBoardCopy.textContent = `${selectedSeason.name} has ${seasonRosterCount} active season-squad players who can appear in Match Centre, League Table, Planner, and club screens. Tier targets are ${selectedSeason.core_spots} Core and ${selectedSeason.rotation_spots} Flex, with the current queue model starting at matchday ${selectedSeason.model_start_matchday || 1}. ${
           selectedSeason.season_start_date
             ? `Default nights are ${weekdayLabel(selectedSeason.default_matchday_weekday)} at ${formatTimeLabel(
                 selectedSeason.default_kickoff_time
@@ -1265,14 +1265,14 @@
           setSeasonSettingsLocked(true);
           seasonSettingsNote.textContent = "Choose a campaign first. These settings control the weekly queue and the matchday where the current model begins.";
           seasonRosterAddSelect.innerHTML = `<option value="">Select a player from the full squad</option>`;
-          seasonRosterRegistrationTierSelect.value = "rotation";
-          seasonRosterTierStatusSelect.value = "rotation";
+          seasonRosterRegistrationTierSelect.value = "flex";
+          seasonRosterTierStatusSelect.value = "flex";
           seasonRosterPaymentStatusSelect.value = "unknown";
           seedRosterButton.disabled = true;
           syncSeasonTierButton.disabled = true;
           syncSeasonTierButton.textContent = "Use full squad tier status";
           if (rosterBulkNote) {
-            rosterBulkNote.textContent = "For now, bulk add uses the current / next-season tier from Full Squad and only pulls players marked Core or Rotation.";
+            rosterBulkNote.textContent = "For now, bulk add uses the current / next-season tier from Full Squad and only pulls players marked Core or Flex.";
           }
           renderRosterFlowRow({ disabled: true });
           seasonRosterRequestSummary.innerHTML = renderSummaryPillGroup([
@@ -1284,8 +1284,8 @@
           seasonDirectoryPrepSummary.innerHTML = renderSummaryPillGroup([
             { label: "Addable", value: clubPlayers.length },
             { label: "Core", value: 0 },
-            { label: "Rotation", value: 0 },
-            { label: "Flex/Sub", value: 0 },
+            { label: "Flex", value: 0 },
+            { label: "Sub", value: 0 },
           ]);
           seasonDirectoryPrepWrap.innerHTML = `<div class="table-empty">Select a season first.</div>`;
           renderSeasonRosterFilterRow([]);
@@ -1350,14 +1350,14 @@
           .filter((player) => !seasonPlayerIds.has(player.id))
           .sort(comparePlayers);
         const addableCorePlayers = addablePlayers.filter((player) => player.status === "core");
-        const addableRotationPlayers = addablePlayers.filter((player) => player.status === "rotation");
+        const addableRotationPlayers = addablePlayers.filter((player) => player.status === "flex");
         const addableCoreRotationPlayers = addablePlayers.filter(
-          (player) => player.status === "core" || player.status === "rotation"
+          (player) => player.status === "core" || player.status === "flex"
         );
-        const addableFlexPlayers = addablePlayers.filter((player) => player.status === "flex_sub");
+        const addableFlexPlayers = addablePlayers.filter((player) => player.status === "sub");
         const coreCount = rosterRows.filter((row) => row.tier_status === "core").length;
-        const rotationCount = rosterRows.filter((row) => row.tier_status === "rotation").length;
-        const flexCount = rosterRows.filter((row) => row.tier_status === "flex_sub").length;
+        const rotationCount = rosterRows.filter((row) => row.tier_status === "flex").length;
+        const flexCount = rosterRows.filter((row) => row.tier_status === "sub").length;
         const paidCount = rosterRows.filter((row) => row.payment_status === "paid").length;
         const pendingCount = rosterRows.filter((row) => row.payment_status === "pending").length;
         const unknownCount = rosterRows.filter((row) => row.payment_status === "unknown").length;
@@ -1376,8 +1376,8 @@
         rosterSeasonPill.textContent = selectedSeason.name;
         rosterBoardCopy.textContent = `${selectedSeason.name} has ${rosterRows.length} season-squad registrations out of ${clubPlayers.length} full-squad profiles. Only season-squad players appear in Match Centre, League Table, Planner, and club screens. Queue tracking begins at matchday ${selectedSeason.model_start_matchday || 1}, so earlier nights remain historical. ${
           seasonRosterMetadataSupported
-            ? "Store what each player signed up for, whether they paid, and whether they are still active for matchdays. Use Full Squad to set current / next-season tiers first, then bulk add current Core + Rotation."
-            : "Use Full Squad to set current / next-season tiers first, then bulk add current Core + Rotation."
+            ? "Store what each player signed up for, whether they paid, and whether they are still active for matchdays. Use Full Squad to set current / next-season tiers first, then bulk add current Core + Flex."
+            : "Use Full Squad to set current / next-season tiers first, then bulk add current Core + Flex."
         }`;
         openTiersLink.href = `./tiers.html?season_id=${selectedSeasonId}`;
         seedRosterButton.disabled = !addableCoreRotationPlayers.length;
@@ -1408,8 +1408,8 @@
         syncRosterAddDefaultsFromSelection();
         if (rosterBulkNote) {
           const bulkCopy = addableCoreRotationPlayers.length
-            ? `${addableCorePlayers.length} addable full-squad players are currently marked Core and ${addableRotationPlayers.length} are marked Rotation. Use Add current Core + Rotation to pull only those players into ${selectedSeason.name}.`
-            : `No addable full-squad players are currently marked Core or Rotation. Update player tiers in Full Squad first, then use Add current Core + Rotation.`;
+            ? `${addableCorePlayers.length} addable full-squad players are currently marked Core and ${addableRotationPlayers.length} are marked Flex. Use Add current Core + Flex to pull only those players into ${selectedSeason.name}.`
+            : `No addable full-squad players are currently marked Core or Flex. Update player tiers in Full Squad first, then use Add current Core + Flex.`;
           const syncCopy = rosterRows.length
             ? tierSyncRows.length
               ? `${tierSyncRows.length} season-squad players in ${selectedSeason.name} currently differ from the Full Squad tier status. Use full squad tier status to align this season.`
@@ -1514,8 +1514,8 @@
         seasonDirectoryPrepSummary.innerHTML = renderSummaryPillGroup([
           { label: "Addable", value: addablePlayers.length },
           { label: "Core", value: addableCorePlayers.length },
-          { label: "Rotation", value: addableRotationPlayers.length },
-          { label: "Flex/Sub", value: addableFlexPlayers.length },
+          { label: "Flex", value: addableRotationPlayers.length },
+          { label: "Sub", value: addableFlexPlayers.length },
         ]);
         if (!addablePlayers.length) {
           seasonDirectoryPrepWrap.innerHTML = `
@@ -1542,7 +1542,7 @@
                       </div>
                       <div class="compact-badges">
                         <span class="tag-pill">${escapeHtml(
-                          player.status === "flex_sub" ? "Not in bulk add" : "Will bulk add"
+                          player.status === "sub" ? "Not in bulk add" : "Will bulk add"
                         )}</span>
                       </div>
                       <div class="field">
@@ -1575,7 +1575,7 @@
           seasonRosterWrap.innerHTML = `
             <div class="table-empty">
               No players are on ${escapeHtml(selectedSeason.name)}'s season squad yet. Add them one by one or use
-              <strong>Add current Core + Rotation</strong> as a starting point.
+              <strong>Add current Core + Flex</strong> as a starting point.
             </div>
           `;
           return;
@@ -1644,7 +1644,7 @@
 
       function buildSeasonPlayerInsertPayload(selectedSeason, player, overrides = {}) {
         const registrationTier = normalizeText(
-          overrides.registration_tier || player.desired_tier || player.status || "rotation"
+          overrides.registration_tier || player.desired_tier || player.status || "flex"
         ).toLowerCase();
         const payload = {
           season_id: selectedSeason.id,
@@ -1837,8 +1837,8 @@
         }
 
         seasonRosterAddSelect.value = "";
-        seasonRosterRegistrationTierSelect.value = "rotation";
-        seasonRosterTierStatusSelect.value = "rotation";
+        seasonRosterRegistrationTierSelect.value = "flex";
+        seasonRosterTierStatusSelect.value = "flex";
         seasonRosterPaymentStatusSelect.value = "unknown";
         setStatus(`${displayName(player)} added to ${selectedSeason.name}.`, "success");
         openRosterDisclosure("players");
@@ -1856,7 +1856,7 @@
         const existingIds = new Set((selectedSeason.seasonPlayers || []).map((row) => row.player_id));
         const rowsToInsert = clubPlayers
           .filter((player) => !existingIds.has(player.id))
-          .filter((player) => player.status === "core" || player.status === "rotation")
+          .filter((player) => player.status === "core" || player.status === "flex")
           .map((player) =>
             buildSeasonPlayerInsertPayload(selectedSeason, player, {
               registration_tier: player.status,
@@ -1880,7 +1880,7 @@
         const { error } = await supabaseClient.from("season_players").insert(rowsToInsert);
 
         seedRosterButton.disabled = false;
-        seedRosterButton.textContent = "Add current Core + Rotation";
+        seedRosterButton.textContent = "Add current Core + Flex";
 
         if (error) {
           setStatus(readableError(error), "error");
@@ -2368,7 +2368,7 @@
         }
 
         if (!Number.isInteger(rotationSpots) || rotationSpots < 0 || rotationSpots > 60) {
-          setStatus("Rotation spots must be a whole number between 0 and 60.", "error");
+          setStatus("Flex spots must be a whole number between 0 and 60.", "error");
           return;
         }
 
@@ -2458,7 +2458,7 @@
         seasonVenueNameInput.value = DEFAULT_VENUE_NAME;
         selectedSeasonId = seasonRow.id;
         setStatus(
-          `${name} created with ${totalMatchdays} matchdays, ${coreSpots} Core spots, ${rotationSpots} Rotation spots, and queue tracking starting at matchday ${modelStartMatchday}.${
+          `${name} created with ${totalMatchdays} matchdays, ${coreSpots} Core spots, ${rotationSpots} Flex spots, and queue tracking starting at matchday ${modelStartMatchday}.${
             seasonStartDate
               ? ` Weekly kickoffs were prebuilt for ${weekdayLabel(defaultMatchdayWeekday)} at ${formatTimeLabel(
                   defaultKickoffTime

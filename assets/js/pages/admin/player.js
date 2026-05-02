@@ -124,11 +124,11 @@ function showShell() {
 }
 
 function formatTier(value) {
-  if (value === "flex_sub") {
-    return "Flex/Sub";
+  if (value === "sub") {
+    return "Sub";
   }
 
-  return value ? value.charAt(0).toUpperCase() + value.slice(1) : "Rotation";
+  return value ? value.charAt(0).toUpperCase() + value.slice(1) : "Flex";
 }
 
 function formatDate(value) {
@@ -300,14 +300,14 @@ function buildHistoryBadgeStats() {
 }
 
 function populateForm(playerRow) {
-  player = normalizePlayerDesiredTier(playerRow, "rotation");
+  player = normalizePlayerDesiredTier(playerRow, "flex");
   firstNameInput.value = player.first_name || "";
   lastNameInput.value = player.last_name || "";
   nicknameInput.value = player.nickname || "";
   phoneInput.value = player.phone || "";
   nationalityInput.value = player.nationality || "";
   birthDateInput.value = player.birth_date || "";
-  statusInput.value = player.status || "rotation";
+  statusInput.value = player.status || "flex";
   dominantFootInput.value = player.dominant_foot || "right";
   skillRatingInput.value = String(player.skill_rating || 78);
   ratingValue.textContent = String(player.skill_rating || 78);

@@ -43,8 +43,8 @@ const DEFAULT_MERGE_MAP = {
 
 const TIER_PRIORITY = {
   core: 3,
-  rotation: 2,
-  flex_sub: 1,
+  flex: 2,
+  sub: 1,
 };
 
 const ATTENDANCE_PRIORITY = {
@@ -177,8 +177,8 @@ function uniqueLines(...values) {
 }
 
 function mergeTierStatus(left, right) {
-  const leftPriority = TIER_PRIORITY[left || "flex_sub"] || 0;
-  const rightPriority = TIER_PRIORITY[right || "flex_sub"] || 0;
+  const leftPriority = TIER_PRIORITY[left || "sub"] || 0;
+  const rightPriority = TIER_PRIORITY[right || "sub"] || 0;
   return rightPriority > leftPriority ? right : left;
 }
 
@@ -201,7 +201,7 @@ function bestKnownTier(player) {
       }
       return best;
     },
-    "flex_sub"
+    "sub"
   );
 }
 

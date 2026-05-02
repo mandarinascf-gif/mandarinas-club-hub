@@ -32,5 +32,5 @@ select
     order by vt.games_attended asc, vt.attendance_score desc, vt.no_shows asc, lower(trim(vt.last_name)), lower(trim(vt.first_name))
   ) as rotation_priority_rank
 from public.v_season_tier_transparency vt
-where vt.tier_status = 'rotation'
+where vt.tier_status = 'flex'
   and vt.is_eligible = true;

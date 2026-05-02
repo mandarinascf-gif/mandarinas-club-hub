@@ -65,8 +65,8 @@ class PlayerProfile:
 
 
 STATUS_PRIORITY = {
-    "flex_sub": 0,
-    "rotation": 1,
+    "sub": 0,
+    "flex": 1,
     "core": 2,
 }
 
@@ -221,9 +221,9 @@ def status_from_import_label(import_label: str) -> str:
     clean_label = normalize_import_label(import_label)
     base_label = base_player_label(clean_label)
     if is_sub_import_label(clean_label):
-        return "flex_sub"
+        return "sub"
     if "/" in base_label:
-        return "rotation"
+        return "flex"
     return "core"
 
 
@@ -248,7 +248,7 @@ def canonical_identity(import_label: str) -> PlayerIdentity:
         last_name = "Sub"
     elif "/" in base_label:
         first_raw, last_raw = [normalize_space(part) for part in re.split(r"\s*/\s*", base_label, maxsplit=1)]
-        first_name = pretty_token(first_raw) or "Rotation"
+        first_name = pretty_token(first_raw) or "Flex"
         last_name = pretty_token(last_raw) or "Player"
     else:
         parts = base_label.split()
@@ -761,7 +761,7 @@ def build_sql() -> str:
         key=lambda identity: (identity.last_name.lower(), identity.first_name.lower(), (identity.nickname or "").lower()),
     )
     core_spots = sum(1 for identity in sorted_players if identity.status == "core")
-    rotation_spots = sum(1 for identity in sorted_players if identity.status == "rotation")
+    rotation_spots = sum(1 for identity in sorted_players if identity.status == "flex")
 
     remapped_assignments = []
     seen_assignment_keys: set[tuple[str, int]] = set()

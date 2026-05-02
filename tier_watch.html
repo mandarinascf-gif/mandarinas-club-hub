@@ -11,7 +11,7 @@
     <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png" />
     <link rel="stylesheet" href="./assets/css/app.css?v=20260501h" />
-    <title>Club · Rotation Tier Queue</title>
+    <title>Club · Flex Tier Queue</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/js/core/club_logic.js?v=20260428b"></script>
     <script src="./assets/js/core/supabase_config.js"></script>
@@ -32,7 +32,7 @@
           <a class="nav-link" href="./roster.html">Squad</a>
           <a class="nav-link" href="./public_standings.html">Standings</a>
           <a class="nav-link" href="./submissions.html" title="Submit your matchday stats">Report</a>
-          <a class="nav-link nav-link-extra active" href="./tier_watch.html" title="Rotation tier waiting list">Queue</a>
+          <a class="nav-link nav-link-extra active" href="./tier_watch.html" title="Flex tier waiting list">Queue</a>
           <a class="nav-link nav-link-extra" href="./videos.html">Videos</a>
         </div>
       </div>
@@ -41,10 +41,10 @@
     <main class="page">
       <section class="panel page-header">
         <div class="page-header-main">
-          <div class="section-label">Club · Rotation Tier Queue</div>
+          <div class="section-label">Club · Flex Tier Queue</div>
           <h1>Who is next?</h1>
           <p id="hero-copy">
-            This is the live line for rotation-tier players. If you remember the old buddy system, this is the updated version of that line.
+            This is the live line for flex-tier players. If you remember the old buddy system, this is the updated version of that line.
           </p>
           <div class="field">
             <label for="season-select">Season</label>
@@ -60,7 +60,7 @@
 
       <section class="panel" id="summary-bar">
         <div class="section-label">Snapshot</div>
-        <h2>Rotation Tier Snapshot</h2>
+        <h2>Flex Tier Snapshot</h2>
         <div class="summary-grid">
           <div class="summary-card">
             <span>Weighted spot plan</span>
@@ -73,12 +73,12 @@
             <span class="summary-copy">Suggested Core players</span>
           </div>
           <div class="summary-card">
-            <span>Rotation</span>
+            <span>Flex</span>
             <strong id="rotation-count">0</strong>
             <span class="summary-copy">Queue-managed players</span>
           </div>
           <div class="summary-card">
-            <span>Flex/Sub</span>
+            <span>Sub</span>
             <strong id="flex-count">0</strong>
             <span class="summary-copy">Depth spots</span>
           </div>
@@ -93,7 +93,7 @@
       <section class="panel">
         <div class="section-label">Live</div>
         <h2>Who is next</h2>
-        <div class="status-line" id="tier-status-line">Loading the rotation queue...</div>
+        <div class="status-line" id="tier-status-line">Loading the flex queue...</div>
         <div class="table-shell tw-table-wrap" id="queue-table-wrap"></div>
       </section>
 
@@ -120,7 +120,7 @@
           </summary>
           <div class="disclosure-body">
             <p class="section-copy">
-              The live queue stays public and readable on purpose. Rotation players move through the line based on season availability, current points context, and balance rules from the current tier system. Recommendations stay separate so the live answer stays clear.
+              The live queue stays public and readable on purpose. Flex players move through the line based on season availability, current points context, and balance rules from the current tier system. Recommendations stay separate so the live answer stays clear.
             </p>
           </div>
         </details>
@@ -128,7 +128,7 @@
     </main>
 
     <footer class="club-footer">
-      <div class="club-footer-copy">Club · Rotation Tier Queue</div>
+      <div class="club-footer-copy">Club · Flex Tier Queue</div>
     </footer>
 
     <script src="./assets/js/pages/public/tier-watch.js?v=20260426b"></script>
@@ -160,8 +160,8 @@
           <div class="filter-row" id="tier-filter-row">
             <button class="chip-button active" type="button" data-filter="all">All</button>
             <button class="chip-button" type="button" data-filter="core">Core</button>
-            <button class="chip-button" type="button" data-filter="rotation">Rotation</button>
-            <button class="chip-button" type="button" data-filter="flex_sub">Flex/Sub</button>
+            <button class="chip-button" type="button" data-filter="flex">Flex</button>
+            <button class="chip-button" type="button" data-filter="sub">Sub</button>
           </div>
         </div>
         <div class="table-shell tw-table-wrap" id="tier-table-wrap"></div>

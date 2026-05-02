@@ -9,8 +9,8 @@
 
   const STATUS_LABELS = {
     core: "Core",
-    rotation: "Rotation",
-    flex_sub: "Flex/Sub",
+    flex: "Flex",
+    sub: "Sub",
   };
 
   const TREND_LABELS = {
@@ -126,13 +126,13 @@
   const TIER_SUGGESTION_UNIT_LIMIT = TIER_SUGGESTION_SLOT_LIMIT * 2;
   const TIER_SUGGESTION_PRIORITY = Object.freeze({
     core: 0,
-    rotation: 1,
-    flex_sub: 2,
+    flex: 1,
+    sub: 2,
   });
   const TIER_SUGGESTION_UNITS = Object.freeze({
     core: 2,
-    rotation: 1,
-    flex_sub: 0,
+    flex: 1,
+    sub: 0,
   });
   const DEFAULT_TEAM_DISPLAY_CONFIG = Object.freeze({
     magenta: Object.freeze({ label: "Magenta", color: "#ff00ff" }),
@@ -492,13 +492,13 @@
         <path d="M10 2.8L15.65 4.95V9.15C15.65 12.95 13.02 15.62 10 17.2C6.98 15.62 4.35 12.95 4.35 9.15V4.95L10 2.8Z" />
         <path d="M12.45 7.1A3 3 0 1 0 12.45 12.9" />
       `,
-      rotation: `
+      flex: `
         <path d="M14.5 6.35A5.15 5.15 0 0 0 5.35 6.85" />
         <path d="M14.45 3.95V6.7H11.7" />
         <path d="M5.5 13.65A5.15 5.15 0 0 0 14.65 13.15" />
         <path d="M5.55 16.05V13.3H8.3" />
       `,
-      flex: `
+      sub: `
         <path d="M10 4.2V15.8" />
         <path d="M4.2 10H15.8" />
       `,
@@ -548,9 +548,8 @@
   }
 
   function tierIconMarkup(status, options = {}) {
-    const normalized = normalizeTierValue(status, "rotation");
-    const kind = normalized === "flex_sub" ? "flex" : normalized;
-    return badgeIconMarkup(kind, {
+    const normalized = normalizeTierValue(status, "flex");
+    return badgeIconMarkup(normalized, {
       label: formatStatusLabel(normalized),
       ...options,
     });
@@ -565,19 +564,22 @@
     });
   }
 
-  function normalizeTierValue(value, fallback = "rotation") {
+  function normalizeTierValue(value, fallback = "flex") {
     const normalized = normalizeText(value).toLowerCase();
-    if (normalized === "core" || normalized === "rotation" || normalized === "flex_sub") {
+    if (normalized === "core" || normalized === "flex" || normalized === "sub") {
       return normalized;
     }
+    // Legacy migration: map old tier names to new ones
+    if (normalized === "rotation") return "flex";
+    if (normalized === "flex_sub") return "sub";
     return fallback;
   }
 
-  function playerDesiredTier(player, fallback = "rotation") {
+  function playerDesiredTier(player, fallback = "flex") {
     return normalizeTierValue(player?.desired_tier ?? player?.status, fallback);
   }
 
-  function normalizePlayerDesiredTier(player, fallback = "rotation") {
+  function normalizePlayerDesiredTier(player, fallback = "flex") {
     const desiredTier = playerDesiredTier(player, fallback);
     return {
       ...player,
@@ -1227,11 +1229,11 @@
   }
 
   function tierSuggestionWeight(status) {
-    return TIER_SUGGESTION_PRIORITY[normalizeTierValue(status, "flex_sub")] ?? 3;
+    return TIER_SUGGESTION_PRIORITY[normalizeTierValue(status, "sub")] ?? 3;
   }
 
   function tierSuggestionUnits(status) {
-    return TIER_SUGGESTION_UNITS[normalizeTierValue(status, "flex_sub")] ?? 0;
+    return TIER_SUGGESTION_UNITS[normalizeTierValue(status, "sub")] ?? 0;
   }
 
   function compareTierSuggestionPriority(left, right) {
@@ -1456,7 +1458,7 @@
     return [...(rows || [])]
       .filter(
         (row) =>
-          normalizeTierValue(row.tier_status || row.default_status, "flex_sub") === "rotation" &&
+          normalizeTierValue(row.tier_status || row.default_status, "sub") === "flex" &&
           row.is_eligible !== false
       )
       .map((row) => {
@@ -1592,15 +1594,15 @@
       return currentTier === "core" ? "steady" : "up";
     }
 
-    if (suggestedTier === "rotation") {
+    if (suggestedTier === "flex") {
       if (currentTier === "core") {
         return "down";
       }
 
-      return currentTier === "rotation" ? "steady" : "up";
+      return currentTier === "flex" ? "steady" : "up";
     }
 
-    return currentTier === "flex_sub" ? "steady" : "down";
+    return currentTier === "sub" ? "steady" : "down";
   }
 
   function tierSuggestionMixLabel(slotLimit) {
@@ -1667,24 +1669,24 @@
     }
 
     if (
-      row.recommended_tier_status === "rotation" &&
-      row.preliminary_recommended_tier_status === "flex_sub"
+      row.recommended_tier_status === "flex" &&
+      row.preliminary_recommended_tier_status === "sub"
     ) {
       return `Mix hold. Season-to-date work still keeps this player inside the weighted ${mixLabel} even with a lighter recent run.`;
     }
 
-    if (row.recommended_tier_status === "rotation" && currentTier === "flex_sub") {
-      return `Upward case. The recent 8-match run now supports a rotation half-spot in the weighted ${mixLabel}.`;
+    if (row.recommended_tier_status === "flex" && currentTier === "sub") {
+      return `Upward case. The recent 8-match run now supports a flex half-spot in the weighted ${mixLabel}.`;
     }
 
     if (
-      row.recommended_tier_status === "flex_sub" &&
-      row.preliminary_recommended_tier_status !== "flex_sub"
+      row.recommended_tier_status === "sub" &&
+      row.preliminary_recommended_tier_status !== "sub"
     ) {
       return `Borderline case. The recent run is competitive, but stronger mix cases are taking the last weighted ${mixLabel} spots.`;
     }
 
-    if (row.recommended_tier_status === "flex_sub" && currentTier !== "flex_sub") {
+    if (row.recommended_tier_status === "sub" && currentTier !== "sub") {
       return "Downward case. Recent form is no longer clearing the current tier line once season totals are folded in.";
     }
 
@@ -1703,17 +1705,17 @@
     }
 
     if (
-      row.recommended_tier_status === "rotation" &&
-      row.preliminary_recommended_tier_status === "flex_sub"
+      row.recommended_tier_status === "flex" &&
+      row.preliminary_recommended_tier_status === "sub"
     ) {
       return `Stay inside the weighted ${mixLabel} and strengthen the recent 8-match run`;
     }
 
-    if (row.recommended_tier_status === "rotation" && Number(row.recent_games_attended || 0) < 3) {
+    if (row.recommended_tier_status === "flex" && Number(row.recent_games_attended || 0) < 3) {
       return "Turn the recent run into a longer stretch of availability";
     }
 
-    if (row.recommended_tier_status === "rotation") {
+    if (row.recommended_tier_status === "flex") {
       return "Keep stacking recent attendance and push toward core";
     }
 
@@ -1727,7 +1729,7 @@
       ...row,
       preliminary_recommended_tier_status: normalizeTierValue(
         row.preliminary_recommended_tier_status || row.recommended_tier_status,
-        "flex_sub"
+        "sub"
       ),
     }));
 
@@ -1778,16 +1780,16 @@
     }
 
     return normalizedRows.map((row) => {
-      const currentTier = normalizeTierValue(row.tier_status || row.default_status, "flex_sub");
+      const currentTier = normalizeTierValue(row.tier_status || row.default_status, "sub");
       const playerId = Number(row.player_id);
       const suggestionSlotRank = suggestionRankByPlayerId.get(playerId) || null;
       const suggestionUnits = suggestionUnitsByPlayerId.get(playerId) || 0;
-      let suggestedTier = "flex_sub";
+      let suggestedTier = "sub";
 
       if (suggestionUnits >= 2) {
         suggestedTier = "core";
       } else if (suggestionUnits === 1) {
-        suggestedTier = "rotation";
+        suggestedTier = "flex";
       }
 
       const nextRow = {
@@ -1978,7 +1980,7 @@
     }
 
     if (sortKey === "tier_status") {
-      const tierOrder = { core: 0, rotation: 1, flex_sub: 2 };
+      const tierOrder = { core: 0, flex: 1, sub: 2 };
       const leftTier = tierOrder[left.player?.status] ?? 99;
       const rightTier = tierOrder[right.player?.status] ?? 99;
       const tierDiff = (leftTier - rightTier) * direction;

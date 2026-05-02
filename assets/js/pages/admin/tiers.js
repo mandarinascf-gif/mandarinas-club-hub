@@ -31,7 +31,7 @@
       const buildRotationQueueRows =
         logic.buildRotationQueueRows ||
         ((rows) =>
-          [...(rows || [])].filter((row) => row.tier_status === "rotation" && row.is_eligible));
+          [...(rows || [])].filter((row) => row.tier_status === "flex" && row.is_eligible));
       const applyTierSuggestionSlots = logic.applyTierSuggestionSlots || ((rows) => [...(rows || [])]);
       const tierSuggestionEvidence =
         logic.tierSuggestionEvidence || ((row) => row?.suggestion_evidence || "");
@@ -121,15 +121,12 @@
       }
 
       function currentTier(row) {
-        return row.tier_status || row.default_status || "flex_sub";
+        return row.tier_status || row.default_status || "sub";
       }
 
       function formatStatusLabel(value) {
-        if (value === "flex_sub") {
-          return "Flex/Sub";
-        }
-
-        return value ? value.charAt(0).toUpperCase() + value.slice(1) : "Rotation";
+        if (!value) return "Flex";
+        return value.charAt(0).toUpperCase() + value.slice(1);
       }
 
       function formatSpotValue(value) {

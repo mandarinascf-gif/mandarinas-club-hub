@@ -86,20 +86,18 @@ function escapeHtml(value) {
 }
 
 function formatStatusLabel(value) {
-  if (value === "flex_sub") {
-    return "Flex/Sub";
-  }
-  return value ? value.charAt(0).toUpperCase() + value.slice(1) : "Rotation";
+  if (!value) return "Flex";
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 function tierSortRank(status) {
   if (status === "core") {
     return 0;
   }
-  if (status === "rotation") {
+  if (status === "flex") {
     return 1;
   }
-  if (status === "flex_sub") {
+  if (status === "sub") {
     return 2;
   }
   return 3;
@@ -120,7 +118,7 @@ function comparePlayersForRoster(left, right) {
 }
 
 function tierOptionsMarkup(selectedValue) {
-  return ["core", "rotation", "flex_sub"]
+  return ["core", "flex", "sub"]
     .map(
       (value) =>
         `<option value="${value}" ${value === selectedValue ? "selected" : ""}>${escapeHtml(
@@ -237,7 +235,7 @@ function resetForm(options = {}) {
 function updateHeroStats() {
   const playerCount = players.length;
   const preferredCoreCount = players.filter((player) => player.status === "core").length;
-  const preferredRotationCount = players.filter((player) => player.status === "rotation").length;
+  const preferredRotationCount = players.filter((player) => player.status === "flex").length;
   const averageRating = playerCount
     ? Math.round(players.reduce((sum, player) => sum + Number(player.skill_rating || 0), 0) / playerCount)
     : 0;
@@ -247,7 +245,7 @@ function updateHeroStats() {
   heroAverageRating.textContent = String(averageRating);
 
   if (seasonPrepCopy) {
-    seasonPrepCopy.textContent = `${preferredCoreCount} full-squad players are currently marked Core and ${preferredRotationCount} are marked Rotation. Season Centre uses those full-squad current / next-season tiers when you bulk-load the next campaign.`;
+    seasonPrepCopy.textContent = `${preferredCoreCount} full-squad players are currently marked Core and ${preferredRotationCount} are marked Flex. Season Centre uses those full-squad current / next-season tiers when you bulk-load the next campaign.`;
   }
 }
 

@@ -122,15 +122,15 @@ def status_from_import_label(import_label: str) -> str:
     base_label = base_player_label(clean_label)
 
     if clean_label.upper().startswith("(SUB)") or (clean_label.startswith("(") and clean_label.endswith(")")):
-        return "flex_sub"
+        return "sub"
 
     if "/" in base_label:
-        return "rotation"
+        return "flex"
 
-    return "rotation"
+    return "flex"
 
 
-def canonical_identity_from_full_name(full_name: str, nickname: str | None = None, status: str = "rotation"):
+def canonical_identity_from_full_name(full_name: str, nickname: str | None = None, status: str = "flex"):
     normalized_name = seed.normalize_space(full_name)
     safe_nickname = seed.normalize_space(nickname or "") or None
     parts = normalized_name.split()
@@ -178,7 +178,7 @@ def parse_profile_rows(rows: list[list[str]]) -> dict[str, object]:
         if not full_name:
             continue
 
-        identity = canonical_identity_from_full_name(full_name, nickname or None, "rotation")
+        identity = canonical_identity_from_full_name(full_name, nickname or None, "flex")
         aliases = {
             seed.normalize_label(full_name),
             seed.normalize_label(normalize_import_label(full_name)),
@@ -242,7 +242,7 @@ def parse_registry_aliases(csv_path: Path | None) -> dict[str, object]:
                 continue
 
             parts = player_name.split()
-            identity = canonical_identity_from_full_name(player_name, player_name, "rotation")
+            identity = canonical_identity_from_full_name(player_name, player_name, "flex")
             aliases = {
                 seed.normalize_label(player_name),
                 simplified_label_key(player_name),
@@ -535,7 +535,7 @@ def build_sql(workbook_path: Path, season_name: str, alias_workbooks: list[Path]
 -- Historical rules applied:
 -- 1. Only the target season is deleted and recreated. Existing players stay in place.
 -- 2. Buddy labels resolve to one real player per matchday. The full buddy-slot stats stay with that selected player.
--- 3. Historical imports do not assign anyone to Core. Imported players default to Rotation unless they were explicitly a sub.
+-- 3. Historical imports do not assign anyone to Core. Imported players default to Flex unless they were explicitly a sub.
 -- 4. This seed is for archive/history only. Current-season live tiers still need to be managed in the app.
 
 begin;
