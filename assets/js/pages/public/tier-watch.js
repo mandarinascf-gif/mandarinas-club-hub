@@ -45,9 +45,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const tierStatusLine = document.getElementById("tier-status-line");
   const queueTableWrap = document.getElementById("queue-table-wrap");
   const suggestionPanelCopy = document.getElementById("suggestion-panel-copy");
+  const suggestionSummaryPills = document.getElementById("suggestion-summary-pills");
   const openSuggestionModalButton = document.getElementById("open-tier-suggestion-modal");
   const suggestionModal = document.getElementById("tier-suggestion-modal");
   const suggestionModalCopy = document.getElementById("tier-suggestion-modal-copy");
+  const suggestionTableSummary = document.getElementById("tier-table-summary");
   const suggestionTableWrap = document.getElementById("tier-table-wrap");
   const tierFilterRow = document.getElementById("tier-filter-row");
   const tierSearch = document.getElementById("tier-search");
@@ -140,12 +142,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function trendLabel(trend) {
     if (trend === "up") {
-      return "Promote";
+      return "Move up";
     }
     if (trend === "down") {
-      return "Drop";
+      return "Move down";
     }
-    return "Stay";
+    return "Stay put";
   }
 
   function movementPill(trend) {
@@ -162,6 +164,142 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function suggestionEvidenceText(row) {
     return row?.suggestion_evidence || tierSuggestionEvidence(row) || "Attendance evidence unavailable.";
+  }
+
+  function suggestionCounts(rows = tierRows) {
+    return rows.reduce(
+      (counts, row) => {
+        const trend = row?.trend || "steady";
+        counts.total += 1;
+
+        if (currentTier(row) !== row.recommended_tier_status) {
+          counts.changes += 1;
+        }
+
+        if (trend === "up") {
+          counts.up += 1;
+        } else if (trend === "down") {
+          counts.down += 1;
+        } else {
+          counts.steady += 1;
+        }
+
+        return counts;
+      },
+      { total: 0, changes: 0, up: 0, steady: 0, down: 0 }
+    );
+  }
+
+  function suggestionSummaryPillsMarkup(counts, rows = tierRows) {
+    const spotMixUsed = rows.reduce(
+      (total, row) => total + Number(row.suggestion_spot_value || 0),
+      0
+    );
+
+    return `
+      <div class="summary-pill">
+        <strong>${escapeHtml(counts.changes)}</strong>
+        <span>Changes</span>
+      </div>
+      <div class="summary-pill">
+        <strong>${escapeHtml(counts.up)}</strong>
+        <span>Move up</span>
+      </div>
+      <div class="summary-pill">
+        <strong>${escapeHtml(counts.steady)}</strong>
+        <span>Hold</span>
+      </div>
+      <div class="summary-pill">
+        <strong>${escapeHtml(counts.down)}</strong>
+        <span>Move down</span>
+      </div>
+      <div class="summary-pill">
+        <strong>${escapeHtml(formatSpotValue(spotMixUsed))} / ${escapeHtml(
+          formatSpotValue(suggestionSlotLimit)
+        )}</strong>
+        <span>Plan fill</span>
+      </div>
+    `;
+  }
+
+  function reliabilityLine(row) {
+    const noShows = Number(row?.no_shows || 0);
+    const lateCancels = Number(row?.late_cancels || 0);
+    const flags = [];
+
+    if (noShows > 0) {
+      flags.push(`${noShows} no-show${noShows === 1 ? "" : "s"}`);
+    }
+    if (lateCancels > 0) {
+      flags.push(`${lateCancels} late cancel${lateCancels === 1 ? "" : "s"}`);
+    }
+
+    return flags.length ? `${flags.join(", ")} this season` : "No no-shows or late cancels this season";
+  }
+
+  function renderSuggestionCards(rows) {
+    return `
+      <div class="standings-card-list">
+        ${rows
+          .map((row, index) => {
+            const recentGames = Number(row.recent_games_attended || 0);
+            const evidenceText = suggestionEvidenceText(row);
+
+            return `
+              <article class="standings-card">
+                <header class="standings-card-head">
+                  <div class="standings-rank-badge">${escapeHtml(index + 1)}</div>
+                  <div class="standings-card-title">
+                    <div class="player-main">${escapeHtml(displayName(row))}</div>
+                    ${
+                      row.nickname && fullName(row) !== stripSubPrefix(row.nickname)
+                        ? `<div class="table-player-sub">${escapeHtml(fullName(row))}</div>`
+                        : ""
+                    }
+                  </div>
+                </header>
+                <div class="compact-badges">
+                  <span class="status-pill ${escapeHtml(currentTier(row))}">Now: ${escapeHtml(
+                    formatStatusLabel(currentTier(row))
+                  )}</span>
+                  ${movementPill(row.trend || "steady")}
+                  <span class="status-pill ${escapeHtml(row.recommended_tier_status)}">Suggested next: ${escapeHtml(
+                    formatStatusLabel(row.recommended_tier_status)
+                  )}</span>
+                </div>
+                <div class="standings-metrics">
+                  <div class="metric-pill"><span>Last 8</span><strong>${escapeHtml(recentGames)} / 8</strong></div>
+                  <div class="metric-pill"><span>Season games</span><strong>${escapeHtml(row.games_attended)}</strong></div>
+                  <div class="metric-pill"><span>Season score</span><strong>${escapeHtml(row.attendance_score)}</strong></div>
+                  <div class="metric-pill"><span>All-time score</span><strong>${escapeHtml(row.historical_attendance_score || 0)}</strong></div>
+                </div>
+                <div class="detail-list">
+                  <div class="detail-item">
+                    <span class="detail-label">Why the app leans here</span>
+                    <strong>${escapeHtml(row.transparency_note || "No summary note yet.")}</strong>
+                    <span class="tier-evidence">${escapeHtml(evidenceText)}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">What helps next</span>
+                    <strong>${escapeHtml(row.next_step || "Keep showing up consistently.")}</strong>
+                    <span class="tier-evidence">${escapeHtml(reliabilityLine(row))}</span>
+                  </div>
+                </div>
+                <div class="actions">
+                  <button
+                    class="secondary-button table-action-button"
+                    type="button"
+                    data-detail-id="${escapeHtml(row.player_id)}"
+                  >
+                    Full breakdown
+                  </button>
+                </div>
+              </article>
+            `;
+          })
+          .join("")}
+      </div>
+    `;
   }
 
   function queueVisibleLimit() {
@@ -444,7 +582,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const query = String(tierSearch.value || "").trim().toLowerCase();
 
     return tierRows.filter((row) => {
-      if (activeFilter !== "all" && row.recommended_tier_status !== activeFilter) {
+      if (activeFilter === "changes" && currentTier(row) === row.recommended_tier_status) {
+        return false;
+      }
+
+      if (
+        activeFilter !== "all" &&
+        activeFilter !== "changes" &&
+        row.recommended_tier_status !== activeFilter
+      ) {
         return false;
       }
 
@@ -572,171 +718,58 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderSuggestionSummaryPanel() {
-    const moveTotal = tierRows.filter(
-      (row) => currentTier(row) !== row.recommended_tier_status
-    ).length;
+    const counts = suggestionCounts();
 
-    if (moveTotal === 0) {
-      suggestionPanelCopy.textContent = "Everyone looks stable right now. No tier changes suggested.";
-    } else {
-      suggestionPanelCopy.textContent = `The app is suggesting ${moveTotal} tier change${
-        moveTotal === 1 ? "" : "s"
-      } based on recent attendance. Open the table to see who and why.`;
+    suggestionSummaryPills.innerHTML = tierRows.length
+      ? suggestionSummaryPillsMarkup(counts)
+      : "";
+
+    if (!tierRows.length) {
+      suggestionPanelCopy.textContent =
+        "Tier recommendations will appear here once the season data is available.";
+      suggestionModalCopy.textContent =
+        "Start with Changes if you only want to see movement. Now is the active tier today. Suggested next is the attendance-based recommendation.";
+      openSuggestionModalButton.disabled = true;
+      return;
     }
-    suggestionModalCopy.textContent = "Players are ranked by recent form first, then season attendance, then history across past seasons. Tap \"View why\" on any player for their full breakdown.";
-    openSuggestionModalButton.disabled = tierRows.length === 0;
+
+    if (counts.changes === 0) {
+      suggestionPanelCopy.textContent =
+        "Everyone looks stable right now. Now and Suggested next currently match across the board.";
+    } else {
+      suggestionPanelCopy.textContent =
+        counts.changes === 1
+          ? "1 player is currently flagged for review. Start with Changes to focus on the movement case first."
+          : `${counts.changes} players are currently flagged for review. Start with Changes to focus on movement cases first.`;
+    }
+
+    suggestionModalCopy.textContent =
+      "Start with Changes if you only want to see movement. Now is the active tier today. Suggested next is the attendance-based recommendation for manager review, not an automatic change.";
+    openSuggestionModalButton.disabled = false;
   }
 
   function renderSuggestionTable() {
     const rows = sorted(filteredSuggestionRows());
+    const counts = suggestionCounts();
+
+    suggestionTableSummary.innerHTML = tierRows.length
+      ? `
+          <div class="summary-pill-grid">
+            ${suggestionSummaryPillsMarkup(counts)}
+          </div>
+          <p class="manual-note">
+            <strong>How to read this:</strong> <strong>Now</strong> is the tier active today.
+            <strong>Suggested next</strong> is where the player would land if the tier plan were rebuilt from attendance data today.
+          </p>
+        `
+      : "";
 
     if (!rows.length) {
       suggestionTableWrap.innerHTML = `<div class="empty-state">No players match the current filter.</div>`;
       return;
     }
 
-    if (window.matchMedia("(max-width: 719px)").matches) {
-      suggestionTableWrap.innerHTML = `
-        <div class="standings-card-list">
-          ${rows
-            .map(
-              (row, index) => `
-                <article class="standings-card">
-                  <header class="standings-card-head">
-                    <div class="standings-rank-badge">${escapeHtml(index + 1)}</div>
-                    <div class="standings-card-title">
-                      <div class="player-main">${escapeHtml(displayName(row))}</div>
-                      ${
-                        row.nickname && fullName(row) !== stripSubPrefix(row.nickname)
-                          ? `<div class="table-player-sub">${escapeHtml(fullName(row))}</div>`
-                          : ""
-                      }
-                    </div>
-                  </header>
-                  <div class="compact-badges">
-                    ${tierPill(currentTier(row))}
-                    ${movementPill(row.trend || "steady")}
-                    ${tierPill(row.recommended_tier_status)}
-                  </div>
-                  <div class="standings-metrics">
-                    <div class="metric-pill"><span>Weight</span><strong>${
-                      row.suggestion_spot_value
-                        ? escapeHtml(formatSpotValue(row.suggestion_spot_value))
-                        : "—"
-                    }</strong></div>
-                    <div class="metric-pill"><span>Games</span><strong>${escapeHtml(row.games_attended)}</strong></div>
-                    <div class="metric-pill"><span>Season</span><strong>${escapeHtml(row.attendance_score)}</strong></div>
-                    <div class="metric-pill"><span>Last 8</span><strong>${escapeHtml(row.recent_attendance_score || 0)}</strong></div>
-                    <div class="metric-pill"><span>All-time</span><strong>${escapeHtml(row.historical_attendance_score || 0)}</strong></div>
-                  </div>
-                  <div class="manual-note">${escapeHtml(row.transparency_note || "No summary note yet.")}</div>
-                  <button
-                    class="secondary-button table-action-button"
-                    type="button"
-                    data-detail-id="${escapeHtml(row.player_id)}"
-                  >
-                    View why
-                  </button>
-                </article>
-              `
-            )
-            .join("")}
-        </div>
-      `;
-
-      suggestionTableWrap.querySelectorAll("[data-detail-id]").forEach((button) => {
-        button.addEventListener("click", () => {
-          const row = tierRows.find(
-            (entry) => Number(entry.player_id) === Number(button.dataset.detailId)
-          );
-          if (!row) {
-            return;
-          }
-          renderDetailModal(row);
-          openModal(detailModal);
-        });
-      });
-      return;
-    }
-
-    suggestionTableWrap.innerHTML = `
-      <table class="standings-table standings-table-wide">
-        <thead>
-          <tr>
-            <th class="num">#</th>
-            <th class="sortable-th ${thClass("player")}" data-sort="player">Player${sortArrow("player")}</th>
-            <th class="sortable-th ${thClass("current")}" data-sort="current">Now${sortArrow("current")}</th>
-            <th></th>
-            <th></th>
-            <th class="sortable-th ${thClass("suggested")}" data-sort="suggested">Suggested${sortArrow("suggested")}</th>
-            <th class="num sortable-th ${thClass("spot")}" data-sort="spot">Weight${sortArrow("spot")}</th>
-            <th class="num sortable-th ${thClass("att")}" data-sort="att">Games${sortArrow("att")}</th>
-            <th class="num sortable-th ${thClass("score")}" data-sort="score">Season${sortArrow("score")}</th>
-            <th class="num sortable-th ${thClass("hist")}" data-sort="hist">All-time${sortArrow("hist")}</th>
-            <th class="num sortable-th ${thClass("recent")}" data-sort="recent">Last 8${sortArrow("recent")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows
-            .map(
-              (row, index) => `
-                <tr>
-                  <td class="num muted">${index + 1}</td>
-                  <td>
-                    <div class="player-stack">
-                      <div class="player-cell">
-                        <span class="name">${escapeHtml(displayName(row))}</span>
-                        ${
-                          row.nickname && fullName(row) !== stripSubPrefix(row.nickname)
-                            ? `<span class="sub">${escapeHtml(fullName(row))}</span>`
-                            : ""
-                        }
-                      </div>
-                    </div>
-                  </td>
-                  <td>${tierPill(currentTier(row))}</td>
-                  <td>${movementPill(row.trend || "steady")}</td>
-                  <td>
-                    <button
-                      class="ghost-button table-action-button"
-                      type="button"
-                      data-detail-id="${escapeHtml(row.player_id)}"
-                    >
-                      View Why
-                    </button>
-                  </td>
-                  <td>${tierPill(row.recommended_tier_status)}</td>
-                  <td class="num">${
-                    row.suggestion_spot_value
-                      ? `<span class="queue-pill">${escapeHtml(
-                          formatSpotValue(row.suggestion_spot_value)
-                        )}</span>`
-                      : "—"
-                  }</td>
-                  <td class="num">${escapeHtml(row.games_attended)}</td>
-                  <td class="num">${escapeHtml(row.attendance_score)}</td>
-                  <td class="num">${escapeHtml(row.historical_attendance_score || 0)}</td>
-                  <td class="num">${escapeHtml(row.recent_attendance_score || 0)}</td>
-                </tr>
-              `
-            )
-            .join("")}
-        </tbody>
-      </table>
-    `;
-
-    suggestionTableWrap.querySelectorAll("[data-sort]").forEach((header) => {
-      header.addEventListener("click", () => {
-        const nextSort = header.dataset.sort;
-        if (sortCol === nextSort) {
-          sortDir = sortDir === "asc" ? "desc" : "asc";
-        } else {
-          sortCol = nextSort;
-          sortDir = DEFAULT_SORT_DIRECTIONS[nextSort] || "desc";
-        }
-        renderSuggestionTable();
-      });
-    });
+    suggestionTableWrap.innerHTML = renderSuggestionCards(rows);
 
     suggestionTableWrap.querySelectorAll("[data-detail-id]").forEach((button) => {
       button.addEventListener("click", () => {
@@ -758,15 +791,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const seasonGames = Number(row.games_attended || 0);
     const seasonScore = Number(row.attendance_score || 0);
     const historicalScore = Number(row.historical_attendance_score || 0);
-    const noShows = Number(row.no_shows || 0);
-    const lateCancels = Number(row.late_cancels || 0);
-
-    const reliabilityFlags = [];
-    if (noShows > 0) reliabilityFlags.push(`${noShows} no-show${noShows > 1 ? "s" : ""}`);
-    if (lateCancels > 0) reliabilityFlags.push(`${lateCancels} late cancel${lateCancels > 1 ? "s" : ""}`);
-    const reliabilityLine = reliabilityFlags.length
-      ? reliabilityFlags.join(", ") + " this season"
-      : "No no-shows or late cancels this season";
+    const evidenceText = suggestionEvidenceText(row);
 
     detailModal.innerHTML = `
       <div class="site-modal-backdrop" data-modal-close></div>
@@ -778,19 +803,20 @@ document.addEventListener("DOMContentLoaded", () => {
       >
         <div class="site-modal-head">
           <div>
-            <div class="section-label">Why this recommendation</div>
+            <div class="section-label">Recommendation breakdown</div>
             <h2 class="site-modal-title" id="tier-detail-modal-title">${escapeHtml(displayName(row))}</h2>
+            <p class="site-modal-copy">This is a manager review note, not an automatic tier change.</p>
           </div>
           <button class="ghost-button" type="button" data-modal-close>Close</button>
         </div>
         <div class="site-modal-body" id="tier-detail-content">
           <div class="detail-list">
             <div class="detail-item">
-              <span class="detail-label">Current tier</span>
+              <span class="detail-label">Now</span>
               <div>${tierPill(currentTier(row))}</div>
             </div>
             <div class="detail-item">
-              <span class="detail-label">Suggested tier</span>
+              <span class="detail-label">Suggested next</span>
               <div>${tierPill(row.recommended_tier_status)} ${movementPill(row.trend || "steady")}</div>
             </div>
           </div>
@@ -804,20 +830,21 @@ document.addEventListener("DOMContentLoaded", () => {
               <strong>${escapeHtml(seasonGames)} games played (score: ${escapeHtml(seasonScore)})</strong>
             </div>
             <div class="detail-item">
-              <span class="detail-label">All-time score</span>
-              <strong>${escapeHtml(historicalScore)}</strong>
+              <span class="detail-label">All-time</span>
+              <strong>Score ${escapeHtml(historicalScore)}</strong>
             </div>
             <div class="detail-item">
               <span class="detail-label">Reliability</span>
-              <strong>${escapeHtml(reliabilityLine)}</strong>
+              <strong>${escapeHtml(reliabilityLine(row))}</strong>
             </div>
           </div>
           <div class="manual-note" style="margin-top: var(--space-md);">
-            <strong>What this means</strong><br />
+            <strong>Why the app leans here</strong><br />
             ${escapeHtml(row.transparency_note || "Stable in current tier.")}
           </div>
+          <div class="manual-note">${escapeHtml(evidenceText)}</div>
           <div class="manual-note">
-            <strong>What to do next</strong><br />
+            <strong>What helps next</strong><br />
             ${escapeHtml(row.next_step || "Keep showing up consistently.")}
           </div>
         </div>
@@ -835,6 +862,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function loadSeason() {
     setTierStatus("Loading the flex queue...", "loading");
     queueTableWrap.innerHTML = "";
+    suggestionTableSummary.innerHTML = "";
     suggestionTableWrap.innerHTML = "";
 
     try {
@@ -873,8 +901,8 @@ document.addEventListener("DOMContentLoaded", () => {
       renderTierBoards();
       heroCopy.textContent =
         activeQueueMode === "final"
-          ? `${bundle.season.name} shows the live line for flex-tier players first. On the final matchday, season points lead the order and tied players are split by goals, goal keeps, and clean sheets.`
-          : `${bundle.season.name} shows the live line for flex-tier players first. Fewer appearances stay at the front, and tied players are split by season points, goals, goal keeps, and clean sheets.`;
+          ? `${bundle.season.name} shows the live flex queue first and keeps the recommendation center separate. On the final matchday, season points lead the line and tied players are split by goals, goal keeps, and clean sheets.`
+          : `${bundle.season.name} shows the live flex queue first and keeps the recommendation center separate. Fewer appearances stay at the front, and tied players are split by season points, goals, goal keeps, and clean sheets.`;
       setTierStatus();
     } catch (error) {
       standingsByPlayerId = new Map();
@@ -882,6 +910,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const message = readableError(error);
       setTierStatus(message, "error");
       queueTableWrap.innerHTML = "";
+      suggestionTableSummary.innerHTML = "";
       suggestionTableWrap.innerHTML = `<div class="empty-state">${escapeHtml(
         message
       )}</div>`;
