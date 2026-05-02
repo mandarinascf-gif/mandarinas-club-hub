@@ -572,22 +572,18 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderSuggestionSummaryPanel() {
-    const spotMixUsed = tierRows.reduce(
-      (total, row) => total + Number(row.suggestion_spot_value || 0),
-      0
-    );
     const moveTotal = tierRows.filter(
       (row) => currentTier(row) !== row.recommended_tier_status
     ).length;
 
-    suggestionPanelCopy.textContent = `Open the recommendation table when needed. It currently fills ${formatSpotValue(
-      spotMixUsed
-    )} of ${formatSpotValue(suggestionSlotLimit)} weighted spots and suggests ${moveTotal} tier change${
-      moveTotal === 1 ? "" : "s"
-    }.`;
-    suggestionModalCopy.textContent = `Recommendations use recent score first, season score second, and historical score third to break close calls inside the ${formatSpotValue(
-      suggestionSlotLimit
-    )}-spot plan.`;
+    if (moveTotal === 0) {
+      suggestionPanelCopy.textContent = "Everyone looks stable right now. No tier changes suggested.";
+    } else {
+      suggestionPanelCopy.textContent = `The app is suggesting ${moveTotal} tier change${
+        moveTotal === 1 ? "" : "s"
+      } based on recent attendance. Open the table to see who and why.`;
+    }
+    suggestionModalCopy.textContent = "Players are ranked by recent form first, then season attendance, then history across past seasons. Tap \"View why\" on any player for their full breakdown.";
     openSuggestionModalButton.disabled = tierRows.length === 0;
   }
 
@@ -623,15 +619,15 @@ document.addEventListener("DOMContentLoaded", () => {
                     ${tierPill(row.recommended_tier_status)}
                   </div>
                   <div class="standings-metrics">
-                    <div class="metric-pill"><span>Spot</span><strong>${
+                    <div class="metric-pill"><span>Weight</span><strong>${
                       row.suggestion_spot_value
                         ? escapeHtml(formatSpotValue(row.suggestion_spot_value))
                         : "—"
                     }</strong></div>
-                    <div class="metric-pill"><span>Att</span><strong>${escapeHtml(row.games_attended)}</strong></div>
-                    <div class="metric-pill"><span>Score</span><strong>${escapeHtml(row.attendance_score)}</strong></div>
-                    <div class="metric-pill"><span>Recent</span><strong>${escapeHtml(row.recent_attendance_score || 0)}</strong></div>
-                    <div class="metric-pill"><span>History</span><strong>${escapeHtml(row.historical_attendance_score || 0)}</strong></div>
+                    <div class="metric-pill"><span>Games</span><strong>${escapeHtml(row.games_attended)}</strong></div>
+                    <div class="metric-pill"><span>Season</span><strong>${escapeHtml(row.attendance_score)}</strong></div>
+                    <div class="metric-pill"><span>Last 8</span><strong>${escapeHtml(row.recent_attendance_score || 0)}</strong></div>
+                    <div class="metric-pill"><span>All-time</span><strong>${escapeHtml(row.historical_attendance_score || 0)}</strong></div>
                   </div>
                   <div class="manual-note">${escapeHtml(row.transparency_note || "No summary note yet.")}</div>
                   <button
@@ -669,15 +665,15 @@ document.addEventListener("DOMContentLoaded", () => {
           <tr>
             <th class="num">#</th>
             <th class="sortable-th ${thClass("player")}" data-sort="player">Player${sortArrow("player")}</th>
-            <th class="sortable-th ${thClass("current")}" data-sort="current">Current${sortArrow("current")}</th>
-            <th>Move</th>
-            <th>More</th>
+            <th class="sortable-th ${thClass("current")}" data-sort="current">Now${sortArrow("current")}</th>
+            <th></th>
+            <th></th>
             <th class="sortable-th ${thClass("suggested")}" data-sort="suggested">Suggested${sortArrow("suggested")}</th>
-            <th class="num sortable-th ${thClass("spot")}" data-sort="spot">Spot${sortArrow("spot")}</th>
-            <th class="num sortable-th ${thClass("att")}" data-sort="att">Att${sortArrow("att")}</th>
-            <th class="num sortable-th ${thClass("score")}" data-sort="score">Score${sortArrow("score")}</th>
-            <th class="num sortable-th ${thClass("hist")}" data-sort="hist">History${sortArrow("hist")}</th>
-            <th class="num sortable-th ${thClass("recent")}" data-sort="recent">Recent${sortArrow("recent")}</th>
+            <th class="num sortable-th ${thClass("spot")}" data-sort="spot">Weight${sortArrow("spot")}</th>
+            <th class="num sortable-th ${thClass("att")}" data-sort="att">Games${sortArrow("att")}</th>
+            <th class="num sortable-th ${thClass("score")}" data-sort="score">Season${sortArrow("score")}</th>
+            <th class="num sortable-th ${thClass("hist")}" data-sort="hist">All-time${sortArrow("hist")}</th>
+            <th class="num sortable-th ${thClass("recent")}" data-sort="recent">Last 8${sortArrow("recent")}</th>
           </tr>
         </thead>
         <tbody>
@@ -757,6 +753,21 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderDetailModal(row) {
+    const recentGames = Number(row.recent_games_attended || 0);
+    const recentScore = Number(row.recent_attendance_score || 0);
+    const seasonGames = Number(row.games_attended || 0);
+    const seasonScore = Number(row.attendance_score || 0);
+    const historicalScore = Number(row.historical_attendance_score || 0);
+    const noShows = Number(row.no_shows || 0);
+    const lateCancels = Number(row.late_cancels || 0);
+
+    const reliabilityFlags = [];
+    if (noShows > 0) reliabilityFlags.push(`${noShows} no-show${noShows > 1 ? "s" : ""}`);
+    if (lateCancels > 0) reliabilityFlags.push(`${lateCancels} late cancel${lateCancels > 1 ? "s" : ""}`);
+    const reliabilityLine = reliabilityFlags.length
+      ? reliabilityFlags.join(", ") + " this season"
+      : "No no-shows or late cancels this season";
+
     detailModal.innerHTML = `
       <div class="site-modal-backdrop" data-modal-close></div>
       <div
@@ -767,59 +778,47 @@ document.addEventListener("DOMContentLoaded", () => {
       >
         <div class="site-modal-head">
           <div>
-            <div class="section-label">Explanation</div>
-            <h2 class="site-modal-title" id="tier-detail-modal-title">Suggestion Details</h2>
+            <div class="section-label">Why this recommendation</div>
+            <h2 class="site-modal-title" id="tier-detail-modal-title">${escapeHtml(displayName(row))}</h2>
           </div>
           <button class="ghost-button" type="button" data-modal-close>Close</button>
         </div>
         <div class="site-modal-body" id="tier-detail-content">
           <div class="detail-list">
             <div class="detail-item">
-              <span class="detail-label">Player</span>
-              <strong>${escapeHtml(displayName(row))}</strong>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Current Tier</span>
+              <span class="detail-label">Current tier</span>
               <div>${tierPill(currentTier(row))}</div>
             </div>
             <div class="detail-item">
-              <span class="detail-label">Suggested Tier</span>
-              <div>${tierPill(row.recommended_tier_status)}</div>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Move</span>
-              <div>${movementPill(row.trend || "steady")}</div>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Weighted Spot</span>
-              <strong>${escapeHtml(
-                row.suggestion_spot_value ? formatSpotValue(row.suggestion_spot_value) : "—"
-              )}</strong>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Season Attendance</span>
-              <strong>${escapeHtml(row.games_attended)}</strong>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Season Score</span>
-              <strong>${escapeHtml(row.attendance_score)}</strong>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Recent Score</span>
-              <strong>${escapeHtml(row.recent_attendance_score || 0)}</strong>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Historical Score</span>
-              <strong>${escapeHtml(row.historical_attendance_score || 0)}</strong>
+              <span class="detail-label">Suggested tier</span>
+              <div>${tierPill(row.recommended_tier_status)} ${movementPill(row.trend || "steady")}</div>
             </div>
           </div>
-          <div class="manual-note">
-            <strong>${escapeHtml(row.transparency_note || "No summary note yet.")}</strong><br />
-            ${escapeHtml(suggestionEvidenceText(row))}
+          <div class="detail-list" style="margin-top: var(--space-md);">
+            <div class="detail-item">
+              <span class="detail-label">Last 8 weeks</span>
+              <strong>${escapeHtml(recentGames)} of 8 played (score: ${escapeHtml(recentScore)})</strong>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">This season</span>
+              <strong>${escapeHtml(seasonGames)} games played (score: ${escapeHtml(seasonScore)})</strong>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">All-time score</span>
+              <strong>${escapeHtml(historicalScore)}</strong>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Reliability</span>
+              <strong>${escapeHtml(reliabilityLine)}</strong>
+            </div>
+          </div>
+          <div class="manual-note" style="margin-top: var(--space-md);">
+            <strong>What this means</strong><br />
+            ${escapeHtml(row.transparency_note || "Stable in current tier.")}
           </div>
           <div class="manual-note">
-            <strong>Next step</strong><br />
-            ${escapeHtml(row.next_step || "No follow-up note yet.")}
+            <strong>What to do next</strong><br />
+            ${escapeHtml(row.next_step || "Keep showing up consistently.")}
           </div>
         </div>
       </div>
