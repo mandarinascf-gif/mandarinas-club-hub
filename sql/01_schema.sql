@@ -1264,33 +1264,27 @@ scored as (
     base.*,
     case
       when not base.is_eligible then 'sub'
-      -- FIX: Suggested tier now leans on the last 8 tracked matchdays, with season totals
-      -- acting as guardrails so one short hot streak does not overwhelm the full season.
-      when base.recent_attendance_score >= 7
-        and base.recent_games_attended >= 3
-        and base.recent_no_shows = 0
-        and base.attendance_score >= 8
+      -- FIX: Suggested tier now follows full-season attendance first.
+      -- Recent and historical attendance remain available as supporting evidence.
+      when base.attendance_score >= 8
         and base.games_attended >= 4
         and base.no_shows <= 1 then 'core'
-      when base.recent_attendance_score >= 2
-        and base.recent_games_attended >= 1
+      when base.attendance_score >= 2
+        and base.games_attended >= 1
         and base.no_shows <= 2 then 'flex'
       else 'sub'
     end as recommended_tier_status,
     case
       when not base.is_eligible then 'down'
-      when base.recent_attendance_score >= 7
-        and base.recent_games_attended >= 3
-        and base.recent_no_shows = 0
-        and base.attendance_score >= 8
+      when base.attendance_score >= 8
         and base.games_attended >= 4
         and base.no_shows <= 1 then
         case
           when coalesce(base.tier_status, 'sub') = 'core' then 'steady'
           else 'up'
         end
-      when base.recent_attendance_score >= 2
-        and base.recent_games_attended >= 1
+      when base.attendance_score >= 2
+        and base.games_attended >= 1
         and base.no_shows <= 2 then
         case
           when coalesce(base.tier_status, 'sub') = 'core' then 'down'
@@ -1309,17 +1303,17 @@ select
   scored.*,
   case
     when not scored.is_eligible then 'Ineligible. Restore eligibility before tier movement.'
-    when scored.recommended_tier_status = 'core' and coalesce(scored.tier_status, 'sub') <> 'core' then 'Promotion case. The last 8 matchdays look core-level, and the season totals still clear the guardrails.'
-    when scored.recommended_tier_status = 'flex' and coalesce(scored.tier_status, 'sub') = 'sub' then 'Trending up. The recent 8-match run now supports rotation minutes.'
-    when scored.recommended_tier_status = 'sub' and coalesce(scored.tier_status, 'sub') <> 'sub' then 'Recent form has slipped below the current tier range, even with season totals included.'
+    when scored.recommended_tier_status = 'core' and coalesce(scored.tier_status, 'sub') <> 'core' then 'Promotion case. Full-season attendance now clears the core line.'
+    when scored.recommended_tier_status = 'flex' and coalesce(scored.tier_status, 'sub') = 'sub' then 'Trending up. Full-season attendance now supports rotation minutes.'
+    when scored.recommended_tier_status = 'sub' and coalesce(scored.tier_status, 'sub') <> 'sub' then 'Season attendance has slipped below the current tier range.'
     else coalesce(scored.movement_note, 'Stable in current tier range.')
   end as transparency_note,
   case
     when not scored.is_eligible then 'Restore eligibility'
-    when scored.recommended_tier_status = 'core' then 'Keep the recent run strong and avoid no-shows'
-    when scored.recommended_tier_status = 'flex' and scored.recent_games_attended < 3 then 'Turn the recent run into a longer stretch of availability'
-    when scored.recommended_tier_status = 'flex' then 'Keep stacking recent attendance and push toward core'
-    else 'Build a stronger recent 8-match run and reduce late changes'
+    when scored.recommended_tier_status = 'core' then 'Keep attendance high and avoid no-shows'
+    when scored.recommended_tier_status = 'flex' and scored.games_attended < 3 then 'Build a longer attendance record'
+    when scored.recommended_tier_status = 'flex' then 'Keep stacking attendance and push toward core'
+    else 'Build stronger attendance and reduce late changes'
   end as next_step
 from scored;
 
