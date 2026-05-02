@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="./assets/css/app.css?v=20260501h" />
     <title>Busses · Planner</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./assets/js/core/club_logic.js"></script>
+    <script src="./assets/js/core/club_logic.js?v=20260501b"></script>
     <script src="./assets/js/core/supabase_config.js"></script>
     <script src="./assets/js/core/runtime_config.js?v=20260427a"></script>
     <script src="./assets/js/ui/shell.js?v=20260427a"></script>
@@ -81,8 +81,8 @@
         <div class="section-label">Controls</div>
         <h2>Choose a Campaign</h2>
         <p id="board-copy">
-          Queue order uses season totals. Recommendations compare recent, season, and historical
-          attendance and always land on a weighted 36-spot plan.
+          Queue order uses season totals. Recommendations prioritize full-season attendance, with
+          historical and recent attendance shown as supporting context inside a weighted 36-spot plan.
         </p>
         <p>Selected season: <strong id="selected-season-pill">No season selected</strong></p>
 
@@ -125,6 +125,6 @@
       <div class="club-footer-copy">Busses · Planner</div>
     </footer>
 
-    <script src="./assets/js/pages/admin/tiers.js?v=20260501a"></script>
+    <script src="./assets/js/pages/admin/tiers.js?v=20260501b"></script>
   </body>
 </html>
