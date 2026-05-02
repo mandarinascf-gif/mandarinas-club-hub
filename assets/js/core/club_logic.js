@@ -1258,7 +1258,12 @@
     const seasonScore = Number(row?.attendance_score || 0);
     const seasonGames = Number(row?.games_attended || 0);
     const seasonNoShows = Number(row?.no_shows || 0);
+    const historicalGames = Number(row?.historical_games_attended || 0);
+    const historicalScore = Number(row?.historical_attendance_score || 0);
+    const historicalNoShows = Number(row?.historical_no_shows || 0);
 
+    // Core: strong recent form + solid season + no recent no-shows
+    // Historical veterans get a slightly easier path (recent >= 5 instead of 7)
     if (
       recentScore >= 7 &&
       recentGames >= 3 &&
@@ -1270,7 +1275,33 @@
       return "core";
     }
 
+    // Historical core path: long-term reliable players with decent recent presence
+    if (
+      historicalGames >= 15 &&
+      historicalScore >= 20 &&
+      historicalNoShows <= 3 &&
+      recentGames >= 2 &&
+      recentNoShows === 0 &&
+      seasonGames >= 3 &&
+      seasonNoShows === 0
+    ) {
+      return "core";
+    }
+
+    // Flex: active recently with at least some showing up
     if (recentScore >= 2 && recentGames >= 1 && seasonNoShows <= 2) {
+      return "flex";
+    }
+
+    // Historical flex floor: long-term reliable players don't drop to sub
+    // from a short-term dip alone — they hold flex as long as they haven't
+    // accumulated no-shows this season
+    if (
+      historicalGames >= 8 &&
+      historicalScore >= 10 &&
+      historicalNoShows <= 4 &&
+      seasonNoShows <= 1
+    ) {
       return "flex";
     }
 
@@ -1786,6 +1817,11 @@
     }
 
     if (row.recommended_tier_status === "core" && currentTier !== "core") {
+      const historicalGames = Number(row.historical_games_attended || 0);
+      const recentScore = Number(row.recent_attendance_score || 0);
+      if (historicalGames >= 15 && recentScore < 7) {
+        return "Long-term reliability across multiple seasons plus solid current-season attendance supports a move to Core.";
+      }
       return "Strong recent attendance supports a move to Core. Showing up consistently in the last 8 weeks with a solid season record is what gets you here.";
     }
 
@@ -1797,6 +1833,11 @@
     }
 
     if (row.recommended_tier_status === "flex" && currentTier === "sub") {
+      const historicalGames = Number(row.historical_games_attended || 0);
+      const recentGames = Number(row.recent_games_attended || 0);
+      if (historicalGames >= 8 && recentGames < 1) {
+        return "History across past seasons keeps this player at Flex. Long-term reliability earns a safety net even during quieter stretches.";
+      }
       return "Recent attendance has picked up enough to move from Sub to Flex. Keep it going to solidify the spot.";
     }
 
@@ -1828,6 +1869,10 @@
       row.preliminary_recommended_tier_status === "sub"
     ) {
       return "Show up more in the coming weeks to strengthen the recent record and lock in the Flex spot.";
+    }
+
+    if (row.recommended_tier_status === "flex" && Number(row.recent_games_attended || 0) < 1) {
+      return "Your history is keeping you at Flex for now. Start showing up again to stay here and push toward Core.";
     }
 
     if (row.recommended_tier_status === "flex" && Number(row.recent_games_attended || 0) < 3) {
