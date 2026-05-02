@@ -1753,101 +1753,92 @@
     const historicalScore = Number(row.historical_attendance_score || 0);
     const historicalLateCancels = Number(row.historical_late_cancels || 0);
     const historicalNoShows = Number(row.historical_no_shows || 0);
-    const seasonFlags = [];
-    const historyFlags = [];
 
-    if (seasonLateCancels > 0) {
-      seasonFlags.push(`${seasonLateCancels} ${pluralize(seasonLateCancels, "late cancel")}`);
+    const parts = [];
+
+    parts.push(`Played ${recentGames} of last 8 weeks (score ${recentScore})`);
+    parts.push(`${seasonGames} games this season (score ${seasonScore})`);
+
+    if (seasonNoShows > 0 || seasonLateCancels > 0) {
+      const flags = [];
+      if (seasonNoShows > 0) flags.push(`${seasonNoShows} no-show${seasonNoShows > 1 ? "s" : ""}`);
+      if (seasonLateCancels > 0) flags.push(`${seasonLateCancels} late cancel${seasonLateCancels > 1 ? "s" : ""}`);
+      parts.push(flags.join(", ") + " this season");
     }
 
-    if (seasonNoShows > 0) {
-      seasonFlags.push(`${seasonNoShows} ${pluralize(seasonNoShows, "no-show")}`);
+    if (historicalGames > 0) {
+      parts.push(`${historicalGames} games all-time (score ${historicalScore})`);
     }
 
-    if (historicalLateCancels > 0) {
-      historyFlags.push(
-        `${historicalLateCancels} ${pluralize(historicalLateCancels, "late cancel")}`
-      );
+    if (historicalNoShows > 0 || historicalLateCancels > 0) {
+      const hFlags = [];
+      if (historicalNoShows > 0) hFlags.push(`${historicalNoShows} no-show${historicalNoShows > 1 ? "s" : ""}`);
+      if (historicalLateCancels > 0) hFlags.push(`${historicalLateCancels} late cancel${historicalLateCancels > 1 ? "s" : ""}`);
+      parts.push(hFlags.join(", ") + " all-time");
     }
 
-    if (historicalNoShows > 0) {
-      historyFlags.push(`${historicalNoShows} ${pluralize(historicalNoShows, "no-show")}`);
-    }
-
-    const seasonPart = `Season ${seasonGames} attended, score ${seasonScore}${
-      seasonFlags.length ? `, ${seasonFlags.join(", ")}` : ""
-    }`;
-    const historyPart = `History ${historicalGames} attended, score ${historicalScore}${
-      historyFlags.length ? `, ${historyFlags.join(", ")}` : ""
-    }`;
-    const recentPart = `Recent ${recentGames}/8, score ${recentScore}`;
-
-    return `${recentPart} · ${seasonPart} · ${historyPart}`;
+    return parts.join(". ") + ".";
   }
 
   function tierSuggestionNote(row, currentTier, slotLimit) {
-    const mixLabel = tierSuggestionMixLabel(slotLimit);
-
     if (row.is_eligible === false) {
-      return "Ineligible. Restore eligibility before tier movement.";
+      return "Currently ineligible. Eligibility needs to be restored before any tier change.";
     }
 
     if (row.recommended_tier_status === "core" && currentTier !== "core") {
-      return `Promotion case. Recent form is strong enough to claim a full core spot inside the weighted ${mixLabel}.`;
+      return "Strong recent attendance supports a move to Core. Showing up consistently in the last 8 weeks with a solid season record is what gets you here.";
     }
 
     if (
       row.recommended_tier_status === "flex" &&
       row.preliminary_recommended_tier_status === "sub"
     ) {
-      return `Mix hold. Season-to-date work still keeps this player inside the weighted ${mixLabel} even with a lighter recent run.`;
+      return "Recent weeks have been lighter, but the season record overall is still strong enough to hold a Flex spot.";
     }
 
     if (row.recommended_tier_status === "flex" && currentTier === "sub") {
-      return `Upward case. The recent 8-match run now supports a flex half-spot in the weighted ${mixLabel}.`;
+      return "Recent attendance has picked up enough to move from Sub to Flex. Keep it going to solidify the spot.";
     }
 
     if (
       row.recommended_tier_status === "sub" &&
       row.preliminary_recommended_tier_status !== "sub"
     ) {
-      return `Borderline case. The recent run is competitive, but stronger mix cases are taking the last weighted ${mixLabel} spots.`;
+      return "Close to Flex range, but other players with stronger recent form are filling the available spots ahead.";
     }
 
     if (row.recommended_tier_status === "sub" && currentTier !== "sub") {
-      return "Downward case. Recent form is no longer clearing the current tier line once season totals are folded in.";
+      return "Recent attendance has dropped below what's needed to hold the current tier. More consistent showing up would bring it back.";
     }
 
-    return row.movement_note || "Stable in current tier range.";
+    return row.movement_note || "Holding steady in the current tier.";
   }
 
   function tierSuggestionNextStep(row, slotLimit) {
-    const mixLabel = tierSuggestionMixLabel(slotLimit);
-
     if (row.is_eligible === false) {
-      return "Restore eligibility";
+      return "Get eligibility restored, then focus on showing up consistently.";
     }
 
     if (row.recommended_tier_status === "core") {
-      return "Keep the recent run strong and avoid no-shows";
+      return "Keep showing up and avoid no-shows. Consistency is what keeps a Core spot.";
     }
 
     if (
       row.recommended_tier_status === "flex" &&
       row.preliminary_recommended_tier_status === "sub"
     ) {
-      return `Stay inside the weighted ${mixLabel} and strengthen the recent 8-match run`;
+      return "Show up more in the coming weeks to strengthen the recent record and lock in the Flex spot.";
     }
 
     if (row.recommended_tier_status === "flex" && Number(row.recent_games_attended || 0) < 3) {
-      return "Turn the recent run into a longer stretch of availability";
+      return "Play more of the next few weeks. Getting to 3+ of the last 8 opens the path toward Core.";
     }
 
     if (row.recommended_tier_status === "flex") {
-      return "Keep stacking recent attendance and push toward core";
+      return "Keep attending and push toward 5+ of the last 8 weeks with no no-shows to enter Core range.";
     }
 
-    return `Climb back into the weighted ${mixLabel} with a stronger recent 8-match run`;
+    return "Show up more consistently over the next few weeks. Even 1-2 more appearances in the last 8 makes a difference.";
   }
 
   function applyTierSuggestionSlots(rows, slotLimit = TIER_SUGGESTION_SLOT_LIMIT) {
