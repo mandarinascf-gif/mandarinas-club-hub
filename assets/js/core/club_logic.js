@@ -467,7 +467,17 @@
   }
 
   function formatStatusLabel(status) {
-    return STATUS_LABELS[status] || "Core";
+    const normalized = normalizeTierValue(status, "");
+    if (STATUS_LABELS[normalized]) {
+      return STATUS_LABELS[normalized];
+    }
+
+    const text = normalizeText(status);
+    if (!text) {
+      return "Unknown";
+    }
+
+    return text.charAt(0).toUpperCase() + text.slice(1);
   }
 
   function formatTrendLabel(trend) {
