@@ -20,6 +20,7 @@
         teamDisplayLabel,
         applyTeamDisplayConfig,
         sortSeasonsChronologically,
+        normalizeTierValue,
         normalizePlayerDesiredTier,
         summarizeBalancedAssignments,
         summarizeMatchdayProgress,
@@ -499,7 +500,10 @@
           return;
         }
 
-        const tierStatus = normalizeText(replacementTierStatusSelect.value || player.status || "flex").toLowerCase();
+        const tierStatus = normalizeTierValue(
+          replacementTierStatusSelect.value || player.status,
+          "flex"
+        );
         const attendanceStatus = normalizeText(replacementAttendanceStatusSelect.value || "available").toLowerCase();
 
         replacementAddButton.disabled = true;
@@ -796,11 +800,12 @@
       }
 
       function formatStatusLabel(value) {
-        if (value === "sub") {
+        const normalized = normalizeTierValue(value, "");
+        if (normalized === "sub") {
           return "Sub";
         }
 
-        return value.charAt(0).toUpperCase() + value.slice(1);
+        return normalized ? normalized.charAt(0).toUpperCase() + normalized.slice(1) : "Flex";
       }
 
       function formatAttendanceStatusLabel(value) {
@@ -810,11 +815,11 @@
       function priorityWeight(status) {
         const lookup = {
           core: 0,
-          rotation: 1,
-          flex_sub: 2,
+          flex: 1,
+          sub: 2,
         };
 
-        return lookup[status] ?? 3;
+        return lookup[normalizeTierValue(status, "")] ?? 3;
       }
 
       function priorityMetrics(playerId) {
@@ -1863,12 +1868,18 @@
           seasonRosterRows = (seasonPlayerRows || [])
             .map((row) => {
               const registryPlayer = normalizePlayerDesiredTier(row.player, "flex");
+              const tierStatus = normalizeTierValue(
+                row.tier_status || registryPlayer.desired_tier,
+                registryPlayer.desired_tier
+              );
               return {
                 ...row,
                 player: registryPlayer,
-                registration_tier: normalizeText(
-                  row.registration_tier || registryPlayer.desired_tier || row.tier_status || "flex"
-                ).toLowerCase(),
+                tier_status: tierStatus,
+                registration_tier: normalizeTierValue(
+                  row.registration_tier || tierStatus,
+                  tierStatus
+                ),
                 payment_status: normalizeText(row.payment_status || "unknown").toLowerCase(),
                 is_eligible: row.is_eligible !== false,
               };
