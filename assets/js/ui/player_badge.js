@@ -449,6 +449,35 @@
   transform: none !important;
 }
 
+.fut-stat-card--rank-selector {
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.fut-stat-card--rank-selector[role="button"] {
+  cursor: pointer;
+}
+
+.fut-stat-card--rank-selector.is-rank-active {
+  border-color: rgba(255,224,138,.92);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255,216,115,.22), transparent 55%),
+    linear-gradient(180deg, #221607, #0b0603);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,238,188,.14),
+    0 0 0 1px rgba(255,211,91,.18);
+}
+
+.fut-stat-card--rank-selector[role="button"]:focus-visible {
+  outline: none;
+  border-color: rgba(255,232,165,.96);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,238,188,.18),
+    0 0 0 2px rgba(255,211,91,.26);
+}
+
 .fut-stat-card.is-zero {
   opacity: .42;
   filter: grayscale(.4);
@@ -687,6 +716,39 @@
   function formatWholeNumber(value) {
     const number = Number(value);
     return Number.isFinite(number) ? String(Math.round(number)) : "0";
+  }
+
+  function rankModeLabel(mode) {
+    return mode === "points" ? "Points Rank" : "PPG Rank";
+  }
+
+  function buildBadgeRankState(player, stats) {
+    const ppgRank = formatRank(player?.ppg_rank ?? stats?.ppg_rank ?? player?.rank ?? stats?.rank);
+    const pointsRank = formatRank(player?.points_rank ?? stats?.points_rank);
+    const rankModes = [];
+
+    if (ppgRank !== "--") {
+      rankModes.push("ppg");
+    }
+
+    if (pointsRank !== "--") {
+      rankModes.push("points");
+    }
+
+    const activeRankMode = rankModes.includes("ppg") ? "ppg" : rankModes[0] || "ppg";
+    const activeRank = activeRankMode === "points" ? pointsRank : ppgRank;
+    const activeRankSummary = rankModes.length
+      ? rankModeLabel(activeRankMode)
+      : "Ranking unavailable";
+
+    return {
+      activeRank,
+      activeRankMode,
+      activeRankSummary,
+      pointsRank,
+      ppgRank,
+      rankModes,
+    };
   }
 
   /* ------------------------------------------------------------------ */
@@ -1063,6 +1125,105 @@
     return cards;
   }
 
+  function badgeRankModes(badge) {
+    return normalizeText(badge?.dataset?.rankModes, "")
+      .split(",")
+      .map((value) => normalizeText(value, "").toLowerCase())
+      .filter(Boolean);
+  }
+
+  function badgeRankValue(badge, mode) {
+    if (mode === "points") {
+      return normalizeText(badge?.dataset?.rankPoints, "--");
+    }
+
+    return normalizeText(badge?.dataset?.rankPpg, "--");
+  }
+
+  function updateBadgeRankSelectorState(badge) {
+    const activeMode = normalizeText(badge?.dataset?.rankMode, "ppg").toLowerCase();
+    badge.querySelectorAll("[data-rank-select]").forEach((node) => {
+      const mode = normalizeText(node.dataset.rankSelect, "").toLowerCase();
+      const isActive = mode === activeMode;
+      node.classList.toggle("is-rank-active", isActive);
+
+      if (node.getAttribute("role") === "button") {
+        node.setAttribute("aria-pressed", isActive ? "true" : "false");
+      }
+
+      const label = rankModeLabel(mode);
+      const message = isActive ? `${label} selected` : `Show ${label}`;
+      node.setAttribute("aria-label", message);
+      node.setAttribute("title", message);
+    });
+  }
+
+  function applyBadgeRankMode(badge, mode) {
+    if (!badge) return;
+    const availableModes = badgeRankModes(badge);
+    const normalizedMode = normalizeText(mode, "").toLowerCase();
+    const nextMode = availableModes.includes(normalizedMode)
+      ? normalizedMode
+      : availableModes[0] || "ppg";
+
+    badge.dataset.rankMode = nextMode;
+
+    const valueNode = badge.querySelector("[data-rank-value]");
+    if (valueNode) {
+      valueNode.textContent = badgeRankValue(badge, nextMode);
+    }
+
+    const metaNode = badge.querySelector("[data-rank-meta]");
+    if (metaNode) {
+      metaNode.textContent = rankModeLabel(nextMode);
+    }
+
+    updateBadgeRankSelectorState(badge);
+    scheduleBadgeFit(badge);
+  }
+
+  function hydrateBadgeRankSelectors(root) {
+    if (!root || typeof root.querySelectorAll !== "function") return;
+    const badges = [];
+
+    if (typeof root.matches === "function" && root.matches(".fut-card")) {
+      badges.push(root);
+    }
+
+    root.querySelectorAll(".fut-card").forEach((badge) => badges.push(badge));
+
+    badges.forEach((badge) => {
+      const selectors = Array.from(badge.querySelectorAll("[data-rank-select]"));
+      if (!selectors.length) return;
+
+      applyBadgeRankMode(badge, badge.dataset.rankMode);
+
+      if (badge.dataset.rankSelectorsBound === "true") {
+        return;
+      }
+
+      badge.dataset.rankSelectorsBound = "true";
+
+      selectors.forEach((selector) => {
+        if (selector.getAttribute("role") !== "button") {
+          return;
+        }
+
+        const activate = () => applyBadgeRankMode(badge, selector.dataset.rankSelect);
+
+        selector.addEventListener("click", activate);
+        selector.addEventListener("keydown", (event) => {
+          if (event.key !== "Enter" && event.key !== " ") {
+            return;
+          }
+
+          event.preventDefault();
+          activate();
+        });
+      });
+    });
+  }
+
   /* ------------------------------------------------------------------ */
   /*  Text fitting (shrink long names / values to fit container)         */
   /* ------------------------------------------------------------------ */
@@ -1123,8 +1284,12 @@
     window.__mcPlayerBadgeObserverReady = true;
 
     if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", () => scheduleAllBadgeFits(), { once: true });
+      document.addEventListener("DOMContentLoaded", () => {
+        hydrateBadgeRankSelectors(document);
+        scheduleAllBadgeFits();
+      }, { once: true });
     } else {
+      hydrateBadgeRankSelectors(document);
       scheduleAllBadgeFits();
     }
 
@@ -1132,7 +1297,10 @@
       const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
           mutation.addedNodes.forEach((node) => {
-            if (node instanceof Element) scheduleAllBadgeFits(node);
+            if (node instanceof Element) {
+              hydrateBadgeRankSelectors(node);
+              scheduleAllBadgeFits(node);
+            }
           });
         });
       });
@@ -1154,25 +1322,49 @@
     const ballArtUrl = escapeHtml(assetUrl(BALL_ART_PATH));
     const positions = positionList(model.player);
     const positionCount = Math.min(Math.max(positions.length, 1), 4);
+    const rankModeSet = new Set(model.rankModes);
+    const rankSwitchingEnabled = model.rankModes.length > 1;
     const flagMarkup =
       model.flagCode || model.flagTitle
         ? `<div class="fut-flag-wrap">${badgeFlagMarkup(model.flagCode, model.flagTitle)}</div>`
         : "";
 
     const statCardsMarkup = model.statCards
-      .map(
-        (card) => `
-          <article class="${escapeHtml(card.cardClassName)}" data-stat-key="${escapeHtml(card.key)}" data-value-kind="${escapeHtml(card.valueKind)}">
+      .map((card) => {
+        const normalizedCardKey = normalizeCardKey(card.key);
+        const isRankSelector = rankModeSet.has(normalizedCardKey);
+        const cardClassName = [
+          card.cardClassName,
+          isRankSelector ? "fut-stat-card--rank-selector" : "",
+          isRankSelector && model.activeRankMode === normalizedCardKey ? "is-rank-active" : "",
+        ].filter(Boolean).join(" ");
+        const selectorAttrs = isRankSelector
+          ? ` data-rank-select="${escapeHtml(normalizedCardKey)}"`
+          : "";
+        const interactiveAttrs =
+          rankSwitchingEnabled && isRankSelector
+            ? ` role="button" tabindex="0" aria-pressed="${model.activeRankMode === normalizedCardKey ? "true" : "false"}"`
+            : "";
+
+        return `
+          <article class="${escapeHtml(cardClassName)}" data-stat-key="${escapeHtml(card.key)}" data-value-kind="${escapeHtml(card.valueKind)}"${selectorAttrs}${interactiveAttrs}>
             ${statIconMarkup(card.icon)}
             <div class="fut-stat-label">${escapeHtml(card.label)}</div>
             <strong class="${escapeHtml(card.valueClassName)}" title="${escapeHtml(card.value)}">${escapeHtml(card.value)}</strong>
           </article>
-        `
-      )
+        `;
+      })
       .join("");
 
     return `
-      <section class="fut-card" aria-label="${escapeHtml(model.name)} player badge">
+      <section
+        class="fut-card"
+        aria-label="${escapeHtml(model.name)} player badge"
+        data-rank-mode="${escapeHtml(model.activeRankMode)}"
+        data-rank-modes="${escapeHtml(model.rankModes.join(","))}"
+        data-rank-ppg="${escapeHtml(model.ppgRank)}"
+        data-rank-points="${escapeHtml(model.pointsRank)}"
+      >
         <header class="fut-card-header">
           <div class="fut-card-title">Mandarinas CF</div>
           <div class="fut-card-subtitle">California Club de Futbol</div>
@@ -1182,7 +1374,7 @@
           <article class="fut-mini-card fut-mini-card--overall">
             <span class="fut-mini-label">OVR</span>
             <strong class="fut-mini-value">${escapeHtml(model.overall)}</strong>
-            <small class="fut-mini-meta">Overall</small>
+            <small class="fut-mini-meta">Overall Rating</small>
           </article>
 
           <div class="fut-crest-wrap">
@@ -1191,8 +1383,8 @@
 
           <article class="fut-mini-card fut-mini-card--rank">
             <span class="fut-mini-label">Rank</span>
-            <strong class="fut-mini-value">${escapeHtml(model.rank)}</strong>
-            <small class="fut-mini-meta">${escapeHtml(model.ppgSummary)}</small>
+            <strong class="fut-mini-value" data-rank-value>${escapeHtml(model.activeRank)}</strong>
+            <small class="fut-mini-meta" data-rank-meta>${escapeHtml(model.activeRankSummary)}</small>
           </article>
         </section>
 
@@ -1226,12 +1418,17 @@
     const ppgSource = stats && typeof stats === "object" ? stats : {};
     const hasPpgData = hasStatSource(ppgSource, ["ppg", "points_per_game"]);
     const ppgValue = hasPpgData ? formatPpg(stats?.ppg ?? stats?.points_per_game) : "--";
+    const rankState = buildBadgeRankState(player, stats);
     const data = {
       player,
       overall: formatWholeNumber(player?.overall_rating ?? player?.overall ?? player?.skill_rating ?? 0),
-      rank: formatRank(player?.rank ?? stats?.rank),
+      activeRank: rankState.activeRank,
+      activeRankMode: rankState.activeRankMode,
+      activeRankSummary: rankState.activeRankSummary,
       ppg: ppgValue,
-      ppgSummary: hasPpgData ? "Ranked by PPG" : "PPG ranking unavailable",
+      ppgRank: rankState.ppgRank,
+      pointsRank: rankState.pointsRank,
+      rankModes: rankState.rankModes,
       flagCode: resolveFlagCode(player),
       flagTitle: normalizeText(player?.nationality || player?.country, ""),
       name: normalizeText(player?.name, "N/A"),
@@ -1247,6 +1444,7 @@
     const host = document.createElement("div");
     host.innerHTML = createBadgeMarkup(data).trim();
     const badge = host.firstElementChild;
+    hydrateBadgeRankSelectors(badge);
     scheduleBadgeFit(badge);
     return badge;
   }
@@ -1276,6 +1474,8 @@
       flag_code: "MX",
       overall_rating: 80,
       rank: "19",
+      ppg_rank: "19",
+      points_rank: "14",
       primary_position: "DEF",
       position_label: "DEF · ATT · GK",
       positions: ["DEF", "ATT", "GK"],
@@ -1291,6 +1491,8 @@
       goal_keeps: 5,
       clean_sheets: 0,
       points_per_game: 5.52,
+      ppg_rank: "19",
+      points_rank: "14",
       seasons_won: 8,
       seasons_participated: 8,
     },
