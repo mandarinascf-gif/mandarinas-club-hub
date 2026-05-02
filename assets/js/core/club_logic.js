@@ -1252,16 +1252,25 @@
       return "sub";
     }
 
-    const overallAverage = Number(row?.overall_attendance_average || 0);
-    const overallGames = Number(row?.overall_games_attended || 0);
-    const overallNoShows = Number(row?.overall_no_shows || 0);
+    const recentScore = Number(row?.recent_attendance_score || 0);
+    const recentGames = Number(row?.recent_games_attended || 0);
+    const recentNoShows = Number(row?.recent_no_shows || 0);
+    const seasonScore = Number(row?.attendance_score || 0);
     const seasonGames = Number(row?.games_attended || 0);
+    const seasonNoShows = Number(row?.no_shows || 0);
 
-    if (overallAverage >= 1.4 && overallGames >= 6 && seasonGames >= 2 && overallNoShows <= 1) {
+    if (
+      recentScore >= 7 &&
+      recentGames >= 3 &&
+      recentNoShows === 0 &&
+      seasonScore >= 8 &&
+      seasonGames >= 4 &&
+      seasonNoShows <= 1
+    ) {
       return "core";
     }
 
-    if (overallAverage >= 0.75 && overallGames >= 2 && seasonGames >= 1 && overallNoShows <= 2) {
+    if (recentScore >= 2 && recentGames >= 1 && seasonNoShows <= 2) {
       return "flex";
     }
 
@@ -1277,27 +1286,15 @@
       return tierDiff;
     }
 
-    const overallAverageDiff =
-      Number(right.overall_attendance_average || 0) -
-      Number(left.overall_attendance_average || 0);
-    if (overallAverageDiff) {
-      return overallAverageDiff;
+    const recentScoreDiff =
+      Number(right.recent_attendance_score || 0) - Number(left.recent_attendance_score || 0);
+    if (recentScoreDiff) {
+      return recentScoreDiff;
     }
 
-    const scoreDiff =
-      Number(right.overall_attendance_score || 0) - Number(left.overall_attendance_score || 0);
+    const scoreDiff = Number(right.attendance_score || 0) - Number(left.attendance_score || 0);
     if (scoreDiff) {
       return scoreDiff;
-    }
-
-    const gamesDiff = Number(right.overall_games_attended || 0) - Number(left.overall_games_attended || 0);
-    if (gamesDiff) {
-      return gamesDiff;
-    }
-
-    const seasonScoreDiff = Number(right.attendance_score || 0) - Number(left.attendance_score || 0);
-    if (seasonScoreDiff) {
-      return seasonScoreDiff;
     }
 
     const historicalScoreDiff =
@@ -1306,16 +1303,21 @@
       return historicalScoreDiff;
     }
 
-    const recentScoreDiff =
-      Number(right.recent_attendance_score || 0) - Number(left.recent_attendance_score || 0);
-    if (recentScoreDiff) {
-      return recentScoreDiff;
-    }
-
     const recentGamesDiff =
       Number(right.recent_games_attended || 0) - Number(left.recent_games_attended || 0);
     if (recentGamesDiff) {
       return recentGamesDiff;
+    }
+
+    const gamesDiff = Number(right.games_attended || 0) - Number(left.games_attended || 0);
+    if (gamesDiff) {
+      return gamesDiff;
+    }
+
+    const historicalGamesDiff =
+      Number(right.historical_games_attended || 0) - Number(left.historical_games_attended || 0);
+    if (historicalGamesDiff) {
+      return historicalGamesDiff;
     }
 
     const noShowsDiff = Number(left.no_shows || 0) - Number(right.no_shows || 0);
@@ -1741,10 +1743,6 @@
   }
 
   function tierSuggestionEvidence(row) {
-    const overallGames = Number(row.overall_games_attended || 0);
-    const overallTracked = Number(row.overall_tracked_matchdays || 0);
-    const overallScore = Number(row.overall_attendance_score || 0);
-    const overallAverage = Number(row.overall_attendance_average || 0);
     const recentGames = Number(row.recent_games_attended || 0);
     const recentScore = Number(row.recent_attendance_score || 0);
     const seasonGames = Number(row.games_attended || 0);
@@ -1776,9 +1774,6 @@
       historyFlags.push(`${historicalNoShows} ${pluralize(historicalNoShows, "no-show")}`);
     }
 
-    const overallPart = `Overall ${overallGames} attended across ${overallTracked} tracked matchdays, score ${overallScore}, avg ${overallAverage.toFixed(
-      2
-    )}`;
     const seasonPart = `Season ${seasonGames} attended, score ${seasonScore}${
       seasonFlags.length ? `, ${seasonFlags.join(", ")}` : ""
     }`;
@@ -1787,7 +1782,7 @@
     }`;
     const recentPart = `Recent ${recentGames}/8, score ${recentScore}`;
 
-    return `${overallPart} · ${seasonPart} · ${historyPart} · ${recentPart}`;
+    return `${recentPart} · ${seasonPart} · ${historyPart}`;
   }
 
   function tierSuggestionNote(row, currentTier, slotLimit) {
@@ -1798,29 +1793,29 @@
     }
 
     if (row.recommended_tier_status === "core" && currentTier !== "core") {
-      return `Promotion case. Overall attendance history is strong enough to claim a full core spot inside the weighted ${mixLabel}.`;
+      return `Promotion case. Recent form is strong enough to claim a full core spot inside the weighted ${mixLabel}.`;
     }
 
     if (
       row.recommended_tier_status === "flex" &&
       row.preliminary_recommended_tier_status === "sub"
     ) {
-      return `Mix hold. The weighted ${mixLabel} still leaves room for this player even though stronger attendance cases are ahead.`;
+      return `Mix hold. Season-to-date work still keeps this player inside the weighted ${mixLabel} even with a lighter recent run.`;
     }
 
     if (row.recommended_tier_status === "flex" && currentTier === "sub") {
-      return `Upward case. Overall attendance history now supports a flex half-spot in the weighted ${mixLabel}.`;
+      return `Upward case. The recent 8-match run now supports a flex half-spot in the weighted ${mixLabel}.`;
     }
 
     if (
       row.recommended_tier_status === "sub" &&
       row.preliminary_recommended_tier_status !== "sub"
     ) {
-      return `Borderline case. Attendance is competitive, but stronger overall attendance cases are taking the last weighted ${mixLabel} spots.`;
+      return `Borderline case. The recent run is competitive, but stronger mix cases are taking the last weighted ${mixLabel} spots.`;
     }
 
     if (row.recommended_tier_status === "sub" && currentTier !== "sub") {
-      return "Downward case. Overall attendance history is no longer clearing the current tier line.";
+      return "Downward case. Recent form is no longer clearing the current tier line once season totals are folded in.";
     }
 
     return row.movement_note || "Stable in current tier range.";
@@ -1834,25 +1829,25 @@
     }
 
     if (row.recommended_tier_status === "core") {
-      return "Keep attendance high and avoid no-shows";
+      return "Keep the recent run strong and avoid no-shows";
     }
 
     if (
       row.recommended_tier_status === "flex" &&
       row.preliminary_recommended_tier_status === "sub"
     ) {
-      return `Stay inside the weighted ${mixLabel} by keeping attendance steady`;
+      return `Stay inside the weighted ${mixLabel} and strengthen the recent 8-match run`;
     }
 
-    if (row.recommended_tier_status === "flex" && Number(row.games_attended || 0) < 3) {
-      return "Build a longer attendance record";
+    if (row.recommended_tier_status === "flex" && Number(row.recent_games_attended || 0) < 3) {
+      return "Turn the recent run into a longer stretch of availability";
     }
 
     if (row.recommended_tier_status === "flex") {
-      return "Keep stacking attendance and push toward core";
+      return "Keep stacking recent attendance and push toward core";
     }
 
-    return `Climb back into the weighted ${mixLabel} with stronger attendance`;
+    return `Climb back into the weighted ${mixLabel} with a stronger recent 8-match run`;
   }
 
   function applyTierSuggestionSlots(rows, slotLimit = TIER_SUGGESTION_SLOT_LIMIT) {
