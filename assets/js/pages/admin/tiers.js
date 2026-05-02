@@ -304,11 +304,11 @@
                       }</strong></div>
                       <div class="metric-pill"><span>Att</span><strong>${escapeHtml(row.games_attended)}</strong></div>
                       <div class="metric-pill"><span>Score</span><strong>${escapeHtml(row.attendance_score)}</strong></div>
-                      <div class="metric-pill"><span>Recent</span><strong>${escapeHtml(
-                        row.recent_attendance_score || 0
-                      )}</strong></div>
                       <div class="metric-pill"><span>History</span><strong>${escapeHtml(
                         row.historical_attendance_score || 0
+                      )}</strong></div>
+                      <div class="metric-pill"><span>Recent</span><strong>${escapeHtml(
+                        row.recent_attendance_score || 0
                       )}</strong></div>
                     </div>
                     <div class="detail-list">
@@ -437,8 +437,12 @@
               return Number(right.suggestion_spot_value || 0) - Number(left.suggestion_spot_value || 0);
             }
 
-            if (Number(right.recent_attendance_score || 0) !== Number(left.recent_attendance_score || 0)) {
-              return Number(right.recent_attendance_score || 0) - Number(left.recent_attendance_score || 0);
+            if (
+              Number(left.suggestion_slot_rank || 0) > 0 &&
+              Number(right.suggestion_slot_rank || 0) > 0 &&
+              Number(left.suggestion_slot_rank || 0) !== Number(right.suggestion_slot_rank || 0)
+            ) {
+              return Number(left.suggestion_slot_rank || 0) - Number(right.suggestion_slot_rank || 0);
             }
 
             if (right.attendance_score !== left.attendance_score) {
@@ -447,6 +451,20 @@
 
             if (right.games_attended !== left.games_attended) {
               return right.games_attended - left.games_attended;
+            }
+
+            if (
+              Number(right.historical_attendance_score || 0) !==
+              Number(left.historical_attendance_score || 0)
+            ) {
+              return (
+                Number(right.historical_attendance_score || 0) -
+                Number(left.historical_attendance_score || 0)
+              );
+            }
+
+            if (Number(right.recent_attendance_score || 0) !== Number(left.recent_attendance_score || 0)) {
+              return Number(right.recent_attendance_score || 0) - Number(left.recent_attendance_score || 0);
             }
 
             return displayName(left).localeCompare(displayName(right));
@@ -469,13 +487,13 @@
         heroCopy.textContent = selectedSeason
           ? `${selectedSeason.name} keeps the live flex queue separate from future tier recommendations. Recommendations always fill a weighted ${formatSpotValue(
               suggestionSlotLimit
-            )}-spot plan where Core uses 1 full spot and two Flex players share 1 spot. Each explanation shows recent, season, and historical attendance scores so the recommendation has clear evidence behind it. Those scores reward attendance and penalize late cancels and no-shows.`
+            )}-spot plan where Core uses 1 full spot and two Flex players share 1 spot. Each explanation shows season, historical, and recent attendance scores so the recommendation has clear evidence behind it. Recommendations now prioritize full-season attendance and penalize late cancels and no-shows.`
           : "The live queue and future tier recommendations are separate. Recommendations always fill a weighted 36-spot plan.";
         boardCopy.textContent = selectedSeason
-          ? `${selectedSeason.name} is the active season lens. Queue order stays season-to-date. Recommendations below lean on the most recent 8-match run, use full-season guardrails, and always land on a weighted ${formatSpotValue(
+          ? `${selectedSeason.name} is the active season lens. Queue order stays season-to-date. Recommendations below prioritize full-season attendance, use prior-season attendance as supporting context, and keep the recent 8-match snapshot as extra detail inside a weighted ${formatSpotValue(
               suggestionSlotLimit
-            )}-spot plan with prior-season attendance used as supporting context. The why column compares recent score first, season score second, and history as the tie-break support. Scores reward attendance and subtract late cancels and no-shows.`
-          : "Queue order uses season totals. Recommendations use the recent 8-match run and always fill a weighted 36-spot plan.";
+            )}-spot plan. The why column compares season score first, history second, and recent form last. Scores reward attendance and subtract late cancels and no-shows.`
+          : "Queue order uses season totals. Recommendations use full-season attendance and always fill a weighted 36-spot plan.";
 
         if (!rotationQueueRows.length) {
           priorityStrip.innerHTML = `
@@ -579,7 +597,7 @@
                 <p>${escapeHtml(
                   `Recommendations currently use ${formatSpotValue(spotMixUsed)} of ${formatSpotValue(
                     suggestionSlotLimit
-                )} weighted spots. Core uses 1 full spot. Two Rotation players share 1 spot. The explanation column uses recent score first, season score second, then prior-season score to separate close calls, and the score model penalizes late cancels and no-shows.`
+                )} weighted spots. Core uses 1 full spot. Two Rotation players share 1 spot. The explanation column uses season score first, prior-season score second, and recent form last, and the score model penalizes late cancels and no-shows.`
               )}</p>
             </div>
           </div>
