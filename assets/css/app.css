@@ -3564,6 +3564,25 @@ body.manager-touch::before {
     padding: 0.85rem;
   }
 
+  .page-schedule .detail-card.detail-card-teams {
+    padding-inline: 0;
+    padding-bottom: 0;
+  }
+
+  .page-schedule .detail-card.detail-card-teams > .section-label {
+    padding-inline: 0.85rem;
+  }
+
+  .page-schedule .team-sheet.team-sheet-lineup {
+    gap: 0.72rem;
+    padding-inline: 0;
+    padding-bottom: 0.85rem;
+  }
+
+  .page-schedule .team-sheet.team-sheet-lineup .team-sheet-head {
+    padding-inline: 0.85rem;
+  }
+
   .page-schedule .team-sheet-tools,
   .page-schedule .lineup-team-actions {
     width: 100%;
