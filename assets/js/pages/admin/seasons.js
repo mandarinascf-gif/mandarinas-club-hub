@@ -767,7 +767,7 @@
             <span aria-hidden="true">·</span>
             <strong>${escapeHtml(notAddedCount)}</strong> not added
             <span aria-hidden="true">·</span>
-            targets <strong>${escapeHtml(coreTarget)}</strong> core / <strong>${escapeHtml(rotationTarget)}</strong> rotation
+            targets <strong>${escapeHtml(coreTarget)}</strong> core / <strong>${escapeHtml(rotationTarget)}</strong> flex
           </p>
         `;
       }
@@ -1017,7 +1017,7 @@
               <span class="tag-pill">${escapeHtml(matchdays.length)} generated</span>
               <span class="tag-pill">${escapeHtml(rosterCount)} in season</span>
               <span class="tag-pill">${escapeHtml(season.core_spots)} core target</span>
-              <span class="tag-pill">${escapeHtml(season.rotation_spots)} rotation target</span>
+              <span class="tag-pill">${escapeHtml(season.rotation_spots)} flex target</span>
               <span class="tag-pill">${escapeHtml(seasonScheduleSummary(season))}</span>
               <span class="tag-pill">${escapeHtml(season.venue_name || DEFAULT_VENUE_NAME)}</span>
               <span class="tag-pill">Go live MD ${escapeHtml(season.model_start_matchday || 1)}</span>
@@ -1878,20 +1878,20 @@
               registration_tier: player.status,
               tier_status: player.status,
               payment_status: "unknown",
-              tier_reason: "Seeded from current desired core/rotation tiers.",
+              tier_reason: "Seeded from current desired core/flex tiers.",
               movement_note: "Review signup details before the season starts.",
               is_eligible: true,
             })
           );
 
         if (!rowsToInsert.length) {
-          setStatus("No missing full-squad core or rotation players to add.", "warning");
+          setStatus("No missing full-squad core or flex players to add.", "warning");
           return;
         }
 
         seedRosterButton.disabled = true;
         seedRosterButton.textContent = "Adding...";
-        setStatus(`Adding ${rowsToInsert.length} current core/rotation players to ${selectedSeason.name}...`);
+        setStatus(`Adding ${rowsToInsert.length} current core/flex players to ${selectedSeason.name}...`);
 
         const { error } = await supabaseClient.from("season_players").insert(rowsToInsert);
 
@@ -1903,7 +1903,7 @@
           return;
         }
 
-        setStatus(`Added ${rowsToInsert.length} current core/rotation players to ${selectedSeason.name}.`, "success");
+        setStatus(`Added ${rowsToInsert.length} current core/flex players to ${selectedSeason.name}.`, "success");
         openRosterDisclosure("players");
         await loadSeasons();
       }
@@ -2398,7 +2398,7 @@
         }
 
         if (coreSpots + rotationSpots < 1) {
-          setStatus("Add at least one core or rotation spot for the next season.", "error");
+          setStatus("Add at least one core or flex spot for the next season.", "error");
           return;
         }
 
@@ -2512,12 +2512,12 @@
         }
 
         if (!Number.isInteger(rotationSpots) || rotationSpots < 0 || rotationSpots > 60) {
-          setStatus("Live rotation spots must be a whole number between 0 and 60.", "error");
+          setStatus("Live flex spots must be a whole number between 0 and 60.", "error");
           return;
         }
 
         if (coreSpots + rotationSpots < 1) {
-          setStatus("Add at least one live core or rotation spot.", "error");
+          setStatus("Add at least one live core or flex spot.", "error");
           return;
         }
 
