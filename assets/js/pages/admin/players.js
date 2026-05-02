@@ -2,6 +2,20 @@ const supabaseConfig = window.MandarinasSupabaseConfig;
 const supabaseClient = supabaseConfig.createClient();
 const normalizePlayerDesiredTier =
   window.MandarinasLogic?.normalizePlayerDesiredTier || ((player) => player);
+const normalizeTierValue =
+  window.MandarinasLogic?.normalizeTierValue ||
+  ((value, fallback = "flex") => {
+    const normalized = normalizeText(value).toLowerCase();
+    const compact = normalized.replace(/[\s/-]+/g, "_");
+
+    if (normalized === "core" || normalized === "flex" || normalized === "sub") {
+      return normalized;
+    }
+
+    if (compact === "rotation") return "flex";
+    if (compact === "flex_sub") return "sub";
+    return fallback;
+  });
 
 const form = document.getElementById("player-form");
 const firstNameInput = document.getElementById("first-name");
@@ -86,8 +100,9 @@ function escapeHtml(value) {
 }
 
 function formatStatusLabel(value) {
-  if (!value) return "Flex";
-  return value.charAt(0).toUpperCase() + value.slice(1);
+  const normalized = normalizeTierValue(value, "");
+  if (!normalized) return "Flex";
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 }
 
 function tierSortRank(status) {
