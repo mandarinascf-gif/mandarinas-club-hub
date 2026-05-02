@@ -1366,6 +1366,50 @@
     return playerDisplayName(left.player || left).localeCompare(playerDisplayName(right.player || right));
   }
 
+  function flexQueueGoalKeeps(entry) {
+    return Number(entry?.goal_keeps ?? entry?.goal_keep_points_earned ?? entry?.goalie_points ?? 0);
+  }
+
+  function compareFlexQueueSeasonTotals(left, right) {
+    const pointsDiff = Number(right.total_points || 0) - Number(left.total_points || 0);
+    if (pointsDiff) {
+      return pointsDiff;
+    }
+
+    const goalsDiff = Number(right.goals || 0) - Number(left.goals || 0);
+    if (goalsDiff) {
+      return goalsDiff;
+    }
+
+    const goalKeepsDiff = flexQueueGoalKeeps(right) - flexQueueGoalKeeps(left);
+    if (goalKeepsDiff) {
+      return goalKeepsDiff;
+    }
+
+    const cleanSheetsDiff = Number(right.clean_sheets || 0) - Number(left.clean_sheets || 0);
+    if (cleanSheetsDiff) {
+      return cleanSheetsDiff;
+    }
+
+    if (Number(right.wins || 0) !== Number(left.wins || 0)) {
+      return Number(right.wins || 0) - Number(left.wins || 0);
+    }
+
+    if (Number(right.draws || 0) !== Number(left.draws || 0)) {
+      return Number(right.draws || 0) - Number(left.draws || 0);
+    }
+
+    if (Number(left.losses || 0) !== Number(right.losses || 0)) {
+      return Number(left.losses || 0) - Number(right.losses || 0);
+    }
+
+    if (Number(right.attendance_points || 0) !== Number(left.attendance_points || 0)) {
+      return Number(right.attendance_points || 0) - Number(left.attendance_points || 0);
+    }
+
+    return playerDisplayName(left.player || left).localeCompare(playerDisplayName(right.player || right));
+  }
+
   function compareRotationQueuePriority(left, right, options = {}) {
     const finalMatchday = options.finalMatchday === true;
 
@@ -1376,7 +1420,7 @@
       }
     }
 
-    const standingsDiff = compareSeasonPerformancePriority(left, right);
+    const standingsDiff = compareFlexQueueSeasonTotals(left, right);
     if (standingsDiff) {
       return standingsDiff;
     }
@@ -1490,6 +1534,7 @@
           draws: Number(standings.draws || 0),
           losses: Number(standings.losses || 0),
           goals: Number(standings.goals || 0),
+          goal_keeps: Number(standings.goal_keeps ?? standings.goalie_points ?? 0),
           goal_keep_points_earned: Number(
             standings.goal_keep_points_earned ?? standings.goal_keeps ?? standings.goalie_points ?? 0
           ),
