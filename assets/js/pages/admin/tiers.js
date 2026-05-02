@@ -16,6 +16,7 @@
       const priorityStrip = document.getElementById("priority-strip");
       const boardCopy = document.getElementById("board-copy");
       const filterRow = document.getElementById("filter-row");
+      const recommendationSummaryPills = document.getElementById("recommendation-summary-pills");
       const tierGrid = document.getElementById("tier-grid");
       const params = new URLSearchParams(window.location.search);
       const logic = window.MandarinasLogic || {};
@@ -175,12 +176,12 @@
 
       function formatTrendLabel(value) {
         const lookup = {
-          up: "Trending up",
-          steady: "Holding",
-          down: "Watch list",
+          up: "Move up",
+          steady: "Stay put",
+          down: "Move down",
         };
 
-        return lookup[value] || "Holding";
+        return lookup[value] || "Stay put";
       }
 
       function formatTrendSymbol(value) {
@@ -195,6 +196,12 @@
         return "tier-move-steady";
       }
 
+      function movementBadgeMarkup(value) {
+        return `<span class="move-badge ${escapeHtml(trendClassName(value))}">${escapeHtml(
+          formatTrendLabel(value)
+        )}</span>`;
+      }
+
       function suggestionWeight(status) {
         const lookup = {
           core: 0,
@@ -207,6 +214,57 @@
 
       function suggestionEvidenceText(row) {
         return row?.suggestion_evidence || tierSuggestionEvidence(row) || "Attendance evidence unavailable.";
+      }
+
+      function suggestionCounts(rows = tierRows) {
+        return rows.reduce(
+          (counts, row) => {
+            const trend = row?.trend || "steady";
+            counts.total += 1;
+
+            if (row.default_status !== row.recommended_tier_status) {
+              counts.changes += 1;
+            }
+
+            if (trend === "up") {
+              counts.up += 1;
+            } else if (trend === "down") {
+              counts.down += 1;
+            } else {
+              counts.steady += 1;
+            }
+
+            return counts;
+          },
+          { total: 0, changes: 0, up: 0, steady: 0, down: 0 }
+        );
+      }
+
+      function suggestionSummaryPillsMarkup(counts, spotMixUsed) {
+        return `
+          <div class="summary-pill">
+            <strong>${escapeHtml(counts.changes)}</strong>
+            <span>Review cases</span>
+          </div>
+          <div class="summary-pill">
+            <strong>${escapeHtml(counts.up)}</strong>
+            <span>Move up</span>
+          </div>
+          <div class="summary-pill">
+            <strong>${escapeHtml(counts.steady)}</strong>
+            <span>Hold</span>
+          </div>
+          <div class="summary-pill">
+            <strong>${escapeHtml(counts.down)}</strong>
+            <span>Move down</span>
+          </div>
+          <div class="summary-pill">
+            <strong>${escapeHtml(formatSpotValue(spotMixUsed))} / ${escapeHtml(
+              formatSpotValue(suggestionSlotLimit)
+            )}</strong>
+            <span>Plan fill</span>
+          </div>
+        `;
       }
 
       function isCompactPhoneLayout() {
@@ -283,39 +341,41 @@
                       </div>
                     </header>
                     <div class="compact-badges">
-                      <span class="status-pill ${escapeHtml(row.default_status)}">Directory: ${escapeHtml(
+                      <span class="status-pill ${escapeHtml(row.default_status)}">Saved: ${escapeHtml(
                         formatStatusLabel(row.default_status)
                       )}</span>
-                      <span class="status-pill ${escapeHtml(currentTier(row))}">Current: ${escapeHtml(
+                      <span class="status-pill ${escapeHtml(currentTier(row))}">Live now: ${escapeHtml(
                         formatStatusLabel(currentTier(row))
                       )}</span>
-                      <span class="move-badge ${escapeHtml(trendClassName(row.trend))}">${escapeHtml(
-                        formatTrendLabel(row.trend)
-                      )}</span>
-                      <span class="status-pill ${escapeHtml(row.recommended_tier_status)}">Suggested: ${escapeHtml(
+                      ${movementBadgeMarkup(row.trend)}
+                      <span class="status-pill ${escapeHtml(row.recommended_tier_status)}">Suggested next: ${escapeHtml(
                         formatStatusLabel(row.recommended_tier_status)
                       )}</span>
                     </div>
                     <div class="standings-metrics">
-                      <div class="metric-pill"><span>Spot</span><strong>${
+                      <div class="metric-pill"><span>Plan slot</span><strong>${
                         row.suggestion_spot_value
                           ? escapeHtml(formatSpotValue(row.suggestion_spot_value))
                           : "—"
                       }</strong></div>
-                      <div class="metric-pill"><span>Att</span><strong>${escapeHtml(row.games_attended)}</strong></div>
-                      <div class="metric-pill"><span>Score</span><strong>${escapeHtml(row.attendance_score)}</strong></div>
-                      <div class="metric-pill"><span>Recent</span><strong>${escapeHtml(
+                      <div class="metric-pill"><span>Season games</span><strong>${escapeHtml(row.games_attended)}</strong></div>
+                      <div class="metric-pill"><span>Season score</span><strong>${escapeHtml(row.attendance_score)}</strong></div>
+                      <div class="metric-pill"><span>Last 8</span><strong>${escapeHtml(
                         row.recent_attendance_score || 0
                       )}</strong></div>
-                      <div class="metric-pill"><span>History</span><strong>${escapeHtml(
+                      <div class="metric-pill"><span>All-time</span><strong>${escapeHtml(
                         row.historical_attendance_score || 0
                       )}</strong></div>
                     </div>
                     <div class="detail-list">
                       <div class="detail-item">
-                        <span class="detail-label">Why</span>
+                        <span class="detail-label">Why the app leans here</span>
                         <strong>${escapeHtml(row.transparency_note || "No summary note yet.")}</strong>
                         <span class="tier-evidence">${escapeHtml(evidenceText)}</span>
+                      </div>
+                      <div class="detail-item">
+                        <span class="detail-label">What helps next</span>
+                        <strong>${escapeHtml(row.next_step || "Keep showing up consistently.")}</strong>
                       </div>
                     </div>
                     <div class="actions">
@@ -427,7 +487,13 @@
         const queuePreviewRows = rotationQueueRows.slice(0, 10);
         const queueMetricLabel = activeQueueMode === "final" ? "Pts" : "Score";
         const filteredRows = tierRows
-          .filter((row) => activeFilter === "all" || row.recommended_tier_status === activeFilter)
+          .filter((row) => {
+            if (activeFilter === "changes") {
+              return row.default_status !== row.recommended_tier_status;
+            }
+
+            return activeFilter === "all" || row.recommended_tier_status === activeFilter;
+          })
           .sort((left, right) => {
             if (suggestionWeight(left.recommended_tier_status) !== suggestionWeight(right.recommended_tier_status)) {
               return suggestionWeight(left.recommended_tier_status) - suggestionWeight(right.recommended_tier_status);
@@ -476,6 +542,7 @@
           (total, row) => total + Number(row.suggestion_spot_value || 0),
           0
         );
+        const counts = suggestionCounts();
 
         seasonCountStat.textContent = selectedSeason ? selectedSeason.name : "-";
         spotMixStat.textContent = `${formatSpotValue(spotMixUsed)} / ${formatSpotValue(
@@ -484,16 +551,17 @@
         changeCountStat.textContent = String(changeCount);
         eligibleCountStat.textContent = String(eligibleCount);
         selectedSeasonPill.textContent = selectedSeason ? selectedSeason.name : "No season selected";
+        recommendationSummaryPills.innerHTML = tierRows.length
+          ? suggestionSummaryPillsMarkup(counts, spotMixUsed)
+          : "";
         heroCopy.textContent = selectedSeason
-          ? `${selectedSeason.name} keeps the live flex queue separate from future tier recommendations. Recommendations always fill a weighted ${formatSpotValue(
+          ? `${selectedSeason.name} keeps the live flex queue separate from the next-tier recommendation plan. Read the queue for today's next spot, then use the recommendation board for manager review. The plan always fills a weighted ${formatSpotValue(
               suggestionSlotLimit
-            )}-spot plan where Core uses 1 full spot and two Flex players share 1 spot. Each explanation shows recent, season, and historical attendance scores so the recommendation has clear evidence behind it. Those scores reward attendance and penalize late cancels and no-shows.`
-          : "The live queue and future tier recommendations are separate. Recommendations always fill a weighted 36-spot plan.";
+            )}-spot mix where Core uses 1 full spot and two Flex players share 1 spot.`
+          : "The live queue and next-tier recommendation plan are separate views.";
         boardCopy.textContent = selectedSeason
-          ? `${selectedSeason.name} is the active season lens. Queue order stays season-to-date. Recommendations below lean on the most recent 8-match run, use full-season guardrails, and always land on a weighted ${formatSpotValue(
-              suggestionSlotLimit
-            )}-spot plan with prior-season attendance used as supporting context. The why column compares recent score first, season score second, and history as the tie-break support. Scores reward attendance and subtract late cancels and no-shows.`
-          : "Queue order uses season totals. Recommendations use the recent 8-match run and always fill a weighted 36-spot plan.";
+          ? `${selectedSeason.name} is the active season lens. Start with Changes to review actionable cases first. Saved is the squad record, Live now is the season tier being used today, and Suggested next is the attendance-based recommendation. The board leans on the last 8 matchdays first, then season totals, with past seasons as supporting context.`
+          : "Start with Changes to review movement cases first.";
 
         if (!rotationQueueRows.length) {
           priorityStrip.innerHTML = `
@@ -582,7 +650,7 @@
                 <h3>Recommended Tier Plan</h3>
                 <p>Recommendations follow the selected chip and always total a weighted ${formatSpotValue(
                   suggestionSlotLimit
-                )}-spot plan.</p>
+                )}-spot plan. Use Changes to focus on review cases that do not match the saved squad tier.</p>
               </div>
             </div>
             <div class="empty-state">No players match the current recommended-tier filter.</div>
@@ -595,9 +663,9 @@
               <div>
                 <h3>Recommended Tier Plan</h3>
                 <p>${escapeHtml(
-                  `Recommendations currently use ${formatSpotValue(spotMixUsed)} of ${formatSpotValue(
+                  `This board is the next-tier plan, not today's queue. Saved is the squad record, Live now is the season tier being used today, and Suggested next is the review recommendation. The plan currently uses ${formatSpotValue(spotMixUsed)} of ${formatSpotValue(
                     suggestionSlotLimit
-                )} weighted spots. Core uses 1 full spot. Two Rotation players share 1 spot. The explanation column uses recent score first, season score second, then prior-season score to separate close calls, and the score model penalizes late cancels and no-shows.`
+                )} weighted spots. Core uses 1 full spot, and two Flex players share 1 spot.`
               )}</p>
             </div>
           </div>
@@ -610,15 +678,15 @@
                       <tr>
                         <th class="num">#</th>
                         <th>Player</th>
-                        <th class="hide-mobile">Directory</th>
-                        <th>Current</th>
-                        <th class="num">Move</th>
-                        <th>Suggested</th>
-                        <th class="num">Spot</th>
-                        <th class="num">Att</th>
-                        <th class="num">Score</th>
-                        <th class="num hide-mobile">Hist Score</th>
-                        <th class="num hide-mobile">Rec Score</th>
+                        <th class="hide-mobile">Saved</th>
+                        <th>Live now</th>
+                        <th>Change</th>
+                        <th>Suggested next</th>
+                        <th class="num">Plan slot</th>
+                        <th class="num">Season games</th>
+                        <th class="num">Season score</th>
+                        <th class="num hide-mobile">All-time</th>
+                        <th class="num hide-mobile">Last 8</th>
                         <th class="hide-mobile">Why</th>
                         <th>Action</th>
                       </tr>
@@ -644,7 +712,7 @@
                               </td>
                               <td class="hide-mobile"><span class="status-pill ${escapeHtml(row.default_status)}">${escapeHtml(formatStatusLabel(row.default_status))}</span></td>
                               <td><span class="status-pill ${escapeHtml(currentTier(row))}">${escapeHtml(formatStatusLabel(currentTier(row)))}</span></td>
-                              <td class="num"><span class="${escapeHtml(trendClassName(row.trend))}">${escapeHtml(formatTrendSymbol(row.trend))}</span></td>
+                              <td>${movementBadgeMarkup(row.trend)}</td>
                               <td><span class="status-pill ${escapeHtml(row.recommended_tier_status)}">${escapeHtml(formatStatusLabel(row.recommended_tier_status))}</span></td>
                               <td class="num">${row.suggestion_spot_value ? `<span class="queue-pill">${escapeHtml(formatSpotValue(row.suggestion_spot_value))}</span>` : "—"}</td>
                               <td class="num">${escapeHtml(row.games_attended)}</td>
@@ -655,6 +723,9 @@
                                 <div class="tier-why-cell" title="${escapeHtml(row.next_step || "")}">
                                   <div class="tier-why-title">${escapeHtml(row.transparency_note || "—")}</div>
                                   <div class="tier-evidence">${escapeHtml(evidenceText)}</div>
+                                  <div class="manual-note"><strong>Next:</strong> ${escapeHtml(
+                                    row.next_step || "Keep showing up consistently."
+                                  )}</div>
                                 </div>
                               </td>
                               <td>
