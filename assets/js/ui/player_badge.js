@@ -1231,7 +1231,7 @@
       overall: formatWholeNumber(player?.overall_rating ?? player?.overall ?? player?.skill_rating ?? 0),
       rank: formatRank(player?.rank ?? stats?.rank),
       ppg: ppgValue,
-      ppgSummary: hasPpgData ? `${ppgValue} PPG` : "PPG unavailable",
+      ppgSummary: hasPpgData ? "Ranked by PPG" : "PPG ranking unavailable",
       flagCode: resolveFlagCode(player),
       flagTitle: normalizeText(player?.nationality || player?.country, ""),
       name: normalizeText(player?.name, "N/A"),
