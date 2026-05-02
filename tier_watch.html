@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="./assets/css/app.css?v=20260501h" />
     <title>Club · Flex Tier Queue</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./assets/js/core/club_logic.js?v=20260501d"></script>
+    <script src="./assets/js/core/club_logic.js?v=20260501e"></script>
     <script src="./assets/js/core/supabase_config.js"></script>
     <script src="./assets/js/core/app.js?v=20260501i" defer></script>
     <script src="./assets/js/core/runtime_config.js?v=20260427a"></script>
@@ -100,9 +100,9 @@
 
       <section class="panel" id="suggestion-summary-panel">
         <div class="section-label">Recommendations</div>
-        <h2>Recommended tier plan</h2>
+        <h2>Should anyone move up or down?</h2>
         <p id="suggestion-panel-copy">
-          Recommendations stay in a separate view so the live queue stays easy to read.
+          The app tracks attendance and suggests tier changes when the data supports it.
         </p>
         <button class="secondary-button" type="button" id="open-tier-suggestion-modal">
           View recommendations
@@ -111,7 +111,7 @@
 
       <section class="panel">
         <div class="section-label">How it works</div>
-        <h2>Simple rules</h2>
+        <h2>How the line is sorted</h2>
         <div class="quick-action-grid">
           <div class="list-item">
             <div class="list-item-main">
@@ -121,17 +121,18 @@
           </div>
           <div class="list-item">
             <div class="list-item-main">
-              <div class="list-item-title">Ties break on season totals</div>
+              <div class="list-item-title">Ties break on season performance</div>
               <div class="compact-row-copy">Same number of games? Higher points go first, then goals, goal keeps, and clean sheets.</div>
             </div>
           </div>
           <div class="list-item">
             <div class="list-item-main">
-              <div class="list-item-title">Final matchday is different</div>
-              <div class="compact-row-copy">On the last night of the season, the line flips fully to season totals: highest points still go first.</div>
+              <div class="list-item-title">Final matchday flips the order</div>
+              <div class="compact-row-copy">On the last night of the season, it's all about performance — highest points go first regardless of games played.</div>
             </div>
           </div>
         </div>
+        <p style="margin-top: var(--space-md);"><a href="./tier_system.html">Learn how tiers and recommendations work</a></p>
       </section>
     </main>
 
@@ -139,7 +140,7 @@
       <div class="club-footer-copy">Club · Flex Tier Queue</div>
     </footer>
 
-    <script src="./assets/js/pages/public/tier-watch.js?v=20260501e"></script>
+    <script src="./assets/js/pages/public/tier-watch.js?v=20260501f"></script>
     <div class="site-modal" id="tier-suggestion-modal" hidden>
       <div class="site-modal-backdrop" data-modal-close></div>
       <div
@@ -150,10 +151,10 @@
       >
         <div class="site-modal-head">
           <div>
-            <div class="section-label">Tier Recommendations</div>
-            <h2 class="site-modal-title" id="tier-suggestion-modal-title">Recommended Tier Plan</h2>
+            <div class="section-label">Based on attendance data</div>
+            <h2 class="site-modal-title" id="tier-suggestion-modal-title">Tier Recommendations</h2>
             <p class="site-modal-copy" id="tier-suggestion-modal-copy">
-              Weighted spots, season attendance, and recent form shape the recommendation order.
+              Players are ranked by recent form first, then season attendance, then history across past seasons.
             </p>
           </div>
           <button class="ghost-button" type="button" data-modal-close>Close</button>
