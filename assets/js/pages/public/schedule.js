@@ -882,7 +882,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const formation = loadSavedLineupFormation(matchdayId, teamCode, rows.length);
             const summary = lineupTeamSummary(rows);
             return `
-              <section class="team-sheet">
+              <section class="team-sheet team-sheet-lineup">
                 <div class="team-sheet-head">
                   <span class="team-badge ${escapeHtml(teamClassName(teamCode))}">${escapeHtml(formatTeamLabel(teamCode))}</span>
                   <div class="team-sheet-tools">
@@ -980,7 +980,7 @@ document.addEventListener("DOMContentLoaded", () => {
           ${matches.length ? matches.map((match) => matchMarkup(match)).join("") : '<div class="empty-state">No bracket saved yet.</div>'}
         </div>
       </div>
-      <div class="detail-card">
+      <div class="detail-card detail-card-teams">
         <div class="section-label">Teams</div>
         ${buildLineupView(matchday.id)}
       </div>
