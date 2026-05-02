@@ -4,6 +4,20 @@
       const supabaseClient = supabaseConfig.createClient();
       const sortSeasonsChronologically =
         window.MandarinasLogic?.sortSeasonsChronologically || ((rows) => [...(rows || [])]);
+      const normalizeTierValue =
+        window.MandarinasLogic?.normalizeTierValue ||
+        ((value, fallback = "flex") => {
+          const normalized = normalizeText(value).toLowerCase();
+          const compact = normalized.replace(/[\s/-]+/g, "_");
+
+          if (normalized === "core" || normalized === "flex" || normalized === "sub") {
+            return normalized;
+          }
+
+          if (compact === "rotation") return "flex";
+          if (compact === "flex_sub") return "sub";
+          return fallback;
+        });
 
       const params = new URLSearchParams(window.location.search);
       const seasonForm = document.getElementById("season-form");
@@ -138,7 +152,7 @@
       }
 
       function normalizeDesiredTierPlayer(player) {
-        const desiredTier = normalizeText(player?.desired_tier || player?.status || "flex").toLowerCase();
+        const desiredTier = normalizeTierValue(player?.desired_tier || player?.status, "flex");
         return {
           ...player,
           desired_tier: desiredTier,
@@ -356,11 +370,12 @@
       }
 
       function formatTierLabel(value) {
-        if (value === "sub") {
+        const normalized = normalizeTierValue(value, "");
+        if (normalized === "sub") {
           return "Sub";
         }
 
-        return value ? value.charAt(0).toUpperCase() + value.slice(1) : "Flex";
+        return normalized ? normalized.charAt(0).toUpperCase() + normalized.slice(1) : "Flex";
       }
 
       function seasonViewHash(view) {
@@ -799,11 +814,11 @@
       }
 
       function normalizeSeasonPlayerRow(row) {
+        const tierStatus = normalizeTierValue(row.tier_status || row.registration_tier, "flex");
         return {
           ...row,
-          registration_tier: normalizeText(
-            row.registration_tier || row.tier_status || "flex"
-          ).toLowerCase(),
+          tier_status: tierStatus,
+          registration_tier: normalizeTierValue(row.registration_tier || tierStatus, tierStatus),
           payment_status: normalizePaymentStatus(row.payment_status),
           is_eligible: row.is_eligible !== false,
         };
@@ -823,7 +838,7 @@
             Array.isArray(row.preferred_positions) && row.preferred_positions.length
               ? row.preferred_positions.map((value) => normalizeText(value).toUpperCase())
               : ["MID"],
-          requested_tier: normalizeText(row.requested_tier || "flex").toLowerCase(),
+          requested_tier: normalizeTierValue(row.requested_tier, "flex"),
           status: normalizeText(row.status || "pending").toLowerCase(),
           note: normalizeText(row.note || ""),
           review_note: normalizeText(row.review_note || ""),
@@ -1056,7 +1071,7 @@
       function syncRosterAddDefaultsFromSelection() {
         const playerId = Number(seasonRosterAddSelect.value);
         const player = clubPlayers.find((entry) => entry.id === playerId);
-        const fallbackTier = player?.desired_tier || player?.status || "flex";
+        const fallbackTier = normalizeTierValue(player?.desired_tier || player?.status, "flex");
 
         seasonRosterRegistrationTierSelect.value = fallbackTier;
         seasonRosterTierStatusSelect.value = fallbackTier;
@@ -1643,13 +1658,14 @@
       }
 
       function buildSeasonPlayerInsertPayload(selectedSeason, player, overrides = {}) {
-        const registrationTier = normalizeText(
-          overrides.registration_tier || player.desired_tier || player.status || "flex"
-        ).toLowerCase();
+        const registrationTier = normalizeTierValue(
+          overrides.registration_tier || player.desired_tier || player.status,
+          "flex"
+        );
         const payload = {
           season_id: selectedSeason.id,
           player_id: player.id,
-          tier_status: normalizeText(overrides.tier_status || registrationTier).toLowerCase(),
+          tier_status: normalizeTierValue(overrides.tier_status || registrationTier, registrationTier),
           tier_reason: overrides.tier_reason || "Added from the full squad current / next-season tier.",
           movement_note:
             overrides.movement_note || "Season squad membership controls matchday and standings visibility.",
@@ -1682,7 +1698,7 @@
         const player = clubPlayers.find((entry) => entry.id === row.player_id);
 
         const payload = {
-          tier_status: normalizeText(tierStatusInput?.value || row.tier_status).toLowerCase(),
+          tier_status: normalizeTierValue(tierStatusInput?.value || row.tier_status, row.tier_status),
         };
 
         if (seasonRosterMetadataSupported) {
