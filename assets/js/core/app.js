@@ -522,15 +522,27 @@
     return apps ? Number((points / apps).toFixed(2)) : 0;
   }
 
-  function compareBadgeStandings(left, right) {
-    const ppgDiff = badgePointsPerGame(right) - badgePointsPerGame(left);
-    if (Math.abs(ppgDiff) > 0.0001) {
-      return ppgDiff;
-    }
+  function compareBadgeStandingsByMode(mode, left, right) {
+    if (mode === "points") {
+      const pointsDiff = Number(right?.total_points || 0) - Number(left?.total_points || 0);
+      if (pointsDiff !== 0) {
+        return pointsDiff;
+      }
 
-    const pointsDiff = Number(right?.total_points || 0) - Number(left?.total_points || 0);
-    if (pointsDiff !== 0) {
-      return pointsDiff;
+      const ppgDiff = badgePointsPerGame(right) - badgePointsPerGame(left);
+      if (Math.abs(ppgDiff) > 0.0001) {
+        return ppgDiff;
+      }
+    } else {
+      const ppgDiff = badgePointsPerGame(right) - badgePointsPerGame(left);
+      if (Math.abs(ppgDiff) > 0.0001) {
+        return ppgDiff;
+      }
+
+      const pointsDiff = Number(right?.total_points || 0) - Number(left?.total_points || 0);
+      if (pointsDiff !== 0) {
+        return pointsDiff;
+      }
     }
 
     const appsDiff = Number(right?.days_attended || 0) - Number(left?.days_attended || 0);
@@ -541,17 +553,47 @@
     return compareStandingsPriority(left, right);
   }
 
-  function finalizeBadgeStandings(entries) {
+  function compareBadgeStandings(left, right) {
+    return compareBadgeStandingsByMode("ppg", left, right);
+  }
+
+  function badgeEntryKey(entry) {
+    const playerId = Number(entry?.player_id || entry?.player?.id);
+    return Number.isFinite(playerId) ? playerId : null;
+  }
+
+  function buildBadgeRankMap(entries, mode) {
     return [...(entries || [])]
+      .sort((left, right) => compareBadgeStandingsByMode(mode, left, right))
+      .reduce((map, entry, index) => {
+        const key = badgeEntryKey(entry);
+        if (key != null) {
+          map.set(key, index + 1);
+        }
+        return map;
+      }, new Map());
+  }
+
+  function finalizeBadgeStandings(entries) {
+    const normalizedEntries = [...(entries || [])]
       .map((entry) => ({
         ...entry,
         points_per_game: badgePointsPerGame(entry),
-      }))
-      .sort(compareBadgeStandings)
-      .map((entry, index) => ({
-        ...entry,
-        rank: index + 1,
       }));
+    const pointsRankMap = buildBadgeRankMap(normalizedEntries, "points");
+
+    return normalizedEntries
+      .sort(compareBadgeStandings)
+      .map((entry, index) => {
+        const entryKey = badgeEntryKey(entry);
+        const ppgRank = index + 1;
+        return {
+          ...entry,
+          rank: ppgRank,
+          ppg_rank: ppgRank,
+          points_rank: entryKey != null ? pointsRankMap.get(entryKey) ?? ppgRank : ppgRank,
+        };
+      });
   }
 
   function buildBadgeStandings(players, assignments, playerStats, completedMatchdays, scoringSource) {
