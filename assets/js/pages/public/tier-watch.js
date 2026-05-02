@@ -362,10 +362,10 @@ document.addEventListener("DOMContentLoaded", () => {
       return rightSpot - leftSpot;
     }
 
-    const leftRecent = Number(left.recent_attendance_score || 0);
-    const rightRecent = Number(right.recent_attendance_score || 0);
-    if (rightRecent !== leftRecent) {
-      return rightRecent - leftRecent;
+    const leftRank = Number(left.suggestion_slot_rank || 0);
+    const rightRank = Number(right.suggestion_slot_rank || 0);
+    if (leftRank > 0 && rightRank > 0 && leftRank !== rightRank) {
+      return leftRank - rightRank;
     }
 
     const leftScore = Number(left.attendance_score || 0);
@@ -374,10 +374,22 @@ document.addEventListener("DOMContentLoaded", () => {
       return rightScore - leftScore;
     }
 
+    const leftGames = Number(left.games_attended || 0);
+    const rightGames = Number(right.games_attended || 0);
+    if (rightGames !== leftGames) {
+      return rightGames - leftGames;
+    }
+
     const leftHistorical = Number(left.historical_attendance_score || 0);
     const rightHistorical = Number(right.historical_attendance_score || 0);
     if (rightHistorical !== leftHistorical) {
       return rightHistorical - leftHistorical;
+    }
+
+    const leftRecent = Number(left.recent_attendance_score || 0);
+    const rightRecent = Number(right.recent_attendance_score || 0);
+    if (rightRecent !== leftRecent) {
+      return rightRecent - leftRecent;
     }
 
     return displayName(left).localeCompare(displayName(right));
@@ -573,7 +585,7 @@ document.addEventListener("DOMContentLoaded", () => {
     )} of ${formatSpotValue(suggestionSlotLimit)} weighted spots and suggests ${moveTotal} tier change${
       moveTotal === 1 ? "" : "s"
     }.`;
-    suggestionModalCopy.textContent = `Recommendations use recent score first, season score second, and historical score third to break close calls inside the ${formatSpotValue(
+    suggestionModalCopy.textContent = `Recommendations use season score first, historical score second, and recent form last to break close calls inside the ${formatSpotValue(
       suggestionSlotLimit
     )}-spot plan.`;
     openSuggestionModalButton.disabled = tierRows.length === 0;
@@ -618,8 +630,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     }</strong></div>
                     <div class="metric-pill"><span>Att</span><strong>${escapeHtml(row.games_attended)}</strong></div>
                     <div class="metric-pill"><span>Score</span><strong>${escapeHtml(row.attendance_score)}</strong></div>
-                    <div class="metric-pill"><span>Recent</span><strong>${escapeHtml(row.recent_attendance_score || 0)}</strong></div>
                     <div class="metric-pill"><span>History</span><strong>${escapeHtml(row.historical_attendance_score || 0)}</strong></div>
+                    <div class="metric-pill"><span>Recent</span><strong>${escapeHtml(row.recent_attendance_score || 0)}</strong></div>
                   </div>
                   <div class="manual-note">${escapeHtml(row.transparency_note || "No summary note yet.")}</div>
                   <button
@@ -664,8 +676,8 @@ document.addEventListener("DOMContentLoaded", () => {
             <th class="num sortable-th ${thClass("spot")}" data-sort="spot">Spot${sortArrow("spot")}</th>
             <th class="num sortable-th ${thClass("att")}" data-sort="att">Att${sortArrow("att")}</th>
             <th class="num sortable-th ${thClass("score")}" data-sort="score">Score${sortArrow("score")}</th>
-            <th class="num sortable-th ${thClass("recent")}" data-sort="recent">Recent${sortArrow("recent")}</th>
             <th class="num sortable-th ${thClass("hist")}" data-sort="hist">History${sortArrow("hist")}</th>
+            <th class="num sortable-th ${thClass("recent")}" data-sort="recent">Recent${sortArrow("recent")}</th>
           </tr>
         </thead>
         <tbody>
@@ -707,8 +719,8 @@ document.addEventListener("DOMContentLoaded", () => {
                   }</td>
                   <td class="num">${escapeHtml(row.games_attended)}</td>
                   <td class="num">${escapeHtml(row.attendance_score)}</td>
-                  <td class="num">${escapeHtml(row.recent_attendance_score || 0)}</td>
                   <td class="num">${escapeHtml(row.historical_attendance_score || 0)}</td>
+                  <td class="num">${escapeHtml(row.recent_attendance_score || 0)}</td>
                 </tr>
               `
             )
@@ -793,12 +805,12 @@ document.addEventListener("DOMContentLoaded", () => {
               <strong>${escapeHtml(row.attendance_score)}</strong>
             </div>
             <div class="detail-item">
-              <span class="detail-label">Recent Score</span>
-              <strong>${escapeHtml(row.recent_attendance_score || 0)}</strong>
-            </div>
-            <div class="detail-item">
               <span class="detail-label">Historical Score</span>
               <strong>${escapeHtml(row.historical_attendance_score || 0)}</strong>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Recent Score</span>
+              <strong>${escapeHtml(row.recent_attendance_score || 0)}</strong>
             </div>
           </div>
           <div class="manual-note">
