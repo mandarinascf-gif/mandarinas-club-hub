@@ -40,101 +40,183 @@
         <div class="section-label">Club · How Tiers Work</div>
         <h1>How Tiers Work</h1>
         <p>
-          This guide explains the tier system in plain language. The goal is simple: reward reliable
-          attendance, keep weekly access fair, and make roster choices easy to explain.
+          The tier system decides who plays each week. It rewards showing up consistently, keeps access fair across the squad, and makes every roster decision easy to explain.
         </p>
       </div>
       <div class="actions">
-        <a class="primary-button" href="./tier_watch.html">Open queue</a>
-        <a class="secondary-button" href="./roster.html">Open season squad</a>
-        <a class="secondary-button" href="./public_standings.html">Open standings</a>
+        <a class="primary-button" href="./tier_watch.html">See the queue</a>
+        <a class="secondary-button" href="./tier_watch.html#suggestion-summary-panel">See recommendations</a>
+        <a class="secondary-button" href="./roster.html">Open squad</a>
       </div>
     </section>
 
     <section class="panel">
-      <div class="section-label">Snapshot</div>
-      <h2>Short version</h2>
+      <div class="section-label">The three tiers</div>
+      <h2>Every player is in one of three groups</h2>
       <div class="summary-grid">
         <div class="summary-card">
           <span>Core</span>
-          <strong>First access</strong>
-          <span class="summary-copy">Reliable weekly players are considered first.</span>
+          <strong>Play every week</strong>
+          <span class="summary-copy">You've shown up consistently over several seasons. You get a spot first whenever you're available.</span>
         </div>
         <div class="summary-card">
           <span>Flex</span>
-          <strong>Queue based</strong>
-          <span class="summary-copy">Active players share the next set of spots through a queue.</span>
+          <strong>Take turns via queue</strong>
+          <span class="summary-copy">You're active and reliable, but share spots with other flex players. The queue decides whose turn it is.</span>
         </div>
         <div class="summary-card">
           <span>Sub</span>
-          <strong>Remaining openings</strong>
-          <span class="summary-copy">Depth players fill what is left after Core and Flex.</span>
+          <strong>Fill open spots</strong>
+          <span class="summary-copy">You're newer, occasional, or building your way back. You fill whatever spots remain after Core and Flex.</span>
         </div>
       </div>
     </section>
 
     <section class="panel">
-      <div class="section-label">Flow</div>
-      <h2>How weekly access works</h2>
-      <ol>
-        <li>Core players get first claim on the available roster spots.</li>
-        <li>Flex players are then ordered by fewer season appearances first, with season totals breaking ties.</li>
-        <li>Sub fills whatever spots are still open.</li>
-        <li>On matchday, the confirmed roster moves into team assignment and stat tracking.</li>
-      </ol>
+      <div class="section-label">Each week</div>
+      <h2>How a matchday roster fills up</h2>
+      <div class="quick-action-grid">
+        <div class="list-item">
+          <div class="list-item-main">
+            <div class="list-item-title">1. Core players claim their spots</div>
+            <div class="compact-row-copy">If a core player says they're available, they're in.</div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="list-item-main">
+            <div class="list-item-title">2. Flex players fill in order</div>
+            <div class="compact-row-copy">The queue decides who's next. Players who have played fewer games this season go first.</div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="list-item-main">
+            <div class="list-item-title">3. Subs take remaining spots</div>
+            <div class="compact-row-copy">Whatever's left goes to sub players in order of availability.</div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="list-item-main">
+            <div class="list-item-title">4. Teams are assigned</div>
+            <div class="compact-row-copy">Once the roster is confirmed, the app splits players into balanced teams and tracks stats.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="how-to-move-up">
+      <div class="section-label">Moving up</div>
+      <h2>How do I get to a higher tier?</h2>
+      <p>The app tracks your attendance automatically and recommends tier changes based on real data. Here's what it looks at:</p>
+      <div class="quick-action-grid">
+        <div class="list-item">
+          <div class="list-item-main">
+            <div class="list-item-title">Recent form (last 8 matchdays)</div>
+            <div class="compact-row-copy">How many of the last 8 weeks did you show up? This matters most. Consistency right now beats a great streak months ago.</div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="list-item-main">
+            <div class="list-item-title">Season attendance</div>
+            <div class="compact-row-copy">Your total games and attendance score for the current season. More games and fewer no-shows help your case.</div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="list-item-main">
+            <div class="list-item-title">History across seasons</div>
+            <div class="compact-row-copy">How you've shown up over past seasons. This is the tiebreaker — it rewards long-term commitment.</div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="list-item-main">
+            <div class="list-item-title">No-shows and late cancels</div>
+            <div class="compact-row-copy">These count against you. One is fine. A pattern will hold you back or push you down.</div>
+          </div>
+        </div>
+      </div>
+      <p style="margin-top: var(--space-md);">
+        The app uses all of this to recommend whether you should stay, move up, or move down. You can see exactly where you stand in the
+        <a href="./tier_watch.html#suggestion-summary-panel">recommendations view</a>.
+      </p>
     </section>
 
     <section class="panel">
-      <div class="section-label">Definitions</div>
-      <h2>What each tier usually means</h2>
-      <dl>
-        <dt>Core</dt>
-        <dd>Most reliable weekly players. They are usually in if they are available.</dd>
-        <dt>Flex</dt>
-        <dd>Active players sharing weekly access fairly. The queue decides who is next up.</dd>
-        <dt>Sub</dt>
-        <dd>Depth players, occasional players, or newer players who fill the remaining openings.</dd>
-      </dl>
+      <div class="section-label">Rough thresholds</div>
+      <h2>What does it take?</h2>
+      <p>These aren't hard cutoffs — the app weighs everything together — but as a rough guide:</p>
+      <div class="summary-grid">
+        <div class="summary-card">
+          <span>Sub to Flex</span>
+          <strong>Start showing up</strong>
+          <span class="summary-copy">Play at least 1 of the last 8 weeks with a decent attendance score and no pattern of no-shows.</span>
+        </div>
+        <div class="summary-card">
+          <span>Flex to Core</span>
+          <strong>Be consistently there</strong>
+          <span class="summary-copy">Play 3+ of the last 8 weeks, zero recent no-shows, season score of 8+, and at least 4 total games this season.</span>
+        </div>
+        <div class="summary-card">
+          <span>Staying put</span>
+          <strong>Keep doing what you're doing</strong>
+          <span class="summary-copy">If your recent form matches your tier, you'll hold your spot. The app only suggests a change when the data clearly supports it.</span>
+        </div>
+      </div>
     </section>
 
     <section class="panel">
       <div class="section-label">Example</div>
       <h2>Queue example</h2>
       <p>
-        If ten Flex spots are open, the players with the fewest season appearances go first.
-        A player with 3 games is ahead of a player with 5 games. If two players are tied on appearances,
-        the app breaks that tie with season totals: points first, then goals, goal keeps, clean sheets,
-        and the remaining season stats.
+        Say there are 10 flex spots open this week. The app lines up all available flex players by who has played the fewest games this season — fewer games means you've had fewer turns, so you go first.
       </p>
-      <ol>
-        <li>Alex has 3 games, so Alex is near the front.</li>
-        <li>Ben also has 3 games, so Ben is also near the front.</li>
-        <li>Chris has 4 games, so Chris is after the 3-game group.</li>
-        <li>Players with 5 or 6 games wait until the lower totals are handled first.</li>
-      </ol>
+      <div class="quick-action-grid">
+        <div class="list-item">
+          <div class="list-item-main">
+            <div class="list-item-title">Alex: 3 games this season</div>
+            <div class="compact-row-copy">Near the front — has had fewer turns than most.</div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="list-item-main">
+            <div class="list-item-title">Ben: 3 games (tied with Alex)</div>
+            <div class="compact-row-copy">Same number of games, so the app breaks the tie with season points. Fewer points = higher priority.</div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="list-item-main">
+            <div class="list-item-title">Chris: 5 games this season</div>
+            <div class="compact-row-copy">Behind the 3-game group — Chris has had more turns already.</div>
+          </div>
+        </div>
+      </div>
+      <p style="margin-top: var(--space-md);">
+        On the <strong>final matchday</strong> of the season, the order flips: highest season points go first, so the strongest performers get priority for the finale.
+      </p>
     </section>
 
     <section class="panel" id="common-questions">
       <div class="section-label">Questions</div>
       <h2>Common questions</h2>
       <details open>
-        <summary>Does a strong player always belong in Core?</summary>
-        <p>No. The app focuses on reliability and season attendance, not just playing level.</p>
+        <summary>Does being a great player guarantee Core?</summary>
+        <p>No. Tier is about attendance reliability, not skill level. A talented player who only shows up every other week will be Flex, not Core.</p>
       </details>
       <details>
-        <summary>Can a player move up or down?</summary>
-        <p>Yes. Pathway Planner reviews attendance evidence and recommends changes for the next season.</p>
+        <summary>Can I move down?</summary>
+        <p>Yes. If your recent attendance drops or you accumulate no-shows, the app will recommend moving you down. It works both ways — show up more and you'll move back up.</p>
       </details>
       <details>
-        <summary>What is the difference between current / next-season tier and this season tier?</summary>
+        <summary>Where can I see my recommendation?</summary>
         <p>
-          Current / next-season tier comes from the full squad register. This season tier is the actual tier used on the
-          active season squad for the selected season.
+          Go to the <a href="./tier_watch.html">Queue page</a> and tap "View recommendations." You can search for your name, see your current and suggested tier, and tap "View why" for the full explanation.
         </p>
       </details>
       <details>
-        <summary>Why is the queue important?</summary>
-        <p>It helps Flex players share access fairly over the full season.</p>
+        <summary>What's the difference between my "current tier" and "suggested tier"?</summary>
+        <p>Your current tier is what's active right now for this season. The suggested tier is what the app recommends based on your attendance data — it shows where you're heading, not where you are today.</p>
+      </details>
+      <details>
+        <summary>Do recommendations happen automatically?</summary>
+        <p>No. Recommendations are suggestions. The league manager reviews them and makes the final call, usually between seasons.</p>
       </details>
     </section>
   </main>
