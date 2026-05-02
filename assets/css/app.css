@@ -5907,6 +5907,30 @@ body.manager-touch::before {
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
 }
 
+.retry-button {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.4rem 1rem;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity var(--motion-fast) var(--ease-quick);
+}
+
+.retry-button:hover {
+  opacity: 0.8;
+}
+
+.retry-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 @media (max-width: 1023px) {
   .nav-links .nav-link-extra {
     display: none !important;

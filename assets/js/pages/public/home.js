@@ -328,10 +328,18 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const health = await checkConnection();
       if (!health.ok) {
-        heroCopy.textContent = health.reason;
+        heroCopy.innerHTML = `${escapeHtml(health.reason)} <button class="retry-button" id="home-retry">Tap to retry</button>`;
+        seasonName.textContent = "—";
+        seasonSub.textContent = "Connection failed.";
+        nextMatchdayNumber.textContent = "—";
+        nextMatchdayDate.textContent = "Unavailable.";
+        completedDays.textContent = "—";
+        rankedPlayers.textContent = "—";
         leadersPoints.innerHTML = `<div class="empty-state">${escapeHtml(health.reason)}</div>`;
         leadersGoals.innerHTML = `<div class="empty-state">${escapeHtml(health.reason)}</div>`;
         leadersAttendance.innerHTML = `<div class="empty-state">${escapeHtml(health.reason)}</div>`;
+        const retryBtn = document.getElementById("home-retry");
+        if (retryBtn) retryBtn.addEventListener("click", () => { retryBtn.disabled = true; init(); });
         return;
       }
 
@@ -440,13 +448,22 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } catch (error) {
       const message = readableError(error);
-      heroCopy.textContent = message;
+      heroCopy.innerHTML = `${escapeHtml(message)} <button class="retry-button" id="home-retry">Tap to retry</button>`;
+      seasonName.textContent = "—";
+      seasonSub.textContent = "Could not load season.";
+      nextMatchdayNumber.textContent = "—";
+      nextMatchdayDate.textContent = "Could not load schedule.";
+      nextMatchdayWeather.textContent = "Could not load forecast.";
+      completedDays.textContent = "—";
+      rankedPlayers.textContent = "—";
       leadersPoints.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
       leadersGoals.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
       leadersAttendance.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
       latestResultsCard.hidden = true;
       mvpCard.hidden = true;
       pastWinnersCard.hidden = true;
+      const retryBtn = document.getElementById("home-retry");
+      if (retryBtn) retryBtn.addEventListener("click", () => { retryBtn.disabled = true; init(); });
     }
   }
 
