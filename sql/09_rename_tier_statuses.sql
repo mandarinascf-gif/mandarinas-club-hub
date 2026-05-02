@@ -1,7 +1,7 @@
 -- Migration: Rename tier statuses
 -- core stays core
 -- rotation becomes flex
--- flex_sub becomes sub
+-- flex_sub / flex/sub becomes sub
 --
 -- Run this against your Supabase database to update existing data.
 -- The JS app already handles legacy values gracefully via normalizeTierValue(),
@@ -14,7 +14,7 @@ update public.players
 
 update public.players
   set status = 'sub'
-  where status = 'flex_sub';
+  where status in ('flex_sub', 'flex/sub');
 
 update public.players
   set desired_tier = 'flex'
@@ -22,7 +22,7 @@ update public.players
 
 update public.players
   set desired_tier = 'sub'
-  where desired_tier = 'flex_sub';
+  where desired_tier in ('flex_sub', 'flex/sub');
 
 -- Season players table: tier_status and registration_tier columns
 update public.season_players
@@ -31,7 +31,7 @@ update public.season_players
 
 update public.season_players
   set tier_status = 'sub'
-  where tier_status = 'flex_sub';
+  where tier_status in ('flex_sub', 'flex/sub');
 
 update public.season_players
   set registration_tier = 'flex'
@@ -39,7 +39,7 @@ update public.season_players
 
 update public.season_players
   set registration_tier = 'sub'
-  where registration_tier = 'flex_sub';
+  where registration_tier in ('flex_sub', 'flex/sub');
 
 -- Season roster requests table
 update public.season_roster_requests
@@ -48,7 +48,7 @@ update public.season_roster_requests
 
 update public.season_roster_requests
   set requested_tier = 'sub'
-  where requested_tier = 'flex_sub';
+  where requested_tier in ('flex_sub', 'flex/sub');
 
 -- Update check constraints to use new values
 alter table public.season_roster_requests
