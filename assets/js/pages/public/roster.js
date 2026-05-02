@@ -230,6 +230,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       losses: 0,
       points_per_game: 0,
       rank: "-",
+      ppg_rank: "-",
+      points_rank: "-",
     };
   }
 
@@ -543,6 +545,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       birth_date: player.birth_date,
       overall_rating: overall,
       rank: playerRankDisplay(stats.rank),
+      ppg_rank: playerRankDisplay(stats.ppg_rank ?? stats.rank),
+      points_rank: playerRankDisplay(stats.points_rank),
       ppg: Number(pointsPerGame),
       primary_position: positions[0] || normalizeText(player.primary_position || "", "N/A"),
       position_label: positionLabel,
@@ -558,6 +562,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       goal_keeps: Number(stats.goal_keeps || 0),
       clean_sheets: Number(stats.clean_sheets || 0),
       rank: playerRankDisplay(stats.rank),
+      ppg_rank: playerRankDisplay(stats.ppg_rank ?? stats.rank),
+      points_rank: playerRankDisplay(stats.points_rank),
       ppg: pointsPerGame,
       points_per_game: pointsPerGame,
       seasons_won: Number(stats.seasons_won || 0),
