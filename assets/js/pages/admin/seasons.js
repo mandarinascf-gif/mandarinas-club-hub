@@ -2095,6 +2095,29 @@
         );
 
         if (existingRosterRow) {
+          const payload = {
+            tier_status: normalizeTierValue(request.requested_tier, existingRosterRow.tier_status),
+            tier_reason: "Reactivated from a public season squad request.",
+            movement_note: request.note || "Reactivated into the season squad from the public roster page.",
+            is_eligible: true,
+          };
+
+          if (seasonRosterMetadataSupported) {
+            payload.registration_tier = normalizeTierValue(
+              request.requested_tier,
+              existingRosterRow.registration_tier || existingRosterRow.tier_status
+            );
+          }
+
+          const { error } = await supabaseClient
+            .from("season_players")
+            .update(payload)
+            .eq("id", existingRosterRow.id);
+
+          if (error) {
+            throw error;
+          }
+
           return existingRosterRow.id;
         }
 
