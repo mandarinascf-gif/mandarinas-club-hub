@@ -6058,6 +6058,43 @@ body.manager-touch::before {
   overflow-wrap: anywhere;
 }
 
+.page-seasons .season-roadmap-shell {
+  display: grid;
+  gap: var(--space-3);
+  padding: clamp(1rem, 2.5vw, 1.25rem);
+}
+
+.page-seasons .season-roadmap-shell > p {
+  margin: 0;
+}
+
+.page-seasons #season-setup-progress {
+  grid-template-columns: repeat(6, minmax(5.25rem, 1fr));
+}
+
+.page-seasons #season-flow-grid {
+  align-items: stretch;
+}
+
+.page-seasons .season-flow-card {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  min-height: 100%;
+}
+
+.page-seasons .season-flow-card .section-label {
+  width: fit-content;
+}
+
+.page-seasons .season-flow-card .list-item-title {
+  font-size: 1rem;
+}
+
+.page-seasons .season-flow-actions {
+  margin-top: auto;
+}
+
 .podium-grid {
   grid-template-columns: 1fr;
   gap: var(--space-3);
