@@ -724,6 +724,20 @@
     return Number.isFinite(rank) && rank > 0 ? String(rank) : "--";
   }
 
+  function formatRankDisplay(value) {
+    const text = normalizeText(value, "");
+    if (!text) {
+      return "--";
+    }
+
+    const numericRank = Number(text);
+    if (Number.isFinite(numericRank)) {
+      return numericRank > 0 ? String(numericRank) : "--";
+    }
+
+    return text;
+  }
+
   function formatPpg(value) {
     const ppg = Number(value);
     return Number.isFinite(ppg) ? ppg.toFixed(2) : "0.00";
@@ -734,13 +748,29 @@
     return Number.isFinite(number) ? String(Math.round(number)) : "0";
   }
 
-  function rankModeLabel(mode) {
-    return mode === "points" ? "Points Rank" : "PPG Rank";
-  }
-
   function buildBadgeRankState(player, stats) {
-    const ppgRank = formatRank(player?.ppg_rank ?? stats?.ppg_rank ?? player?.rank ?? stats?.rank);
-    const pointsRank = formatRank(player?.points_rank ?? stats?.points_rank);
+    const ppgRank = formatRankDisplay(
+      player?.ppg_rank_display ??
+      stats?.ppg_rank_display ??
+      player?.ppg_rank ??
+      stats?.ppg_rank ??
+      player?.rank ??
+      stats?.rank
+    );
+    const pointsRank = formatRankDisplay(
+      player?.points_rank_display ??
+      stats?.points_rank_display ??
+      player?.points_rank ??
+      stats?.points_rank
+    );
+    const ppgRankSummary = normalizeText(
+      player?.ppg_rank_label ?? stats?.ppg_rank_label,
+      "PPG Rank"
+    );
+    const pointsRankSummary = normalizeText(
+      player?.points_rank_label ?? stats?.points_rank_label,
+      "Points Rank"
+    );
     const rankModes = [];
 
     if (ppgRank !== "--") {
@@ -754,7 +784,7 @@
     const activeRankMode = rankModes.includes("ppg") ? "ppg" : rankModes[0] || "ppg";
     const activeRank = activeRankMode === "points" ? pointsRank : ppgRank;
     const activeRankSummary = rankModes.length
-      ? rankModeLabel(activeRankMode)
+      ? activeRankMode === "points" ? pointsRankSummary : ppgRankSummary
       : "Ranking unavailable";
 
     return {
@@ -762,7 +792,9 @@
       activeRankMode,
       activeRankSummary,
       pointsRank,
+      pointsRankSummary,
       ppgRank,
+      ppgRankSummary,
       rankModes,
     };
   }
@@ -1156,6 +1188,14 @@
     return normalizeText(badge?.dataset?.rankPpg, "--");
   }
 
+  function badgeRankLabel(badge, mode) {
+    if (mode === "points") {
+      return normalizeText(badge?.dataset?.rankPointsLabel, "Points Rank");
+    }
+
+    return normalizeText(badge?.dataset?.rankPpgLabel, "PPG Rank");
+  }
+
   function nextBadgeRankMode(badge) {
     const availableModes = badgeRankModes(badge);
     if (availableModes.length <= 1) {
@@ -1182,7 +1222,7 @@
         node.setAttribute("aria-pressed", isActive ? "true" : "false");
       }
 
-      const label = rankModeLabel(mode);
+      const label = badgeRankLabel(badge, mode);
       const message = isActive ? `${label} selected` : `Show ${label}`;
       node.setAttribute("aria-label", message);
       node.setAttribute("title", message);
@@ -1194,8 +1234,8 @@
       const availableModes = badgeRankModes(badge);
       const canToggle = availableModes.length > 1;
       const toggleMessage = canToggle
-        ? `Rank box selected. Tap to show ${rankModeLabel(nextMode)}`
-        : `${rankModeLabel(activeMode)} selected`;
+        ? `Rank box selected. Tap to show ${badgeRankLabel(badge, nextMode)}`
+        : `${badgeRankLabel(badge, activeMode)} selected`;
       toggleNode.setAttribute("aria-label", toggleMessage);
       toggleNode.setAttribute("title", toggleMessage);
       if (toggleNode.getAttribute("role") === "button") {
@@ -1221,7 +1261,7 @@
 
     const metaNode = badge.querySelector("[data-rank-meta]");
     if (metaNode) {
-      metaNode.textContent = rankModeLabel(nextMode);
+      metaNode.textContent = badgeRankLabel(badge, nextMode);
     }
 
     updateBadgeRankSelectorState(badge);
@@ -1424,7 +1464,9 @@
         data-rank-mode="${escapeHtml(model.activeRankMode)}"
         data-rank-modes="${escapeHtml(model.rankModes.join(","))}"
         data-rank-ppg="${escapeHtml(model.ppgRank)}"
+        data-rank-ppg-label="${escapeHtml(model.ppgRankSummary)}"
         data-rank-points="${escapeHtml(model.pointsRank)}"
+        data-rank-points-label="${escapeHtml(model.pointsRankSummary)}"
       >
         <header class="fut-card-header">
           <div class="fut-card-title">Mandarinas CF</div>
@@ -1492,7 +1534,9 @@
       activeRankSummary: rankState.activeRankSummary,
       ppg: ppgValue,
       ppgRank: rankState.ppgRank,
+      ppgRankSummary: rankState.ppgRankSummary,
       pointsRank: rankState.pointsRank,
+      pointsRankSummary: rankState.pointsRankSummary,
       rankModes: rankState.rankModes,
       flagCode: resolveFlagCode(player),
       flagTitle: normalizeText(player?.nationality || player?.country, ""),
