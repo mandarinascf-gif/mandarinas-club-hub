@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png" />
-    <link rel="stylesheet" href="./assets/css/app.css?v=20260502c" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260503d" />
     <title>Busses · Season Centre</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/js/core/club_logic.js?v=20260428b"></script>
@@ -45,8 +45,8 @@
           <div class="section-label">Busses · Season Centre</div>
           <h1>Season workspace</h1>
           <p>
-            Start with the season list. The selected campaign stays in view while older or newer
-            campaigns tuck away until you need them. Use the form to launch a new campaign.
+            Build the season in order: create it, set matchdays, load Core + Flex, add Subs when
+            needed, then jump straight into the weekly roster and captain flow.
           </p>
         </div>
         <div class="actions">
@@ -269,13 +269,25 @@
             <div class="actions">
               <button class="secondary-button" type="button" id="roster-refresh-button">Reload roster</button>
               <button class="secondary-button" type="button" id="seed-roster-button">Add current Core + Flex</button>
+              <button class="secondary-button" type="button" id="seed-subs-button">Add current Subs</button>
               <button class="secondary-button" type="button" id="sync-season-tier-button">Use full squad tier status</button>
+              <a class="secondary-button" id="open-season-matchday-link" href="./matchday.html">Open weekly roster</a>
               <a class="secondary-button" id="open-tiers-link" href="./tiers.html">Open planner</a>
               <a class="secondary-button" href="./squad.html#player-list-panel">Open full squad</a>
             </div>
             <p class="micro-note" id="roster-bulk-note">
               For now, bulk add uses the full squad current / next-season tier and only pulls players marked Core or Flex.
             </p>
+            <div class="season-roadmap-shell panel-guide">
+              <div class="section-label">Flow</div>
+              <h3>Setup + Weekly Run</h3>
+              <p id="season-roadmap-copy">
+                Follow the same path every season: set the shape, load Core + Flex, add Subs only
+                when the pool is short, then move to Match Centre for weekly team balance and captains.
+              </p>
+              <div class="wizard-progress" id="season-setup-progress" aria-live="polite"></div>
+              <div class="quick-action-grid" id="season-flow-grid" aria-live="polite"></div>
+            </div>
             <div class="field">
               <label>Manage season squad</label>
               <div class="filter-row" id="season-roster-flow-row" role="toolbar" aria-label="Season squad flow"></div>
@@ -337,9 +349,16 @@
                     <button class="secondary-button" type="button" id="apply-schedule-defaults-button" disabled>
                       Fill unscheduled matchdays
                     </button>
+                    <button class="danger-button" type="button" id="reset-season-button" disabled>
+                      Delete season
+                    </button>
                   </div>
                   <p class="micro-note" id="season-settings-note">
                     Choose a campaign first. These settings control the weekly queue and when the current model begins.
+                  </p>
+                  <p class="micro-note">
+                    Delete season removes that campaign, its matchdays, season squad, requests, lineups,
+                    captains, scores, and stats so you can rebuild it from scratch.
                   </p>
                 </fieldset>
               </div>
@@ -475,6 +494,6 @@
       <div class="club-footer-copy">Busses · Season Centre</div>
     </footer>
 
-    <script src="./assets/js/pages/admin/seasons.js?v=20260503b"></script>
+    <script src="./assets/js/pages/admin/seasons.js?v=20260503c"></script>
   </body>
 </html>
