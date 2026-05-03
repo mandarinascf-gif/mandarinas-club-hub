@@ -9,72 +9,41 @@ document.addEventListener("DOMContentLoaded", () => {
     escapeHtml,
     fullName,
     stripSubPrefix,
-    formatStatusLabel,
     normalizeTierValue,
-    tierIconMarkup,
-    trendIconMarkup,
     readableError,
     fetchSeasons,
     pickSeason,
     fetchSeasonBundle,
-    fetchHistoricalTierAttendance,
     querySeasonIdFromUrl,
   } = window.MandarinasPublic;
 
   const logic = window.MandarinasLogic || {};
-  const suggestionSlotLimit = logic.TIER_SUGGESTION_SLOT_LIMIT || 36;
-  const summarizeHistoricalAttendance =
-    logic.summarizeHistoricalAttendance || ((rows) => [...(rows || [])]);
   const buildStandingsByPlayerId =
     logic.buildStandingsByPlayerId || (() => new Map());
   const rotationQueueMode = logic.rotationQueueMode || (() => "regular");
   const buildRotationQueueRows =
     logic.buildRotationQueueRows ||
     ((rows) => [...(rows || [])].filter((row) => row.tier_status === "flex" && row.is_eligible));
-  const applyTierSuggestionSlots = logic.applyTierSuggestionSlots || ((rows) => [...(rows || [])]);
-  const tierSuggestionEvidence =
-    logic.tierSuggestionEvidence || ((row) => row?.suggestion_evidence || "");
 
   const seasonSelect = document.getElementById("season-select");
+  const queueSearch = document.getElementById("queue-search");
   const heroCopy = document.getElementById("hero-copy");
-  const spotMixCount = document.getElementById("spot-mix-count");
-  const coreCount = document.getElementById("core-count");
-  const rotationCount = document.getElementById("rotation-count");
-  const flexCount = document.getElementById("flex-count");
-  const changeCount = document.getElementById("change-count");
-  const summarySubCard = document.getElementById("summary-sub-card");
+  const queueSpotlightCopy = document.getElementById("queue-spotlight-copy");
+  const queueSpotlight = document.getElementById("queue-spotlight");
+  const queueFlexCount = document.getElementById("queue-flex-count");
+  const queueEligibleCount = document.getElementById("queue-eligible-count");
+  const queueModeLabel = document.getElementById("queue-mode-label");
+  const queueModeCopy = document.getElementById("queue-mode-copy");
+  const queueCycleLabel = document.getElementById("queue-cycle-label");
+  const queueCycleCopy = document.getElementById("queue-cycle-copy");
+  const queueTableCopy = document.getElementById("queue-table-copy");
   const tierStatusLine = document.getElementById("tier-status-line");
   const queueTableWrap = document.getElementById("queue-table-wrap");
-  const suggestionPanelCopy = document.getElementById("suggestion-panel-copy");
-  const suggestionSummaryPills = document.getElementById("suggestion-summary-pills");
-  const openSuggestionModalButton = document.getElementById("open-tier-suggestion-modal");
-  const suggestionModal = document.getElementById("tier-suggestion-modal");
-  const suggestionModalCopy = document.getElementById("tier-suggestion-modal-copy");
-  const suggestionTableSummary = document.getElementById("tier-table-summary");
-  const suggestionTableWrap = document.getElementById("tier-table-wrap");
-  const tierFilterRow = document.getElementById("tier-filter-row");
-  const tierSearch = document.getElementById("tier-search");
-  const detailModal = document.getElementById("tier-detail-modal");
-
-  const TIER_ORDER = Object.freeze({ core: 0, flex: 1, sub: 2 });
-  const DEFAULT_SORT_DIRECTIONS = Object.freeze({
-    player: "asc",
-    current: "asc",
-    suggested: "asc",
-    spot: "desc",
-    att: "desc",
-    score: "desc",
-    recent: "desc",
-    hist: "desc",
-  });
 
   let seasons = [];
   let activeSeasonId = querySeasonIdFromUrl();
   let tierRows = [];
   let seasonRosterPlayers = [];
-  let activeFilter = "all";
-  let sortCol = "suggested";
-  let sortDir = DEFAULT_SORT_DIRECTIONS.suggested;
   let standingsByPlayerId = new Map();
   let activeQueueMode = "regular";
 
@@ -95,10 +64,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function currentTier(row) {
-    return normalizeTierValue(row?.tier_status || row?.default_status, "sub");
-  }
-
   function registrationTier(row) {
     return normalizeTierValue(
       row?.registration_tier || row?.tier_status || row?.season_status || row?.default_status,
@@ -113,202 +78,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const defaultStatus = normalizeTierValue(row.default_status, "sub");
     const tierStatus = normalizeTierValue(row.tier_status, defaultStatus);
-    const preliminarySuggestedStatus = normalizeTierValue(
-      row.preliminary_recommended_tier_status || row.recommended_tier_status,
-      tierStatus
-    );
 
     return {
       ...row,
       default_status: defaultStatus,
       tier_status: tierStatus,
-      recommended_tier_status: normalizeTierValue(
-        row.recommended_tier_status,
-        preliminarySuggestedStatus
-      ),
-      preliminary_recommended_tier_status: preliminarySuggestedStatus,
+      registration_tier: normalizeTierValue(row.registration_tier, defaultStatus),
     };
   }
 
   function displayName(row) {
     return stripSubPrefix(row.nickname) || fullName(row);
-  }
-
-  function formatSpotValue(value) {
-    const numeric = Number(value || 0);
-    return Number.isInteger(numeric) ? String(numeric) : numeric.toFixed(1);
-  }
-
-  function trendClass(trend) {
-    if (trend === "up") {
-      return "move-up";
-    }
-    if (trend === "down") {
-      return "move-down";
-    }
-    return "move-stay";
-  }
-
-  function trendLabel(trend) {
-    if (trend === "up") {
-      return "Move up";
-    }
-    if (trend === "down") {
-      return "Move down";
-    }
-    return "Stay put";
-  }
-
-  function movementPill(trend) {
-    return `<span class="move-badge ${trendClass(trend)}">${trendIconMarkup(trend)}<span>${escapeHtml(
-      trendLabel(trend)
-    )}</span></span>`;
-  }
-
-  function tierPill(status) {
-    return `<span class="tier-pill ${escapeHtml(status)}">${tierIconMarkup(status)}<span>${escapeHtml(
-      formatStatusLabel(status)
-    )}</span></span>`;
-  }
-
-  function suggestionEvidenceText(row) {
-    return row?.suggestion_evidence || tierSuggestionEvidence(row) || "Attendance evidence unavailable.";
-  }
-
-  function suggestionCounts(rows = tierRows) {
-    return rows.reduce(
-      (counts, row) => {
-        const trend = row?.trend || "steady";
-        counts.total += 1;
-
-        if (currentTier(row) !== row.recommended_tier_status) {
-          counts.changes += 1;
-        }
-
-        if (trend === "up") {
-          counts.up += 1;
-        } else if (trend === "down") {
-          counts.down += 1;
-        } else {
-          counts.steady += 1;
-        }
-
-        return counts;
-      },
-      { total: 0, changes: 0, up: 0, steady: 0, down: 0 }
-    );
-  }
-
-  function suggestionSummaryPillsMarkup(counts, rows = tierRows) {
-    const spotMixUsed = rows.reduce(
-      (total, row) => total + Number(row.suggestion_spot_value || 0),
-      0
-    );
-
-    return `
-      <div class="summary-pill">
-        <strong>${escapeHtml(counts.changes)}</strong>
-        <span>Changes</span>
-      </div>
-      <div class="summary-pill">
-        <strong>${escapeHtml(counts.up)}</strong>
-        <span>Move up</span>
-      </div>
-      <div class="summary-pill">
-        <strong>${escapeHtml(counts.steady)}</strong>
-        <span>Hold</span>
-      </div>
-      <div class="summary-pill">
-        <strong>${escapeHtml(counts.down)}</strong>
-        <span>Move down</span>
-      </div>
-      <div class="summary-pill">
-        <strong>${escapeHtml(formatSpotValue(spotMixUsed))} / ${escapeHtml(
-          formatSpotValue(suggestionSlotLimit)
-        )}</strong>
-        <span>Plan fill</span>
-      </div>
-    `;
-  }
-
-  function reliabilityLine(row) {
-    const noShows = Number(row?.no_shows || 0);
-    const lateCancels = Number(row?.late_cancels || 0);
-    const flags = [];
-
-    if (noShows > 0) {
-      flags.push(`${noShows} no-show${noShows === 1 ? "" : "s"}`);
-    }
-    if (lateCancels > 0) {
-      flags.push(`${lateCancels} late cancel${lateCancels === 1 ? "" : "s"}`);
-    }
-
-    return flags.length ? `${flags.join(", ")} this season` : "No no-shows or late cancels this season";
-  }
-
-  function renderSuggestionCards(rows) {
-    return `
-      <div class="standings-card-list">
-        ${rows
-          .map((row, index) => {
-            const recentGames = Number(row.recent_games_attended || 0);
-            const evidenceText = suggestionEvidenceText(row);
-
-            return `
-              <article class="standings-card">
-                <header class="standings-card-head">
-                  <div class="standings-rank-badge">${escapeHtml(index + 1)}</div>
-                  <div class="standings-card-title">
-                    <div class="player-main">${escapeHtml(displayName(row))}</div>
-                    ${
-                      row.nickname && fullName(row) !== stripSubPrefix(row.nickname)
-                        ? `<div class="table-player-sub">${escapeHtml(fullName(row))}</div>`
-                        : ""
-                    }
-                  </div>
-                </header>
-                <div class="compact-badges">
-                  <span class="status-pill ${escapeHtml(currentTier(row))}">Now: ${escapeHtml(
-                    formatStatusLabel(currentTier(row))
-                  )}</span>
-                  ${movementPill(row.trend || "steady")}
-                  <span class="status-pill ${escapeHtml(row.recommended_tier_status)}">Suggested next: ${escapeHtml(
-                    formatStatusLabel(row.recommended_tier_status)
-                  )}</span>
-                </div>
-                <div class="standings-metrics">
-                  <div class="metric-pill"><span>Last 8</span><strong>${escapeHtml(recentGames)} / 8</strong></div>
-                  <div class="metric-pill"><span>Season games</span><strong>${escapeHtml(row.games_attended)}</strong></div>
-                  <div class="metric-pill"><span>Season score</span><strong>${escapeHtml(row.attendance_score)}</strong></div>
-                  <div class="metric-pill"><span>All-time score</span><strong>${escapeHtml(row.historical_attendance_score || 0)}</strong></div>
-                </div>
-                <div class="detail-list">
-                  <div class="detail-item">
-                    <span class="detail-label">Why the app leans here</span>
-                    <strong>${escapeHtml(row.transparency_note || "No summary note yet.")}</strong>
-                    <span class="tier-evidence">${escapeHtml(evidenceText)}</span>
-                  </div>
-                  <div class="detail-item">
-                    <span class="detail-label">What helps next</span>
-                    <strong>${escapeHtml(row.next_step || "Keep showing up consistently.")}</strong>
-                    <span class="tier-evidence">${escapeHtml(reliabilityLine(row))}</span>
-                  </div>
-                </div>
-                <div class="actions">
-                  <button
-                    class="secondary-button table-action-button"
-                    type="button"
-                    data-detail-id="${escapeHtml(row.player_id)}"
-                  >
-                    Full breakdown
-                  </button>
-                </div>
-              </article>
-            `;
-          })
-          .join("")}
-      </div>
-    `;
   }
 
   function queueVisibleLimit() {
@@ -321,6 +101,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function queueRowsMatching(rows, selector, value) {
     return (rows || []).filter((entry) => selector(entry) === value);
+  }
+
+  function queuePositionLabel(position) {
+    if (position === 1) {
+      return "Next up";
+    }
+    if (position === 2) {
+      return "On deck";
+    }
+    if (position === 3) {
+      return "After that";
+    }
+    return `#${position} in line`;
+  }
+
+  function queueRuleSummary(mode = activeQueueMode) {
+    return mode === "final"
+      ? "Final matchday mode is active. Season points lead the line, then goals, goal keeps, and clean sheets."
+      : "Regular queue mode is active. Fewer season appearances stay in front, then season points, goals, goal keeps, and clean sheets break ties.";
   }
 
   function formatQueueReason(row, queueRows) {
@@ -456,197 +255,20 @@ document.addEventListener("DOMContentLoaded", () => {
     return `${attended} attended${totalPoints > 0 ? ` · ${totalPoints} pts` : ""}`;
   }
 
-  function renderQueueRows(rows, queueRows, queueMap, labelPrefix = "#") {
-    return rows
-      .map((row) => {
-        const queuePosition = queueMap.get(row.player_id);
-        const attended = Number(row?.games_attended || 0);
-        const isNext = queuePosition === 1;
-        const positionLabel = isNext ? "Next up" : `#${queuePosition} in line`;
-
-        return `
-          <article class="queue-compact-row ${isNext ? "queue-compact-row-top" : ""}">
-            <div class="queue-compact-rank">
-              <span class="queue-pill">${escapeHtml(String(queuePosition))}</span>
-            </div>
-            <div class="queue-compact-main">
-              <div class="queue-compact-line">
-                <h3 class="queue-compact-name">${escapeHtml(displayName(row))}</h3>
-                <span class="queue-compact-meta">${escapeHtml(positionLabel)}</span>
-              </div>
-              ${
-                isNext
-                  ? '<div class="queue-compact-eyebrow">Gets the next open spot</div>'
-                  : ""
-              }
-              ${
-                row.nickname && fullName(row) !== stripSubPrefix(row.nickname)
-                  ? `<div class="table-player-sub">${escapeHtml(fullName(row))}</div>`
-                  : ""
-              }
-              <p class="queue-compact-reason">${escapeHtml(
-                attended === 0
-                  ? "Hasn't played yet this season"
-                  : `${attended} game${attended === 1 ? "" : "s"} played this season`
-              )}</p>
-            </div>
-          </article>
-        `;
-      })
-      .join("");
+  function queueSearchQuery() {
+    return String(queueSearch.value || "").trim();
   }
 
-  function suggestionComparator(left, right) {
-    const leftSuggested = TIER_ORDER[left.recommended_tier_status] ?? 99;
-    const rightSuggested = TIER_ORDER[right.recommended_tier_status] ?? 99;
-    if (leftSuggested !== rightSuggested) {
-      return leftSuggested - rightSuggested;
+  function filteredQueueRows(queueRows) {
+    const query = queueSearchQuery().toLowerCase();
+
+    if (!query) {
+      return queueRows;
     }
 
-    const leftSpot = Number(left.suggestion_spot_value || 0);
-    const rightSpot = Number(right.suggestion_spot_value || 0);
-    if (rightSpot !== leftSpot) {
-      return rightSpot - leftSpot;
-    }
-
-    const leftRank = Number(left.suggestion_slot_rank || 0);
-    const rightRank = Number(right.suggestion_slot_rank || 0);
-    if (leftRank > 0 && rightRank > 0 && leftRank !== rightRank) {
-      return leftRank - rightRank;
-    }
-
-    const leftRecent = Number(left.recent_attendance_score || 0);
-    const rightRecent = Number(right.recent_attendance_score || 0);
-    if (rightRecent !== leftRecent) {
-      return rightRecent - leftRecent;
-    }
-
-    const leftScore = Number(left.attendance_score || 0);
-    const rightScore = Number(right.attendance_score || 0);
-    if (rightScore !== leftScore) {
-      return rightScore - leftScore;
-    }
-
-    const leftGames = Number(left.games_attended || 0);
-    const rightGames = Number(right.games_attended || 0);
-    if (rightGames !== leftGames) {
-      return rightGames - leftGames;
-    }
-
-    const leftHistorical = Number(left.historical_attendance_score || 0);
-    const rightHistorical = Number(right.historical_attendance_score || 0);
-    if (rightHistorical !== leftHistorical) {
-      return rightHistorical - leftHistorical;
-    }
-
-    return displayName(left).localeCompare(displayName(right));
-  }
-
-  const SORT_KEYS = {
-    player: (row) => displayName(row).toLowerCase(),
-    current: (row) => TIER_ORDER[currentTier(row)] ?? 99,
-    suggested: (row) => TIER_ORDER[row.recommended_tier_status] ?? 99,
-    spot: (row) => Number(row.suggestion_spot_value || 0),
-    att: (row) => Number(row.games_attended || 0),
-    score: (row) => Number(row.attendance_score || 0),
-    recent: (row) => Number(row.recent_attendance_score || 0),
-    hist: (row) => Number(row.historical_attendance_score || 0),
-  };
-
-  function sortArrow(col) {
-    if (sortCol !== col) {
-      return "";
-    }
-    return sortDir === "asc" ? " ▲" : " ▼";
-  }
-
-  function thClass(col) {
-    return sortCol === col ? "active-sort" : "";
-  }
-
-  function syncBodyModalState() {
-    const hasOpenModal = [suggestionModal, detailModal].some((modal) => !modal.hidden);
-    document.body.classList.toggle("modal-open", hasOpenModal);
-  }
-
-  function openModal(modal) {
-    modal.hidden = false;
-    syncBodyModalState();
-  }
-
-  function closeModal(modal) {
-    modal.hidden = true;
-    syncBodyModalState();
-  }
-
-  function bindModal(modal) {
-    modal.addEventListener("click", (event) => {
-      if (event.target === modal || event.target.closest("[data-modal-close]")) {
-        closeModal(modal);
-      }
-    });
-  }
-
-  function filteredSuggestionRows() {
-    const query = String(tierSearch.value || "").trim().toLowerCase();
-
-    return tierRows.filter((row) => {
-      if (activeFilter === "changes" && currentTier(row) === row.recommended_tier_status) {
-        return false;
-      }
-
-      if (
-        activeFilter !== "all" &&
-        activeFilter !== "changes" &&
-        row.recommended_tier_status !== activeFilter
-      ) {
-        return false;
-      }
-
-      if (!query) {
-        return true;
-      }
-
-      return [
-        row.first_name,
-        row.last_name,
-        row.nickname || "",
-        row.next_step || "",
-        row.transparency_note || "",
-        formatStatusLabel(row.recommended_tier_status),
-        formatStatusLabel(currentTier(row)),
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(query);
-    });
-  }
-
-  function sorted(rows) {
-    const key = SORT_KEYS[sortCol] || SORT_KEYS.suggested;
-    const direction = sortDir === "asc" ? 1 : -1;
-
-    return [...rows].sort((left, right) => {
-      const leftValue = key(left);
-      const rightValue = key(right);
-
-      if (typeof leftValue === "string") {
-        const difference = leftValue.localeCompare(rightValue) * direction;
-        return difference || suggestionComparator(left, right);
-      }
-
-      if (leftValue !== rightValue) {
-        return (leftValue - rightValue) * direction;
-      }
-
-      return suggestionComparator(left, right);
-    });
-  }
-
-  function updateSeasonUrl(seasonId) {
-    const url = new URL(window.location.href);
-    url.searchParams.set("season_id", seasonId);
-    window.history.replaceState({}, "", url);
+    return queueRows.filter((row) =>
+      [displayName(row), fullName(row), row.nickname || ""].join(" ").toLowerCase().includes(query)
+    );
   }
 
   function renderSeasonOptions() {
@@ -660,24 +282,106 @@ document.addEventListener("DOMContentLoaded", () => {
       .join("");
   }
 
-  function renderSummary() {
-    const registeredPlayers = seasonRosterPlayers || [];
-    const subCount = registeredPlayers.filter((row) => registrationTier(row) === "sub").length;
+  function updateSeasonUrl(seasonId) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("season_id", seasonId);
+    window.history.replaceState({}, "", url);
+  }
 
-    spotMixCount.textContent = String(registeredPlayers.length);
-    coreCount.textContent = String(
-      registeredPlayers.filter((row) => registrationTier(row) === "core").length
-    );
-    rotationCount.textContent = String(
-      registeredPlayers.filter((row) => registrationTier(row) === "flex").length
-    );
-    flexCount.textContent = String(subCount);
-    changeCount.textContent = String(
-      registeredPlayers.filter((row) => row?.is_eligible !== false).length
-    );
-    if (summarySubCard) {
-      summarySubCard.hidden = subCount === 0;
+  function renderSummary(queueRows) {
+    const flexRegisteredCount = seasonRosterPlayers.filter(
+      (row) => registrationTier(row) === "flex"
+    ).length;
+
+    queueFlexCount.textContent = String(flexRegisteredCount);
+    queueEligibleCount.textContent = String(queueRows.length);
+    queueModeLabel.textContent = activeQueueMode === "final" ? "Points first" : "Fewest games";
+    queueModeCopy.textContent =
+      activeQueueMode === "final"
+        ? "Final matchday mode is active for this season."
+        : "Lower season attendance stays closer to the front.";
+
+    if (queueRows.length) {
+      queueCycleLabel.textContent = "Back of line";
+      queueCycleCopy.textContent =
+        "After you play, your next turn starts behind the players still waiting.";
+      return;
     }
+
+    queueCycleLabel.textContent = "No line yet";
+    queueCycleCopy.textContent =
+      "The queue appears once flex players are eligible for the selected season.";
+  }
+
+  function renderQueueSpotlight(queueRows) {
+    if (!queueRows.length) {
+      queueSpotlightCopy.textContent =
+        "The queue will appear once flex players are registered and eligible for the selected season.";
+      queueSpotlight.innerHTML = `<div class="empty-state">No flex players are in line yet.</div>`;
+      return;
+    }
+
+    queueSpotlightCopy.textContent = queueRuleSummary();
+    queueSpotlight.innerHTML = queueRows
+      .slice(0, 3)
+      .map((row, index) => {
+        const position = index + 1;
+
+        return `
+          <article class="queue-top-card ${position === 1 ? "queue-top-card-primary" : ""}">
+            <div class="queue-top-step">${escapeHtml(queuePositionLabel(position))}</div>
+            <h3 class="queue-top-name">${escapeHtml(displayName(row))}</h3>
+            ${
+              row.nickname && fullName(row) !== stripSubPrefix(row.nickname)
+                ? `<div class="table-player-sub">${escapeHtml(fullName(row))}</div>`
+                : ""
+            }
+            <div class="compact-badges">
+              <span class="queue-pill">#${escapeHtml(String(position))}</span>
+              <span class="status-pill flex">${escapeHtml(formatQueueMeta(row))}</span>
+            </div>
+            <p class="queue-top-copy">${escapeHtml(formatQueueReason(row, queueRows))}</p>
+          </article>
+        `;
+      })
+      .join("");
+  }
+
+  function renderQueueRows(rows, queueRows, queueMap) {
+    return rows
+      .map((row) => {
+        const queuePosition = queueMap.get(row.player_id);
+        const isNext = queuePosition === 1;
+
+        return `
+          <article class="queue-compact-row ${isNext ? "queue-compact-row-top" : ""}">
+            <div class="queue-compact-rank">
+              <span class="queue-pill">${escapeHtml(String(queuePosition))}</span>
+            </div>
+            <div class="queue-compact-main">
+              <div class="queue-compact-heading">
+                <div class="queue-compact-line">
+                  <h3 class="queue-compact-name">${escapeHtml(displayName(row))}</h3>
+                  <span class="queue-compact-meta">${escapeHtml(queuePositionLabel(queuePosition))}</span>
+                </div>
+                <div class="compact-badges">
+                  <span class="status-pill flex">${escapeHtml(formatQueueMeta(row))}</span>
+                  <span class="status-pill ${activeQueueMode === "final" ? "core" : "sub"}">
+                    ${escapeHtml(activeQueueMode === "final" ? "Final matchday rule" : "Regular queue rule")}
+                  </span>
+                </div>
+              </div>
+              ${
+                row.nickname && fullName(row) !== stripSubPrefix(row.nickname)
+                  ? `<div class="table-player-sub">${escapeHtml(fullName(row))}</div>`
+                  : ""
+              }
+              <p class="queue-compact-reason">${escapeHtml(formatQueueReason(row, queueRows))}</p>
+            </div>
+          </article>
+        `;
+      })
+      .join("");
   }
 
   function renderQueue() {
@@ -686,14 +390,37 @@ document.addEventListener("DOMContentLoaded", () => {
       finalMatchday: activeQueueMode === "final",
     });
     const queueMap = new Map(queueRows.map((row, index) => [row.player_id, index + 1]));
-    const visibleRows = queueRows.slice(0, queueVisibleLimit());
-    const hiddenRows = queueRows.slice(visibleRows.length);
+    const rawQuery = queueSearchQuery();
+    const filteredRows = filteredQueueRows(queueRows);
+
+    renderSummary(queueRows);
+    renderQueueSpotlight(queueRows);
+
     if (!queueRows.length) {
+      queueTableCopy.textContent =
+        "This line updates when flex players are registered and marked eligible for the selected season.";
       queueTableWrap.innerHTML = `
-        <div class="empty-state">No flex players in the queue yet. Players appear here once the season starts.</div>
+        <div class="empty-state">No flex players are in the queue yet. Players appear here once the season starts.</div>
       `;
       return;
     }
+
+    if (rawQuery) {
+      queueTableCopy.textContent = `Showing matches for "${rawQuery}". Queue numbers stay the same even while the list is filtered.`;
+    } else {
+      queueTableCopy.textContent =
+        "Search for your name or read from the top down. Lower number means you are closer to the next spot.";
+    }
+
+    if (!filteredRows.length) {
+      queueTableWrap.innerHTML = `<div class="empty-state">No flex queue matches for "${escapeHtml(
+        rawQuery
+      )}". Only eligible flex players appear here.</div>`;
+      return;
+    }
+
+    const visibleRows = rawQuery ? filteredRows : filteredRows.slice(0, queueVisibleLimit());
+    const hiddenRows = rawQuery ? [] : filteredRows.slice(visibleRows.length);
 
     queueTableWrap.innerHTML = `
       <div class="queue-compact-table">
@@ -723,170 +450,13 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
   }
 
-  function renderSuggestionSummaryPanel() {
-    const counts = suggestionCounts();
-
-    suggestionSummaryPills.innerHTML = tierRows.length
-      ? suggestionSummaryPillsMarkup(counts)
-      : "";
-
-    if (!tierRows.length) {
-      suggestionPanelCopy.textContent =
-        "Tier recommendations will appear here once the season data is available.";
-      suggestionModalCopy.textContent =
-        "Start with Changes if you only want to see movement. Now is the active tier today. Suggested next is the attendance-based recommendation.";
-      openSuggestionModalButton.disabled = true;
-      return;
-    }
-
-    if (counts.changes === 0) {
-      suggestionPanelCopy.textContent =
-        "Everyone looks stable right now. Now and Suggested next currently match across the board.";
-    } else {
-      suggestionPanelCopy.textContent =
-        counts.changes === 1
-          ? "1 player is currently flagged for review. Start with Changes to focus on the movement case first."
-          : `${counts.changes} players are currently flagged for review. Start with Changes to focus on movement cases first.`;
-    }
-
-    suggestionModalCopy.textContent =
-      "Start with Changes if you only want to see movement. Now is the active tier today. Suggested next is the attendance-based recommendation for manager review, not an automatic change.";
-    openSuggestionModalButton.disabled = false;
-  }
-
-  function renderSuggestionTable() {
-    const rows = sorted(filteredSuggestionRows());
-    const counts = suggestionCounts();
-
-    suggestionTableSummary.innerHTML = tierRows.length
-      ? `
-          <div class="summary-pill-grid">
-            ${suggestionSummaryPillsMarkup(counts)}
-          </div>
-          <p class="manual-note">
-            <strong>How to read this:</strong> <strong>Now</strong> is the tier active today.
-            <strong>Suggested next</strong> is where the player would land if the tier plan were rebuilt from attendance data today.
-          </p>
-        `
-      : "";
-
-    if (!rows.length) {
-      suggestionTableWrap.innerHTML = `<div class="empty-state">No players match the current filter.</div>`;
-      return;
-    }
-
-    suggestionTableWrap.innerHTML = renderSuggestionCards(rows);
-
-    suggestionTableWrap.querySelectorAll("[data-detail-id]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const row = tierRows.find(
-          (entry) => Number(entry.player_id) === Number(button.dataset.detailId)
-        );
-        if (!row) {
-          return;
-        }
-        renderDetailModal(row);
-        openModal(detailModal);
-      });
-    });
-  }
-
-  function renderDetailModal(row) {
-    const recentGames = Number(row.recent_games_attended || 0);
-    const recentScore = Number(row.recent_attendance_score || 0);
-    const seasonGames = Number(row.games_attended || 0);
-    const seasonScore = Number(row.attendance_score || 0);
-    const historicalScore = Number(row.historical_attendance_score || 0);
-    const evidenceText = suggestionEvidenceText(row);
-
-    detailModal.innerHTML = `
-      <div class="site-modal-backdrop" data-modal-close></div>
-      <div
-        class="site-modal-card"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="tier-detail-modal-title"
-      >
-        <div class="site-modal-head">
-          <div>
-            <div class="section-label">Recommendation breakdown</div>
-            <h2 class="site-modal-title" id="tier-detail-modal-title">${escapeHtml(displayName(row))}</h2>
-            <p class="site-modal-copy">This is a manager review note, not an automatic tier change.</p>
-          </div>
-          <button class="ghost-button" type="button" data-modal-close>Close</button>
-        </div>
-        <div class="site-modal-body" id="tier-detail-content">
-          <div class="detail-list">
-            <div class="detail-item">
-              <span class="detail-label">Now</span>
-              <div>${tierPill(currentTier(row))}</div>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Suggested next</span>
-              <div>${tierPill(row.recommended_tier_status)} ${movementPill(row.trend || "steady")}</div>
-            </div>
-          </div>
-          <div class="detail-list" style="margin-top: var(--space-md);">
-            <div class="detail-item">
-              <span class="detail-label">Last 8 weeks</span>
-              <strong>${escapeHtml(recentGames)} of 8 played (score: ${escapeHtml(recentScore)})</strong>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">This season</span>
-              <strong>${escapeHtml(seasonGames)} games played (score: ${escapeHtml(seasonScore)})</strong>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">All-time</span>
-              <strong>Score ${escapeHtml(historicalScore)}</strong>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Reliability</span>
-              <strong>${escapeHtml(reliabilityLine(row))}</strong>
-            </div>
-          </div>
-          <div class="manual-note" style="margin-top: var(--space-md);">
-            <strong>Why the app leans here</strong><br />
-            ${escapeHtml(row.transparency_note || "Stable in current tier.")}
-          </div>
-          <div class="manual-note">${escapeHtml(evidenceText)}</div>
-          <div class="manual-note">
-            <strong>What helps next</strong><br />
-            ${escapeHtml(row.next_step || "Keep showing up consistently.")}
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  function renderTierBoards() {
-    renderSummary();
-    renderQueue();
-    renderSuggestionSummaryPanel();
-    renderSuggestionTable();
-  }
-
   async function loadSeason() {
     setTierStatus("Loading the flex queue...", "loading");
+    queueSpotlight.innerHTML = `<div class="empty-state">Loading the flex queue...</div>`;
     queueTableWrap.innerHTML = "";
-    suggestionTableSummary.innerHTML = "";
-    suggestionTableWrap.innerHTML = "";
 
     try {
       const bundle = await fetchSeasonBundle(activeSeasonId);
-      const normalizedTierRows = (bundle.tiers || []).map((row) => normalizeTierRow(row));
-      const historicalContext = await fetchHistoricalTierAttendance(
-        seasons,
-        activeSeasonId,
-        normalizedTierRows.map((row) => row.player_id)
-      );
-      const rowsWithHistory = summarizeHistoricalAttendance(
-        normalizedTierRows,
-        seasons,
-        activeSeasonId,
-        historicalContext.matchdays,
-        historicalContext.matches,
-        historicalContext.playerStats
-      );
 
       standingsByPlayerId = buildStandingsByPlayerId(
         bundle.players || [],
@@ -902,26 +472,27 @@ document.addEventListener("DOMContentLoaded", () => {
         bundle.matchdays || [],
         bundle.matches || []
       );
-      tierRows = applyTierSuggestionSlots(rowsWithHistory, suggestionSlotLimit).map((row) =>
-        normalizeTierRow(row)
-      );
-      renderTierBoards();
+      tierRows = (bundle.tiers || []).map((row) => normalizeTierRow(row));
+
+      const seasonName = bundle.season?.name || "This season";
       heroCopy.textContent =
         activeQueueMode === "final"
-          ? `${bundle.season.name} shows the live flex queue first and keeps the recommendation center separate. On the final matchday, season points lead the line and tied players are split by goals, goal keeps, and clean sheets.`
-          : `${bundle.season.name} shows the live flex queue first and keeps the recommendation center separate. Fewer appearances stay at the front, and tied players are split by season points, goals, goal keeps, and clean sheets.`;
+          ? `${seasonName} is in final-matchday queue mode. Highest season points lead the flex line, then goals, goal keeps, and clean sheets.`
+          : `${seasonName} is using the standard flex queue. Players with fewer season appearances stay in front, and tied players are split by season points, goals, goal keeps, and clean sheets.`;
+
+      renderQueue();
       setTierStatus();
     } catch (error) {
       seasonRosterPlayers = [];
       standingsByPlayerId = new Map();
       activeQueueMode = "regular";
+      tierRows = [];
+
       const message = readableError(error);
+      renderSummary([]);
+      renderQueueSpotlight([]);
       setTierStatus(message, "error");
-      queueTableWrap.innerHTML = "";
-      suggestionTableSummary.innerHTML = "";
-      suggestionTableWrap.innerHTML = `<div class="empty-state">${escapeHtml(
-        message
-      )}</div>`;
+      queueTableWrap.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
     }
   }
 
@@ -932,7 +503,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (!selected) {
         setTierStatus("No season found.", "warning");
-        openSuggestionModalButton.disabled = true;
         return;
       }
 
@@ -942,32 +512,8 @@ document.addEventListener("DOMContentLoaded", () => {
       await loadSeason();
     } catch (error) {
       setTierStatus(readableError(error), "error");
-      openSuggestionModalButton.disabled = true;
     }
   }
-
-  bindModal(suggestionModal);
-  bindModal(detailModal);
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key !== "Escape") {
-      return;
-    }
-
-    if (!detailModal.hidden) {
-      closeModal(detailModal);
-      return;
-    }
-
-    if (!suggestionModal.hidden) {
-      closeModal(suggestionModal);
-    }
-  });
-
-  openSuggestionModalButton.addEventListener("click", () => {
-    renderSuggestionTable();
-    openModal(suggestionModal);
-  });
 
   seasonSelect.addEventListener("change", async () => {
     activeSeasonId = Number(seasonSelect.value);
@@ -975,24 +521,10 @@ document.addEventListener("DOMContentLoaded", () => {
     await loadSeason();
   });
 
-  tierFilterRow.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-filter]");
-    if (!button) {
-      return;
-    }
-
-    activeFilter = button.dataset.filter;
-    tierFilterRow.querySelectorAll("[data-filter]").forEach((chip) => {
-      chip.classList.toggle("active", chip.dataset.filter === activeFilter);
-    });
-    renderSuggestionTable();
-  });
-
-  tierSearch.addEventListener("input", () => renderSuggestionTable());
+  queueSearch.addEventListener("input", () => renderQueue());
 
   window.addEventListener("resize", () => {
     renderQueue();
-    renderSuggestionTable();
   });
 
   init();
