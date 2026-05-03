@@ -61,7 +61,7 @@
       return "Busses access could not verify the current session.";
     }
 
-    if (code === "account_lookup_failed") {
+    if (code === "admin_check_failed") {
       return message;
     }
 
@@ -113,7 +113,7 @@
 
       renderGate({
         title: `${pageTitle} needs Busses access`,
-        body: "Sign in with an active admin account to open this page.",
+        body: "Use an authorized admin email and finish the Busses magic-link sign-in to open this page.",
       });
       return { ok: false };
     }

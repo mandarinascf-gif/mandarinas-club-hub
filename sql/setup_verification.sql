@@ -11,6 +11,7 @@ select
   to_regclass('public.matchday_suggestion_likes') is not null as matchday_suggestion_likes_ready,
   to_regclass('public.matchday_assignments') is not null as matchday_assignments_ready,
   to_regclass('public.matchday_team_captains') is not null as matchday_team_captains_ready,
+  to_regclass('public.admin_allowed_emails') is not null as admin_allowed_emails_ready,
   to_regclass('public.player_accounts') is not null as player_accounts_ready,
   to_regprocedure('public.is_admin()') is not null as is_admin_ready,
   to_regclass('public.v_season_tier_scores') is not null as v_season_tier_scores_ready,

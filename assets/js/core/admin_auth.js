@@ -8,6 +8,10 @@
     return typeof value === "string" ? value.trim() : "";
   }
 
+  function normalizeEmail(value) {
+    return normalizeText(value).toLowerCase();
+  }
+
   function resolveUrl(href) {
     try {
       return new URL(href, window.location.href);
@@ -101,19 +105,31 @@
     }
 
     if (
-      lowerMessage.includes("player_accounts") &&
+      (lowerMessage.includes("admin_allowed_emails") || lowerMessage.includes("is_admin")) &&
       (lowerMessage.includes("relation") ||
         lowerMessage.includes("does not exist") ||
-        lowerMessage.includes("schema cache"))
+        lowerMessage.includes("schema cache") ||
+        lowerMessage.includes("function"))
     ) {
       return "Admin auth is not ready yet. Apply the latest Supabase auth/RLS SQL first.";
     }
 
     if (
-      lowerMessage.includes("invalid login credentials") ||
       lowerMessage.includes("email not confirmed")
     ) {
-      return "Those admin credentials were not accepted.";
+      return "Finish the email confirmation flow from the magic link first.";
+    }
+
+    if (
+      lowerMessage.includes("security purposes") ||
+      lowerMessage.includes("rate limit") ||
+      lowerMessage.includes("60 seconds")
+    ) {
+      return "A magic link was already requested recently. Wait a minute, then try again.";
+    }
+
+    if (lowerMessage.includes("invalid email")) {
+      return "Enter a valid admin email address.";
     }
 
     if (
@@ -158,27 +174,24 @@
         supabaseConfig,
         session: null,
         user: null,
-        account: null,
+        adminEmail: "",
         isAdmin: false,
       };
     }
 
-    const { data: account, error: accountError } = await supabaseClient
-      .from("player_accounts")
-      .select("id, player_id, role, is_active")
-      .eq("auth_user_id", user.id)
-      .maybeSingle();
+    const { data: isAdminData, error: adminCheckError } = await supabaseClient.rpc("is_admin");
 
-    if (accountError) {
+    if (adminCheckError) {
       setCachedAdminAccess(false);
       return {
         ok: false,
-        code: "account_lookup_failed",
-        message: accountError.message || "Admin account lookup failed.",
+        code: "admin_check_failed",
+        message: adminCheckError.message || "Admin access lookup failed.",
       };
     }
 
-    const isAdmin = account?.role === "admin" && account?.is_active !== false;
+    const adminEmail = normalizeEmail(user.email);
+    const isAdmin = isAdminData === true;
     setCachedAdminAccess(isAdmin);
 
     return {
@@ -187,45 +200,57 @@
       supabaseConfig,
       session,
       user,
-      account: account || null,
+      adminEmail,
       isAdmin,
     };
   }
 
-  async function signInWithPassword(email, password) {
+  async function sendMagicLink(email, redirectTo) {
     const boot = bootClient();
     if (!boot.ok) {
       setCachedAdminAccess(false);
       return boot;
     }
 
-    const normalizedEmail = normalizeText(email).toLowerCase();
-    const normalizedPassword = String(password || "");
+    const normalizedEmail = normalizeEmail(email);
+    const normalizedRedirectTo = normalizeText(redirectTo);
 
-    if (!normalizedEmail || !normalizedPassword) {
+    if (!normalizedEmail) {
       setCachedAdminAccess(false);
       return {
         ok: false,
-        code: "missing_credentials",
-        message: "Enter the admin email and password.",
+        code: "missing_email",
+        message: "Enter the admin email address first.",
       };
     }
 
-    const { error } = await boot.supabaseClient.auth.signInWithPassword({
+    const options = {
+      shouldCreateUser: true,
+    };
+
+    if (normalizedRedirectTo) {
+      options.emailRedirectTo = normalizedRedirectTo;
+    }
+
+    const { error } = await boot.supabaseClient.auth.signInWithOtp({
       email: normalizedEmail,
-      password: normalizedPassword,
+      options,
     });
 
     if (error) {
       setCachedAdminAccess(false);
       return {
         ok: false,
-        code: "sign_in_failed",
-        message: error.message || "Sign-in failed.",
+        code: "magic_link_failed",
+        message: error.message || "Magic-link request failed.",
       };
     }
 
-    return resolveAccess();
+    return {
+      ok: true,
+      email: normalizedEmail,
+      redirectTo: normalizedRedirectTo || null,
+    };
   }
 
   async function signOut() {
@@ -258,7 +283,7 @@
     readableAccessError,
     resolveAccess,
     setCachedAdminAccess,
-    signInWithPassword,
+    sendMagicLink,
     signOut,
   });
 })();

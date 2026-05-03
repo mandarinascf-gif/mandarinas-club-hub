@@ -15,8 +15,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/js/core/supabase_config.js?v=20260503b"></script>
     <script src="./assets/js/core/runtime_config.js?v=20260503b"></script>
-    <script src="./assets/js/core/admin_auth.js?v=20260503b"></script>
-    <script src="./assets/js/core/admin_page.js?v=20260503b"></script>
+    <script src="./assets/js/core/admin_auth.js?v=20260503c"></script>
+    <script src="./assets/js/core/admin_page.js?v=20260503c"></script>
     <script src="./assets/js/ui/shell.js?v=20260503b" defer></script>
   </head>
   <body class="manager-touch admin-app page-setup">
@@ -45,7 +45,7 @@
           <h1>Admin setup and help</h1>
           <p>
             This page keeps the static workflow easy to reopen on a phone. It points Busses back to
-            the season, matchday, squad, standings, and tier tools behind the admin sign-in flow.
+            the season, matchday, squad, standings, and tier tools behind the admin magic-link flow.
           </p>
         </div>
         <div class="actions">
@@ -61,8 +61,8 @@
         <div class="summary-grid">
           <div class="summary-card">
             <span>Entry</span>
-            <strong>Admin sign-in</strong>
-            <span class="summary-copy">Protected pages now rely on Supabase Auth plus an active admin role.</span>
+            <strong>Magic link</strong>
+            <span class="summary-copy">Protected pages now rely on Supabase Auth plus an authorized admin email.</span>
           </div>
           <div class="summary-card">
             <span>Season</span>
@@ -129,15 +129,17 @@
         <h2>Current guardrails</h2>
         <details class="disclosure-card" open>
           <summary class="disclosure-summary">
-            <div class="disclosure-copy">
-              <div class="disclosure-title">What stays unchanged in this build</div>
+              <div class="disclosure-copy">
+                <div class="disclosure-title">What stays unchanged in this build</div>
               <div class="micro-note">The mobile refactor keeps the static deployment, but the Busses gate now uses real auth.</div>
             </div>
           </summary>
           <div class="disclosure-body">
             <ul>
               <li>Public pages remain public and keep their current URLs.</li>
-              <li>Protected pages require a signed-in Supabase admin account.</li>
+              <li>Protected pages require a signed-in Supabase session from an authorized admin email.</li>
+              <li>Authorized admin emails live in <code>public.admin_allowed_emails</code>.</li>
+              <li>Supabase Auth redirect URLs should include the production `busses.html` page.</li>
               <li>`season_id` stays in the URL flow for season-aware pages.</li>
               <li>Supabase browser data loading remains in the existing static HTML, CSS, and JS structure.</li>
             </ul>

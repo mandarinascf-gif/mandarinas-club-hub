@@ -18,7 +18,7 @@ The current app has **no player authentication model**.
 
 Today:
 
-- Busses admin pages now use Supabase Auth plus `public.player_accounts`.
+- Busses admin pages now use Supabase Auth plus `public.admin_allowed_emails`.
 - Public read paths and player-submission writes still rely on the open client model.
 - There is no stable relationship between a logged-in user and a specific `players.id`.
 

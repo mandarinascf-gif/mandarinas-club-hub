@@ -5,7 +5,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const quickActions = document.getElementById("busses-quick-actions");
   const signInForm = document.getElementById("busses-sign-in-form");
   const emailInput = document.getElementById("busses-email");
-  const passwordInput = document.getElementById("busses-password");
   const signInButton = document.getElementById("busses-sign-in-button");
   const continueButton = document.getElementById("busses-continue-button");
   const signOutButton = document.getElementById("busses-sign-out-button");
@@ -36,6 +35,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     statusLine.className = tone ? `status-line ${tone}` : "status-line";
   }
 
+  function magicLinkRedirectHref() {
+    try {
+      const redirectUrl = new URL(window.location.href);
+      redirectUrl.hash = "";
+      return redirectUrl.toString();
+    } catch (error) {
+      return window.location.href;
+    }
+  }
+
   function setSignedInState(isSignedIn, isAdmin = false) {
     if (quickActions) {
       quickActions.hidden = !isAdmin;
@@ -57,9 +66,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   function setBusy(isBusy) {
     if (emailInput) {
       emailInput.disabled = isBusy;
-    }
-    if (passwordInput) {
-      passwordInput.disabled = isBusy;
     }
     if (signInButton) {
       signInButton.disabled = isBusy;
@@ -95,16 +101,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!access.session?.user) {
       setSignedInState(false, false);
       accessCopy.textContent =
-        "Sign in with an active Busses admin account to open the protected workspace.";
-      setStatus("Busses tools stay separate until an admin account signs in.", "");
+        "Use an authorized Busses admin email to receive a magic link and open the protected workspace.";
+      setStatus("Busses tools stay separate until an authorized admin email completes the magic-link sign-in.", "");
       return access;
     }
 
     if (!access.isAdmin) {
       setSignedInState(true, false);
       accessCopy.textContent =
-        "This session is signed in, but the linked account does not have active Busses admin access.";
-      setStatus("This account is not authorized for the Busses workspace.", "error");
+        "This browser session is signed in, but that email is not on the active Busses admin allowlist.";
+      setStatus(
+        access.adminEmail
+          ? `${access.adminEmail} is signed in, but it is not authorized for the Busses workspace.`
+          : "This signed-in account is not authorized for the Busses workspace.",
+        "error"
+      );
       return access;
     }
 
@@ -139,28 +150,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     event.preventDefault();
 
     setBusy(true);
-    setStatus("Checking Busses access...", "");
+    setStatus("Sending Busses magic link...", "");
 
-    const result = await adminAuth.signInWithPassword(emailInput?.value, passwordInput?.value);
+    const result = await adminAuth.sendMagicLink(emailInput?.value, magicLinkRedirectHref());
     setBusy(false);
 
     if (!result.ok) {
-      setSignedInState(false, false);
       setStatus(adminAuth.readableAccessError(result.message), "error");
-      passwordInput?.focus();
-      passwordInput?.select();
+      emailInput?.focus();
+      emailInput?.select();
       return;
     }
 
-    if (!result.isAdmin) {
-      setSignedInState(true, false);
-      setStatus("This account signed in, but it is not an active Busses admin.", "error");
-      return;
-    }
-
-    setSignedInState(true, true);
-    setStatus("Busses access confirmed. Opening the protected workspace...", "success");
-    window.location.href = safeNextHref();
+    setStatus(
+      `Magic link sent to ${result.email}. Open that email on this device to finish Busses access.`,
+      "success"
+    );
   });
 
   await syncAccessState();
