@@ -230,14 +230,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       losses: 0,
       points_per_game: 0,
       rank: "-",
-      ppg_rank: "-",
-      ppg_rank_display: "--",
-      ppg_rank_label: "PPG Rank",
-      points_rank: "-",
-      points_rank_display: "--",
-      points_rank_label: "Points Rank",
-      qualified_for_ppg_rank: false,
-      minimum_apps_for_rank: 4,
+      rank_label: "Wins x3 + Draws x1",
     };
   }
 
@@ -426,20 +419,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     return Number.isFinite(rank) && rank > 0 ? String(rank) : "--";
   }
 
-  function badgeRankDisplay(value) {
-    const text = normalizeText(value, "");
-    if (!text) {
-      return "--";
-    }
-
-    const rank = Number(text);
-    if (Number.isFinite(rank)) {
-      return rank > 0 ? String(rank) : "--";
-    }
-
-    return text;
-  }
-
   function positionRoleLabel(position) {
     const map = {
       GK: "Goalkeeper",
@@ -565,15 +544,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       birth_date: player.birth_date,
       overall_rating: overall,
       rank: playerRankDisplay(stats.rank),
-      ppg_rank: playerRankDisplay(stats.ppg_rank ?? stats.rank),
-      ppg_rank_display: badgeRankDisplay(stats.ppg_rank_display ?? stats.ppg_rank ?? stats.rank),
-      ppg_rank_label: normalizeText(
-        stats.ppg_rank_label,
-        stats.qualified_for_ppg_rank ? "Qualified PPG Rank" : "Provisional PPG Rank"
-      ),
-      points_rank: playerRankDisplay(stats.points_rank),
-      points_rank_display: badgeRankDisplay(stats.points_rank_display ?? stats.points_rank),
-      points_rank_label: normalizeText(stats.points_rank_label, "Points Rank"),
+      rank_label: normalizeText(stats.rank_label, "Wins x3 + Draws x1"),
       ppg: Number(pointsPerGame),
       primary_position: positions[0] || normalizeText(player.primary_position || "", "N/A"),
       position_label: positionLabel,
@@ -589,17 +560,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       goal_keeps: Number(stats.goal_keeps || 0),
       clean_sheets: Number(stats.clean_sheets || 0),
       rank: playerRankDisplay(stats.rank),
-      ppg_rank: playerRankDisplay(stats.ppg_rank ?? stats.rank),
-      ppg_rank_display: badgeRankDisplay(stats.ppg_rank_display ?? stats.ppg_rank ?? stats.rank),
-      ppg_rank_label: normalizeText(
-        stats.ppg_rank_label,
-        stats.qualified_for_ppg_rank ? "Qualified PPG Rank" : "Provisional PPG Rank"
-      ),
-      points_rank: playerRankDisplay(stats.points_rank),
-      points_rank_display: badgeRankDisplay(stats.points_rank_display ?? stats.points_rank),
-      points_rank_label: normalizeText(stats.points_rank_label, "Points Rank"),
-      qualified_for_ppg_rank: Boolean(stats.qualified_for_ppg_rank),
-      minimum_apps_for_rank: Number(stats.minimum_apps_for_rank || 4),
+      rank_label: normalizeText(stats.rank_label, "Wins x3 + Draws x1"),
       ppg: pointsPerGame,
       points_per_game: pointsPerGame,
       seasons_won: Number(stats.seasons_won || 0),
