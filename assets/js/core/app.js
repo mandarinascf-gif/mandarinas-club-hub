@@ -526,6 +526,11 @@
   }
 
   function compareBadgeStandings(left, right) {
+    const attendanceDiff = Number(right?.days_attended || 0) - Number(left?.days_attended || 0);
+    if (attendanceDiff !== 0) {
+      return attendanceDiff;
+    }
+
     const scoreDiff = badgeRankScore(right) - badgeRankScore(left);
     if (scoreDiff !== 0) {
       return scoreDiff;
@@ -571,7 +576,6 @@
       .map((entry) => ({
         ...entry,
         points_per_game: badgePointsPerGame(entry),
-        rank_score: badgeRankScore(entry),
       }));
     const rankMap = buildBadgeRankMap(normalizedEntries);
 
@@ -584,7 +588,7 @@
         return {
           ...entry,
           rank,
-          rank_label: "Wins x3 + Draws x1",
+          rank_label: "Attendance, then W3+D1",
         };
       });
   }
