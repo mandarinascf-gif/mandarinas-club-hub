@@ -758,7 +758,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function requestableDirectoryPlayers() {
-    const rosterPlayerIds = new Set(allPlayers.map((player) => Number(player.id)));
+    const rosterPlayerIds = new Set(countedSeasonPlayers().map((player) => Number(player.id)));
     return directoryPlayers
       .filter((player) => !rosterPlayerIds.has(Number(player.id)))
       .sort(comparePlayersForRoster);
