@@ -693,7 +693,7 @@
     const activeRank = formatRank(player?.rank ?? stats?.rank);
     const activeRankSummary = normalizeText(
       player?.rank_label ?? stats?.rank_label,
-      "Wins x3 + Draws x1"
+      "Attendance, then W3+D1"
     );
 
     return {
@@ -1290,7 +1290,7 @@
       flag_code: "MX",
       overall_rating: 80,
       rank: "19",
-      rank_label: "Wins x3 + Draws x1",
+      rank_label: "Attendance, then W3+D1",
       primary_position: "DEF",
       position_label: "DEF · ATT · GK",
       positions: ["DEF", "ATT", "GK"],
@@ -1306,7 +1306,7 @@
       goal_keeps: 5,
       clean_sheets: 0,
       points_per_game: 5.52,
-      rank_label: "Wins x3 + Draws x1",
+      rank_label: "Attendance, then W3+D1",
       seasons_won: 8,
       seasons_participated: 8,
     },
