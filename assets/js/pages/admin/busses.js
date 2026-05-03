@@ -36,7 +36,24 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function magicLinkRedirectHref() {
+    const appConfig = window.__MANDARINAS_APP_CONFIG__ || {};
+    const configuredRedirect = String(appConfig.bussesMagicLinkRedirectUrl || "").trim();
+    if (configuredRedirect) {
+      return configuredRedirect;
+    }
+
+    const configuredSiteUrl = String(appConfig.siteUrl || "").trim();
+
     try {
+      if (configuredSiteUrl) {
+        const siteUrl = new URL(configuredSiteUrl);
+        const currentUrl = new URL(window.location.href);
+        siteUrl.pathname = currentUrl.pathname;
+        siteUrl.search = currentUrl.search;
+        siteUrl.hash = "";
+        return siteUrl.toString();
+      }
+
       const redirectUrl = new URL(window.location.href);
       redirectUrl.hash = "";
       return redirectUrl.toString();
