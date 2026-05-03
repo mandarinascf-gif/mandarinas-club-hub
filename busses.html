@@ -12,11 +12,8 @@
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png" />
     <link rel="stylesheet" href="./assets/css/app.css?v=20260502c" />
     <title>Busses Access · Mandarinas CF</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./assets/js/core/supabase_config.js?v=20260503b"></script>
-    <script src="./assets/js/core/runtime_config.js?v=20260503b"></script>
-    <script src="./assets/js/core/admin_auth.js?v=20260503d"></script>
-    <script src="./assets/js/ui/shell.js?v=20260503b" defer></script>
+    <script src="./assets/js/core/admin_auth.js?v=20260503e"></script>
+    <script src="./assets/js/ui/shell.js?v=20260503e" defer></script>
   </head>
   <body class="manager-touch admin-app page-busses">
     <nav class="site-nav">
@@ -44,8 +41,8 @@
           <div class="section-label">Busses Workspace</div>
           <h1>Busses Access</h1>
           <p>
-            Club pages stay public-facing. Use an authorized admin email and an email code before
-            you open the protected workspace.
+            Club pages stay public-facing. Enter the shared Busses code before you open the
+            protected workspace.
           </p>
         </div>
         <div class="actions">
@@ -70,52 +67,45 @@
           </div>
           <div class="summary-card">
             <span>Busses side</span>
-            <strong>Email code</strong>
-            <span class="summary-copy">Protected tools now require a real Supabase session from an authorized email.</span>
+            <strong>Shared code</strong>
+            <span class="summary-copy">Protected tools stay behind the separate Busses entry page.</span>
           </div>
           <div class="summary-card">
             <span>Browser session</span>
-            <strong>Scoped access</strong>
-            <span class="summary-copy">The workspace stays available only while the signed-in admin session is active.</span>
+            <strong>Tab access</strong>
+            <span class="summary-copy">This browser tab keeps Busses open until you lock it again.</span>
           </div>
         </div>
       </section>
 
       <section class="panel panel-spotlight">
         <div class="section-label">Next step</div>
-        <h2>Email yourself a busses code</h2>
+        <h2>Enter the Busses code</h2>
         <p id="busses-access-copy">
-          Use an authorized Busses admin email. We will send a 6-digit code here, and if you came
-          from a protected page, you will return there after access is confirmed.
+          Use the shared Busses code. If you came from a protected page, this tab will return there
+          after access is confirmed.
         </p>
         <form id="busses-sign-in-form">
           <div class="field-grid">
             <div class="field">
-              <label for="busses-email">Admin email</label>
-              <input id="busses-email" name="email" type="email" autocomplete="email" />
-            </div>
-            <div class="field" id="busses-code-field" hidden>
-              <label for="busses-code">Email code</label>
+              <label for="busses-code">Busses code</label>
               <input
                 id="busses-code"
                 name="code"
                 type="text"
-                maxlength="160"
+                maxlength="24"
                 inputmode="text"
-                autocomplete="one-time-code"
+                autocomplete="off"
               />
             </div>
           </div>
           <div class="actions">
-            <button class="primary-button" id="busses-send-code-button" type="button">
-              Email me a code
-            </button>
-            <button class="secondary-button" id="busses-verify-code-button" type="submit" hidden>
-              Verify code
+            <button class="primary-button" id="busses-verify-code-button" type="submit">
+              Unlock Busses
             </button>
           </div>
-          <p class="micro-note" id="busses-code-help" hidden>
-            Enter the code from the email. A 6-digit OTP is best, but this field also accepts a longer Supabase token if your template is still sending one.
+          <p class="micro-note" id="busses-code-help">
+            This gate only unlocks the separate Busses workspace for the current browser tab.
           </p>
         </form>
         <p class="status-line" id="busses-access-status">Busses tools stay separate from the public club pages.</p>
@@ -174,6 +164,6 @@
     <footer class="club-footer">
       <div class="club-footer-copy">Busses Access · Mandarinas CF</div>
     </footer>
-    <script src="./assets/js/pages/admin/busses.js?v=20260503d"></script>
+    <script src="./assets/js/pages/admin/busses.js?v=20260503e"></script>
   </body>
 </html>

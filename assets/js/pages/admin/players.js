@@ -36,8 +36,6 @@ const firstNameInput = document.getElementById("first-name");
 const lastNameInput = document.getElementById("last-name");
 const nicknameInput = document.getElementById("nickname");
 const phoneInput = document.getElementById("phone");
-const adminEmailInput = document.getElementById("admin-email");
-const bussesAccessInput = document.getElementById("busses-access");
 const nationalityInput = document.getElementById("nationality");
 const birthDateInput = document.getElementById("birth-date");
 const statusInput = document.getElementById("status-select");
@@ -79,14 +77,6 @@ function hasMissingDesiredTierColumn(error) {
 
 function normalizeText(value) {
   return String(value || "").trim().replace(/\s+/g, " ");
-}
-
-function normalizeEmail(value) {
-  return normalizeText(value).toLowerCase();
-}
-
-function isValidEmail(value) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
 function stripSubPrefix(value) {
@@ -178,23 +168,11 @@ function readableError(error) {
     return "Full Squad cannot open until live club data is ready.";
   }
 
-  if (
-    (lowerMessage.includes("relation") ||
-      lowerMessage.includes("column") ||
-      lowerMessage.includes("schema cache")) &&
-    lowerMessage.includes("admin_allowed_emails")
-  ) {
-    return "Busses player access fields are waiting for the latest Supabase admin migration.";
-  }
-
   if (lowerMessage.includes("column") || lowerMessage.includes("schema cache")) {
     return "Full Squad is waiting for the latest live club update.";
   }
 
   if (error?.code === "23505") {
-    if (lowerMessage.includes("admin_allowed_emails") || lowerMessage.includes("email_key")) {
-      return "That admin sign-in email is already linked to another player.";
-    }
     return "That player already exists in the full squad register.";
   }
 
@@ -317,8 +295,6 @@ function getFilteredPlayers() {
         player.nationality || "",
         ...(player.positions || []),
         player.phone || "",
-        player.admin_email || "",
-        player.is_busses_admin ? "busses access" : "",
         player.notes || "",
       ]
         .join(" ")
@@ -353,12 +329,6 @@ function renderRoster() {
       }
       if (Array.isArray(player.positions) && player.positions.length) {
         subtitleParts.push(player.positions.join(", "));
-      }
-      if (player.admin_email) {
-        subtitleParts.push(player.admin_email);
-      }
-      if (player.is_busses_admin) {
-        subtitleParts.push("Busses access");
       }
 
       return `
@@ -414,39 +384,8 @@ async function loadPlayers() {
     return;
   }
 
-  const { data: accessRows, error: accessError } = await supabaseClient
-    .from("admin_allowed_emails")
-    .select("player_id, email, is_active");
-
-  if (accessError) {
-    players = [];
-    updateHeroStats();
-    renderRoster();
-    setStatus(readableError(accessError), "error");
-    return;
-  }
-
-  const accessByPlayerId = new Map(
-    (accessRows || [])
-      .filter((row) => Number.isFinite(Number(row.player_id)))
-      .map((row) => [
-        Number(row.player_id),
-        {
-          admin_email: normalizeEmail(row.email),
-          is_busses_admin: row.is_active === true,
-        },
-      ])
-  );
-
   players = (data || [])
-    .map((player) => {
-      const accessRow = accessByPlayerId.get(Number(player.id)) || null;
-      return {
-        ...normalizePlayerDesiredTier(player, "core"),
-        admin_email: accessRow?.admin_email || "",
-        is_busses_admin: accessRow?.is_busses_admin === true,
-      };
-    })
+    .map((player) => normalizePlayerDesiredTier(player, "core"))
     .filter((player) => !isSubPlaceholder(player));
 
   updateHeroStats();
@@ -463,8 +402,6 @@ async function addPlayer(event) {
   const nationality = normalizeText(nationalityInput.value);
   const birthDate = birthDateInput.value || null;
   const phone = normalizeText(phoneInput.value);
-  const adminEmail = normalizeEmail(adminEmailInput.value);
-  const hasBussesAccess = bussesAccessInput.checked;
   const notes = normalizeText(notesInput.value);
   const skillRating = Number(skillRatingInput.value);
 
@@ -478,16 +415,6 @@ async function addPlayer(event) {
 
   if (!selectedRoles.length || selectedRoles.length > 3) {
     setStatus("Select between 1 and 3 positions.", "error");
-    return;
-  }
-
-  if (adminEmail && !isValidEmail(adminEmail)) {
-    setStatus("Enter a valid admin sign-in email.", "error");
-    return;
-  }
-
-  if (hasBussesAccess && !adminEmail) {
-    setStatus("Add an admin sign-in email before turning on Busses access.", "error");
     return;
   }
 
@@ -536,23 +463,6 @@ async function addPlayer(event) {
       .single();
 
     ({ data: insertedPlayer, error } = insertResponse);
-  }
-
-  if (!error && insertedPlayer?.id && adminEmail) {
-    ({ error } = await supabaseClient.from("admin_allowed_emails").upsert(
-      {
-        player_id: insertedPlayer.id,
-        email: adminEmail,
-        is_active: hasBussesAccess,
-      },
-      {
-        onConflict: "player_id",
-      }
-    ));
-  }
-
-  if (!error && insertedPlayer?.id && !adminEmail) {
-    await supabaseClient.from("admin_allowed_emails").delete().eq("player_id", insertedPlayer.id);
   }
 
   submitButton.disabled = false;

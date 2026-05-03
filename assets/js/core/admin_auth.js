@@ -3,48 +3,19 @@
 
   const ACCESS_CACHE_KEY = "mcfAdminAccess";
   const ACCESS_PAGE = "busses.html";
+  const DEFAULT_ACCESS_CODE = "201118";
 
   function normalizeText(value) {
     return typeof value === "string" ? value.trim() : "";
   }
 
-  function normalizeEmail(value) {
-    return normalizeText(value).toLowerCase();
+  function normalizeCode(value) {
+    return normalizeText(value).replace(/\s+/g, "");
   }
 
-  function normalizeOtpOrHash(value) {
-    const normalizedValue = normalizeText(value);
-
-    if (!normalizedValue) {
-      return "";
-    }
-
-    try {
-      const directUrl = new URL(normalizedValue);
-      const confirmationUrl = directUrl.searchParams.get("confirmation_url");
-      if (confirmationUrl) {
-        try {
-          const nestedUrl = new URL(confirmationUrl);
-          return (
-            normalizeText(nestedUrl.searchParams.get("token_hash")) ||
-            normalizeText(nestedUrl.searchParams.get("token")) ||
-            normalizeText(nestedUrl.searchParams.get("code")) ||
-            normalizedValue
-          );
-        } catch (error) {
-          // Fall through to direct token extraction below.
-        }
-      }
-
-      return (
-        normalizeText(directUrl.searchParams.get("token_hash")) ||
-        normalizeText(directUrl.searchParams.get("token")) ||
-        normalizeText(directUrl.searchParams.get("code")) ||
-        normalizedValue
-      );
-    } catch (error) {
-      return normalizedValue.replace(/\s+/g, "");
-    }
+  function configuredAccessCode() {
+    const runtimeCode = normalizeCode(window.__MANDARINAS_APP_CONFIG__?.bussesAccessCode);
+    return runtimeCode || DEFAULT_ACCESS_CODE;
   }
 
   function resolveUrl(href) {
@@ -139,223 +110,59 @@
       return "Busses access could not be verified right now.";
     }
 
-    if (
-      (lowerMessage.includes("admin_allowed_emails") || lowerMessage.includes("is_admin")) &&
-      (lowerMessage.includes("relation") ||
-        lowerMessage.includes("does not exist") ||
-        lowerMessage.includes("schema cache") ||
-        lowerMessage.includes("function"))
-    ) {
-      return "Admin auth is not ready yet. Apply the latest Supabase auth/RLS SQL first.";
+    if (lowerMessage.includes("invalid_code")) {
+      return "That Busses code did not match.";
+    }
+
+    if (lowerMessage.includes("missing_code")) {
+      return "Enter the Busses access code first.";
     }
 
     if (
-      lowerMessage.includes("security purposes") ||
-      lowerMessage.includes("rate limit") ||
-      lowerMessage.includes("60 seconds")
+      lowerMessage.includes("library_missing") ||
+      lowerMessage.includes("config_missing") ||
+      lowerMessage.includes("client_create_failed")
     ) {
-      return "A Busses code was already requested recently. Wait a minute, then try again.";
-    }
-
-    if (
-      lowerMessage.includes("otp") ||
-      (lowerMessage.includes("token") &&
-        (lowerMessage.includes("expired") ||
-          lowerMessage.includes("invalid") ||
-          lowerMessage.includes("not found")))
-    ) {
-      return "That email code was not accepted. Request a new code and try again.";
-    }
-
-    if (lowerMessage.includes("invalid email")) {
-      return "Enter a valid admin email address.";
-    }
-
-    if (
-      lowerMessage.includes("jwt") ||
-      lowerMessage.includes("apikey") ||
-      lowerMessage.includes("unauthorized")
-    ) {
-      return "Busses access could not verify the Supabase session.";
+      return message;
     }
 
     return message;
   }
 
   async function resolveAccess() {
-    const boot = bootClient();
-    if (!boot.ok) {
-      setCachedAdminAccess(false);
-      return boot;
-    }
-
-    const { supabaseClient, supabaseConfig } = boot;
-    const {
-      data: { session } = {},
-      error: sessionError,
-    } = await supabaseClient.auth.getSession();
-
-    if (sessionError) {
-      setCachedAdminAccess(false);
-      return {
-        ok: false,
-        code: "session_failed",
-        message: sessionError.message || "Supabase session lookup failed.",
-      };
-    }
-
-    const user = session?.user || null;
-    if (!user) {
-      setCachedAdminAccess(false);
-      return {
-        ok: true,
-        supabaseClient,
-        supabaseConfig,
-        session: null,
-        user: null,
-        adminEmail: "",
-        isAdmin: false,
-      };
-    }
-
-    const { data: isAdminData, error: adminCheckError } = await supabaseClient.rpc("is_admin");
-
-    if (adminCheckError) {
-      setCachedAdminAccess(false);
-      return {
-        ok: false,
-        code: "admin_check_failed",
-        message: adminCheckError.message || "Admin access lookup failed.",
-      };
-    }
-
-    const adminEmail = normalizeEmail(user.email);
-    const isAdmin = isAdminData === true;
-    setCachedAdminAccess(isAdmin);
-
     return {
       ok: true,
-      supabaseClient,
-      supabaseConfig,
-      session,
-      user,
-      adminEmail,
-      isAdmin,
+      isAdmin: hasCachedAdminAccess(),
     };
   }
 
-  async function sendEmailOtp(email) {
-    const boot = bootClient();
-    if (!boot.ok) {
-      setCachedAdminAccess(false);
-      return boot;
-    }
+  async function verifyAccessCode(code) {
+    const normalizedCode = normalizeCode(code);
 
-    const normalizedEmail = normalizeEmail(email);
-
-    if (!normalizedEmail) {
+    if (!normalizedCode) {
       setCachedAdminAccess(false);
       return {
         ok: false,
-        code: "missing_email",
-        message: "Enter the admin email address first.",
+        code: "missing_code",
+        message: "missing_code",
       };
     }
 
-    const { error } = await boot.supabaseClient.auth.signInWithOtp({
-      email: normalizedEmail,
-      options: {
-        shouldCreateUser: true,
-      },
-    });
-
-    if (error) {
+    if (normalizedCode !== configuredAccessCode()) {
       setCachedAdminAccess(false);
       return {
         ok: false,
-        code: "otp_send_failed",
-        message: error.message || "Email code request failed.",
+        code: "invalid_code",
+        message: "invalid_code",
       };
     }
 
-    return {
-      ok: true,
-      email: normalizedEmail,
-    };
-  }
-
-  async function verifyEmailOtp(email, token) {
-    const boot = bootClient();
-    if (!boot.ok) {
-      setCachedAdminAccess(false);
-      return boot;
-    }
-
-    const normalizedEmail = normalizeEmail(email);
-    const normalizedToken = normalizeOtpOrHash(token);
-
-    if (!normalizedEmail) {
-      setCachedAdminAccess(false);
-      return {
-        ok: false,
-        code: "missing_email",
-        message: "Enter the admin email address first.",
-      };
-    }
-
-    if (!normalizedToken) {
-      setCachedAdminAccess(false);
-      return {
-        ok: false,
-        code: "missing_otp",
-        message: "Enter the email code first.",
-      };
-    }
-
-    const isSixDigitOtp = /^\d{6}$/.test(normalizedToken);
-    const verificationPayload = isSixDigitOtp
-      ? {
-          email: normalizedEmail,
-          token: normalizedToken,
-          type: "email",
-        }
-      : {
-          token_hash: normalizedToken,
-          type: "email",
-        };
-
-    const { error } = await boot.supabaseClient.auth.verifyOtp(verificationPayload);
-
-    if (error) {
-      setCachedAdminAccess(false);
-      return {
-        ok: false,
-        code: "otp_verify_failed",
-        message: error.message || "Email code verification failed.",
-      };
-    }
-
+    setCachedAdminAccess(true);
     return resolveAccess();
   }
 
   async function signOut() {
-    const boot = bootClient();
-    if (!boot.ok) {
-      setCachedAdminAccess(false);
-      return boot;
-    }
-
-    const { error } = await boot.supabaseClient.auth.signOut();
     setCachedAdminAccess(false);
-
-    if (error) {
-      return {
-        ok: false,
-        code: "sign_out_failed",
-        message: error.message || "Sign-out failed.",
-      };
-    }
-
     return {
       ok: true,
     };
@@ -368,8 +175,7 @@
     readableAccessError,
     resolveAccess,
     setCachedAdminAccess,
-    sendEmailOtp,
     signOut,
-    verifyEmailOtp,
+    verifyAccessCode,
   });
 })();

@@ -57,14 +57,6 @@
       return `Supabase could not start for this page. ${message}`;
     }
 
-    if (code === "session_failed") {
-      return "Busses access could not verify the current session.";
-    }
-
-    if (code === "admin_check_failed") {
-      return message;
-    }
-
     return message || "This page could not verify Busses access.";
   }
 
@@ -89,18 +81,7 @@
     if (!access.ok) {
       renderGate({
         title: `${pageTitle} could not start`,
-        body: readableBootMessage(
-          access.code,
-          adminAuth.readableAccessError(access.message || "Busses access failed.")
-        ),
-      });
-      return { ok: false };
-    }
-
-    if (requireLogic && !window.MandarinasLogic) {
-      renderGate({
-        title: `${pageTitle} could not start`,
-        body: "Core app logic failed to load for this page.",
+        body: adminAuth.readableAccessError(access.message || "Busses access failed."),
       });
       return { ok: false };
     }
@@ -113,7 +94,24 @@
 
       renderGate({
         title: `${pageTitle} needs Busses access`,
-        body: "Use an authorized admin email and finish the Busses email-code sign-in to open this page.",
+        body: "Enter the shared Busses code on the entry page to open this workspace.",
+      });
+      return { ok: false };
+    }
+
+    const boot = adminAuth.bootClient();
+    if (!boot.ok) {
+      renderGate({
+        title: `${pageTitle} could not start`,
+        body: readableBootMessage(boot.code, boot.message),
+      });
+      return { ok: false };
+    }
+
+    if (requireLogic && !window.MandarinasLogic) {
+      renderGate({
+        title: `${pageTitle} could not start`,
+        body: "Core app logic failed to load for this page.",
       });
       return { ok: false };
     }
@@ -121,6 +119,7 @@
     return {
       ok: true,
       ...access,
+      ...boot,
       logic: window.MandarinasLogic || null,
     };
   }

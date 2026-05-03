@@ -34,36 +34,21 @@ For local env reference, see `.env.example`.
 
 ## Busses admin access
 
-Busses pages now require a real Supabase Auth session plus a player-linked
-`public.admin_allowed_emails` row that matches the signed-in email address.
+Busses pages use a shared browser-side code gate again.
 
-For an existing live project:
+The current built-in code is:
 
-- run `sql/09_admin_auth_hardening.sql`
-- run `sql/13_admin_magic_link_allowlist.sql`
-- run `sql/14_player_linked_busses_access.sql`
-- in Supabase Auth Email Templates, switch the email sign-in template to send the 6-digit OTP
-  code using `{{ .Token }}`
-- add the first admin email to `public.admin_allowed_emails`, linked to the right `players.id`
-
-After the first admin can sign in, manage these fields from the Busses Squad player editor:
-
-- `Admin sign-in email`
-- `Busses access`
-
-The Busses sign-in page now uses email OTP instead of magic links, which is more reliable for a
-home-screen bookmark flow because it does not depend on redirect handling.
-
-Example:
-
-```sql
-insert into public.admin_allowed_emails (player_id, email, is_active, note)
-values (123, 'you@example.com', true, 'Primary Busses admin');
+```text
+201118
 ```
 
-For fresh setups, `sql/01_schema.sql` now creates the same table/function/policies directly.
-`public.player_accounts` remains available for future player-to-account linking, but it is no
-longer the source of truth for Busses admin access.
+For an existing live project that already applied the auth/RLS hardening rollout, run:
+
+- `sql/15_code_gate_revert.sql`
+
+That migration removes the Busses auth tables/function and reopens the legacy anonymous write
+policies used by the static admin pages. For fresh setups, `sql/01_schema.sql` now matches that
+same code-gated behavior directly.
 
 For workbook-backed reseed scripts, the folder source of truth is
 `data/reseed_config/season_inventory.csv`. Current-season generation, historical repair helpers,
@@ -73,5 +58,5 @@ machine-specific `Downloads` paths.
 ## Current caveats
 
 - Public player submissions and idea-board writes still use the existing open client workflow.
-- Some player-report actions may remain in view mode until the related Supabase migration is applied.
+- The Busses code gate is only a browser-side separation layer, not real backend access control.
 - This repo includes club data artifacts under `data/` and SQL seed files. Review that content before publishing publicly.

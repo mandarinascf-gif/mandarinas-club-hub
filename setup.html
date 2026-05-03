@@ -15,8 +15,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/js/core/supabase_config.js?v=20260503b"></script>
     <script src="./assets/js/core/runtime_config.js?v=20260503b"></script>
-    <script src="./assets/js/core/admin_auth.js?v=20260503d"></script>
-    <script src="./assets/js/core/admin_page.js?v=20260503d"></script>
+    <script src="./assets/js/core/admin_auth.js?v=20260503e"></script>
+    <script src="./assets/js/core/admin_page.js?v=20260503e"></script>
     <script src="./assets/js/ui/shell.js?v=20260503b" defer></script>
   </head>
   <body class="manager-touch admin-app page-setup">
@@ -45,7 +45,7 @@
           <h1>Admin setup and help</h1>
           <p>
             This page keeps the static workflow easy to reopen on a phone. It points Busses back to
-            the season, matchday, squad, standings, and tier tools behind the admin email-code flow.
+            the season, matchday, squad, standings, and tier tools behind the shared Busses code gate.
           </p>
         </div>
         <div class="actions">
@@ -61,8 +61,8 @@
         <div class="summary-grid">
           <div class="summary-card">
             <span>Entry</span>
-            <strong>Email code</strong>
-            <span class="summary-copy">Protected pages now rely on Supabase Auth plus an authorized admin email.</span>
+            <strong>Shared code</strong>
+            <span class="summary-copy">Protected pages reopen from the Busses entry page with the shared club code.</span>
           </div>
           <div class="summary-card">
             <span>Season</span>
@@ -131,15 +131,14 @@
           <summary class="disclosure-summary">
               <div class="disclosure-copy">
                 <div class="disclosure-title">What stays unchanged in this build</div>
-              <div class="micro-note">The mobile refactor keeps the static deployment, but the Busses gate now uses real auth.</div>
+              <div class="micro-note">The mobile refactor keeps the static deployment, and Busses stays on its own separate entry page.</div>
             </div>
           </summary>
           <div class="disclosure-body">
             <ul>
               <li>Public pages remain public and keep their current URLs.</li>
-              <li>Protected pages require a signed-in Supabase session from an authorized admin email.</li>
-              <li>Authorized admin emails are linked to player records and managed from Busses Squad.</li>
-              <li>Supabase Auth email templates should send the 6-digit OTP code, not a magic link.</li>
+              <li>Protected pages still require the shared Busses code before this browser tab can open them.</li>
+              <li>Supabase continues to store the club data, but Busses no longer depends on email auth setup.</li>
               <li>`season_id` stays in the URL flow for season-aware pages.</li>
               <li>Supabase browser data loading remains in the existing static HTML, CSS, and JS structure.</li>
             </ul>
