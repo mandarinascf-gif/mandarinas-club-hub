@@ -50,9 +50,14 @@
       const rosterSeasonPill = document.getElementById("roster-season-pill");
       const rosterRefreshButton = document.getElementById("roster-refresh-button");
       const seedRosterButton = document.getElementById("seed-roster-button");
+      const seedSubsButton = document.getElementById("seed-subs-button");
       const syncSeasonTierButton = document.getElementById("sync-season-tier-button");
+      const openSeasonMatchdayLink = document.getElementById("open-season-matchday-link");
       const openTiersLink = document.getElementById("open-tiers-link");
       const rosterBulkNote = document.getElementById("roster-bulk-note");
+      const seasonRoadmapCopy = document.getElementById("season-roadmap-copy");
+      const seasonSetupProgress = document.getElementById("season-setup-progress");
+      const seasonFlowGrid = document.getElementById("season-flow-grid");
       const seasonRosterFlowRow = document.getElementById("season-roster-flow-row");
       const selectedCoreSpotsInput = document.getElementById("selected-core-spots");
       const selectedRotationSpotsInput = document.getElementById("selected-rotation-spots");
@@ -63,6 +68,7 @@
       const selectedSeasonVenueNameInput = document.getElementById("selected-season-venue-name");
       const saveSeasonSettingsButton = document.getElementById("save-season-settings-button");
       const applyScheduleDefaultsButton = document.getElementById("apply-schedule-defaults-button");
+      const resetSeasonButton = document.getElementById("reset-season-button");
       const seasonSettingsNote = document.getElementById("season-settings-note");
       const seasonRosterSearch = document.getElementById("season-roster-search");
       const seasonRosterAddSelect = document.getElementById("season-roster-add-select");
@@ -912,6 +918,13 @@
           return "That player already has matchday assignments or stats in this season. Clear or reassign their matchday activity before removing them from the season squad.";
         }
 
+        if (
+          lowerMessage.includes("season delete") &&
+          (lowerMessage.includes("blocked") || lowerMessage.includes("rejected"))
+        ) {
+          return "Season delete is blocked on the live database. Apply the latest season delete SQL policy in Supabase, then try again.";
+        }
+
         return message;
       }
 
@@ -962,6 +975,195 @@
         return `${weekdayLabel(season.default_matchday_weekday)} · ${formatTimeLabel(
           season.default_kickoff_time
         )}`;
+      }
+
+      function seasonMatchdayHref(seasonId, hash = "") {
+        const numericSeasonId = Number(seasonId);
+        return Number.isInteger(numericSeasonId) && numericSeasonId > 0
+          ? `./matchday.html?season_id=${numericSeasonId}${hash || ""}`
+          : "./matchday.html";
+      }
+
+      function renderSeasonSetupProgress(selectedSeason, context = {}) {
+        if (!seasonSetupProgress) {
+          return;
+        }
+
+        const matchdayTarget = Number(selectedSeason?.total_matchdays || 0);
+        const generatedMatchdays = (selectedSeason?.matchdays || []).length;
+        const hasGeneratedMatchdays = Boolean(selectedSeason) && generatedMatchdays >= matchdayTarget && matchdayTarget > 0;
+        const hasCoreFlex = Number(context.coreCount || 0) + Number(context.rotationCount || 0) > 0;
+        const subsReady =
+          Number(context.subCount || 0) > 0 || Number(context.addableSubPlayersCount || 0) === 0;
+        const hasScheduledKickoff = (selectedSeason?.matchdays || []).some((matchday) => Boolean(matchday.kickoff_at));
+
+        const activeKey = !selectedSeason
+          ? "create"
+          : !hasGeneratedMatchdays
+            ? "matchdays"
+            : !hasCoreFlex
+              ? "core_flex"
+              : !subsReady
+                ? "subs"
+                : !hasScheduledKickoff
+                  ? "weekly"
+                  : "captains";
+
+        const steps = [
+          { key: "create", label: "Create" },
+          { key: "matchdays", label: "Matchdays" },
+          { key: "core_flex", label: "Core + Flex" },
+          { key: "subs", label: "Subs" },
+          { key: "weekly", label: "Weekly roster" },
+          { key: "captains", label: "Captains" },
+        ];
+        const activeIndex = steps.findIndex((step) => step.key === activeKey);
+
+        seasonSetupProgress.innerHTML = steps
+          .map((step, index) => {
+            const classes = ["wizard-step"];
+            if (index < activeIndex) {
+              classes.push("is-complete");
+            } else if (index === activeIndex) {
+              classes.push("is-active");
+            }
+
+            return `
+              <div class="${classes.join(" ")}">
+                <span class="wizard-step-number">${index + 1}</span>
+                <span class="wizard-step-label">${escapeHtml(step.label)}</span>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      function seasonFlowCardMarkup({
+        step = "",
+        title = "",
+        copy = "",
+        primaryLabel = "",
+        primaryAction = "",
+        secondaryLabel = "",
+        secondaryAction = "",
+        primaryTone = "primary-button",
+      } = {}) {
+        return `
+          <article class="list-item season-flow-card">
+            <div class="section-label">${escapeHtml(step)}</div>
+            <div class="list-item-title">${escapeHtml(title)}</div>
+            <p class="compact-row-copy">${escapeHtml(copy)}</p>
+            <div class="actions season-flow-actions">
+              ${
+                primaryLabel && primaryAction
+                  ? `
+                    <button
+                      class="${escapeHtml(primaryTone)}"
+                      type="button"
+                      data-season-flow-action="${escapeHtml(primaryAction)}"
+                    >
+                      ${escapeHtml(primaryLabel)}
+                    </button>
+                  `
+                  : ""
+              }
+              ${
+                secondaryLabel && secondaryAction
+                  ? `
+                    <button
+                      class="secondary-button"
+                      type="button"
+                      data-season-flow-action="${escapeHtml(secondaryAction)}"
+                    >
+                      ${escapeHtml(secondaryLabel)}
+                    </button>
+                  `
+                  : ""
+              }
+            </div>
+          </article>
+        `;
+      }
+
+      function renderSeasonFlowGrid(selectedSeason, context = {}) {
+        if (!seasonFlowGrid) {
+          return;
+        }
+
+        if (!selectedSeason) {
+          seasonFlowGrid.innerHTML = seasonFlowCardMarkup({
+            step: "Step 1",
+            title: "Create the next season",
+            copy: "Start with the campaign name and matchday count, then the rest of the flow unlocks.",
+            primaryLabel: "Create season",
+            primaryAction: "open_create",
+          });
+          return;
+        }
+
+        const coreFlexRostered = Number(context.coreCount || 0) + Number(context.rotationCount || 0);
+        const addableCoreFlexCount = Number(context.addableCoreRotationPlayersCount || 0);
+        const subCount = Number(context.subCount || 0);
+        const addableSubPlayersCount = Number(context.addableSubPlayersCount || 0);
+        const scheduledCount = Number(context.scheduledCount || 0);
+
+        seasonFlowGrid.innerHTML = [
+          seasonFlowCardMarkup({
+            step: "Step 1",
+            title: "Season shape",
+            copy: `${selectedSeason.total_matchdays} matchdays. Targets ${selectedSeason.core_spots} Core and ${selectedSeason.rotation_spots} Flex.`,
+            primaryLabel: "Open settings",
+            primaryAction: "open_settings",
+            secondaryLabel: "Open fixtures",
+            secondaryAction: "open_schedule",
+          }),
+          seasonFlowCardMarkup({
+            step: "Step 2",
+            title: "Load Core + Flex",
+            copy: `${coreFlexRostered} rostered now. ${addableCoreFlexCount} more current Core/Flex players can be pulled in from Full Squad.`,
+            primaryLabel: addableCoreFlexCount ? "Add current Core + Flex" : "Review season squad",
+            primaryAction: addableCoreFlexCount ? "seed_core_flex" : "open_players",
+            secondaryLabel: "Full squad prep",
+            secondaryAction: "open_prep",
+          }),
+          seasonFlowCardMarkup({
+            step: "Step 3",
+            title: "Add Subs when short",
+            copy: `${subCount} Subs already sit on this season squad. ${addableSubPlayersCount} more current Subs are available if Core + Flex is not enough.`,
+            primaryLabel: addableSubPlayersCount ? "Add current Subs" : "Add one player",
+            primaryAction: addableSubPlayersCount ? "seed_subs" : "open_tools",
+            secondaryLabel: "Add one player",
+            secondaryAction: "open_tools",
+          }),
+          seasonFlowCardMarkup({
+            step: "Step 4",
+            title: "Run the weekly roster",
+            copy: "Match Centre uses Core first, Flex by rotation next, then season Subs if the pool is still short.",
+            primaryLabel: "Open weekly roster",
+            primaryAction: "open_weekly_roster",
+            secondaryLabel: "Open season squad",
+            secondaryAction: "open_players",
+          }),
+          seasonFlowCardMarkup({
+            step: "Step 5",
+            title: "Balance teams + captains",
+            copy: `${scheduledCount} kickoff${scheduledCount === 1 ? "" : "s"} scheduled. Move straight into auto-balance and captain picks from Match Centre.`,
+            primaryLabel: "Open balance + captains",
+            primaryAction: "open_balance",
+            secondaryLabel: "Open fixtures",
+            secondaryAction: "open_schedule",
+          }),
+          seasonFlowCardMarkup({
+            step: "Reset",
+            title: "Start this season over",
+            copy: `Delete ${selectedSeason.name} and all of its season-only activity, then rebuild it from scratch on the app.`,
+            primaryLabel: "Delete season",
+            primaryAction: "reset_season",
+            primaryTone: "danger-button",
+            secondaryLabel: "Season list",
+            secondaryAction: "open_list",
+          }),
+        ].join("");
       }
 
       function buildSeasonListGroups(rows) {
@@ -1078,6 +1280,7 @@
         selectedSeasonVenueNameInput.disabled = locked || !seasonScheduleDefaultsSupported;
         saveSeasonSettingsButton.disabled = locked;
         applyScheduleDefaultsButton.disabled = locked || !seasonScheduleDefaultsSupported;
+        resetSeasonButton.disabled = locked;
       }
 
       function syncRosterAddDefaultsFromSelection() {
@@ -1280,7 +1483,8 @@
           editingSeasonPlayerId = null;
           seasonRosterSearch.value = "";
           rosterSeasonPill.textContent = "Choose a campaign";
-          rosterBoardCopy.textContent = "Choose a campaign to decide which full-squad players become active this season. Flow: Full Squad -> Season squad -> Availability -> Match Centre -> League Table -> Planner -> Club HQ.";
+          rosterBoardCopy.textContent = "Choose a campaign to decide which full-squad players become active this season. Weekly flow stays Core first, Flex rotation next, then Subs when the pool is short.";
+          openSeasonMatchdayLink.href = "./matchday.html";
           openTiersLink.href = "./tiers.html";
           selectedSeasonStartDateInput.value = "";
           selectedSeasonWeekdayInput.value = String(DEFAULT_MATCHDAY_WEEKDAY);
@@ -1296,11 +1500,17 @@
           seasonRosterTierStatusSelect.value = "flex";
           seasonRosterPaymentStatusSelect.value = "unknown";
           seedRosterButton.disabled = true;
+          seedSubsButton.disabled = true;
           syncSeasonTierButton.disabled = true;
           syncSeasonTierButton.textContent = "Use full squad tier status";
           if (rosterBulkNote) {
-            rosterBulkNote.textContent = "For now, bulk add uses the current / next-season tier from Full Squad and only pulls players marked Core or Flex.";
+            rosterBulkNote.textContent = "Bulk add can pull Core + Flex first, then Subs later if a season needs depth.";
           }
+          if (seasonRoadmapCopy) {
+            seasonRoadmapCopy.textContent = "Pick a campaign first. Then you can move through the same short setup path every season and jump into the weekly roster flow.";
+          }
+          renderSeasonSetupProgress(null);
+          renderSeasonFlowGrid(null);
           renderRosterFlowRow({ disabled: true });
           seasonRosterRequestSummary.innerHTML = renderSummaryPillGroup([
             { label: "Pending", value: 0 },
@@ -1381,10 +1591,10 @@
         const addableCoreRotationPlayers = addablePlayers.filter(
           (player) => player.status === "core" || player.status === "flex"
         );
-        const addableFlexPlayers = addablePlayers.filter((player) => player.status === "sub");
+        const addableSubPlayers = addablePlayers.filter((player) => player.status === "sub");
         const coreCount = rosterRows.filter((row) => row.tier_status === "core").length;
         const rotationCount = rosterRows.filter((row) => row.tier_status === "flex").length;
-        const flexCount = rosterRows.filter((row) => row.tier_status === "sub").length;
+        const subCount = rosterRows.filter((row) => row.tier_status === "sub").length;
         const paidCount = rosterRows.filter((row) => row.payment_status === "paid").length;
         const pendingCount = rosterRows.filter((row) => row.payment_status === "pending").length;
         const unknownCount = rosterRows.filter((row) => row.payment_status === "unknown").length;
@@ -1401,13 +1611,15 @@
         }
 
         rosterSeasonPill.textContent = selectedSeason.name;
-        rosterBoardCopy.textContent = `${selectedSeason.name} has ${rosterRows.length} season-squad registrations out of ${clubPlayers.length} full-squad profiles. Only season-squad players appear in Match Centre, League Table, Planner, and club screens. Queue tracking begins at matchday ${selectedSeason.model_start_matchday || 1}, so earlier nights remain historical. ${
+        rosterBoardCopy.textContent = `${selectedSeason.name} has ${rosterRows.length} season-squad registrations out of ${clubPlayers.length} full-squad profiles. Only season-squad players appear in Match Centre, League Table, Planner, and club screens. Weekly flow is Core first, Flex rotation next, then season Subs when the pool is short. Queue tracking begins at matchday ${selectedSeason.model_start_matchday || 1}, so earlier nights remain historical. ${
           seasonRosterMetadataSupported
-            ? "Store what each player signed up for, whether they paid, and whether they are still active for matchdays. Use Full Squad to set current / next-season tiers first, then bulk add current Core + Flex."
-            : "Use Full Squad to set current / next-season tiers first, then bulk add current Core + Flex."
+            ? "Store what each player signed up for, whether they paid, and whether they are still active for matchdays."
+            : "Use Full Squad to set current / next-season tiers first, then pull players into the season squad."
         }`;
+        openSeasonMatchdayLink.href = seasonMatchdayHref(selectedSeasonId);
         openTiersLink.href = `./tiers.html?season_id=${selectedSeasonId}`;
         seedRosterButton.disabled = !addableCoreRotationPlayers.length;
+        seedSubsButton.disabled = !addableSubPlayers.length;
         syncSeasonTierButton.disabled = !rosterRows.length;
         syncSeasonTierButton.textContent = rosterRows.length
           ? `Use full squad tier status${selectedSeason.name ? ` for ${selectedSeason.name}` : ""}`
@@ -1437,13 +1649,35 @@
           const bulkCopy = addableCoreRotationPlayers.length
             ? `${addableCorePlayers.length} addable full-squad players are currently marked Core and ${addableRotationPlayers.length} are marked Flex. Use Add current Core + Flex to pull only those players into ${selectedSeason.name}.`
             : `No addable full-squad players are currently marked Core or Flex. Update player tiers in Full Squad first, then use Add current Core + Flex.`;
+          const subCopy = addableSubPlayers.length
+            ? `${addableSubPlayers.length} current Subs can also be added when Core + Flex is not enough for weekly availability.`
+            : subCount
+              ? `${subCount} Subs already sit on ${selectedSeason.name} for short-pool weeks.`
+              : "No extra Subs are waiting outside the current season squad.";
           const syncCopy = rosterRows.length
             ? tierSyncRows.length
               ? `${tierSyncRows.length} season-squad players in ${selectedSeason.name} currently differ from the Full Squad tier status. Use full squad tier status to align this season.`
               : `${selectedSeason.name} already matches the Full Squad tier status for every season-squad player.`
             : "";
-          rosterBulkNote.textContent = syncCopy ? `${bulkCopy} ${syncCopy}` : bulkCopy;
+          rosterBulkNote.textContent = [bulkCopy, subCopy, syncCopy].filter(Boolean).join(" ");
         }
+        if (seasonRoadmapCopy) {
+          seasonRoadmapCopy.textContent = `${selectedSeason.name} is ready for a short setup loop: confirm season shape, load Core + Flex, add Subs only when needed, then move into Match Centre for weekly balance and captains.`;
+        }
+        renderSeasonSetupProgress(selectedSeason, {
+          coreCount,
+          rotationCount,
+          subCount,
+          addableSubPlayersCount: addableSubPlayers.length,
+        });
+        renderSeasonFlowGrid(selectedSeason, {
+          coreCount,
+          rotationCount,
+          subCount,
+          addableCoreRotationPlayersCount: addableCoreRotationPlayers.length,
+          addableSubPlayersCount: addableSubPlayers.length,
+          scheduledCount: (selectedSeason.matchdays || []).filter((matchday) => Boolean(matchday.kickoff_at)).length,
+        });
         renderRosterFlowRow({
           pendingRequests: pendingRosterRequests.length,
           addablePlayers: addablePlayers.length,
@@ -1542,7 +1776,7 @@
           { label: "Addable", value: addablePlayers.length },
           { label: "Core", value: addableCorePlayers.length },
           { label: "Flex", value: addableRotationPlayers.length },
-          { label: "Sub", value: addableFlexPlayers.length },
+          { label: "Sub", value: addableSubPlayers.length },
         ]);
         if (!addablePlayers.length) {
           seasonDirectoryPrepWrap.innerHTML = `
@@ -1569,7 +1803,7 @@
                       </div>
                       <div class="compact-badges">
                         <span class="tag-pill">${escapeHtml(
-                          player.status === "sub" ? "Not in bulk add" : "Will bulk add"
+                          player.status === "sub" ? "Sub add-on" : "Will bulk add"
                         )}</span>
                       </div>
                       <div class="field">
@@ -1602,7 +1836,7 @@
           seasonRosterWrap.innerHTML = `
             <div class="table-empty">
               No players are on ${escapeHtml(selectedSeason.name)}'s season squad yet. Add them one by one or use
-              <strong>Add current Core + Flex</strong> as a starting point.
+              <strong>Add current Core + Flex</strong> as a starting point, then add Subs only when needed.
             </div>
           `;
           return;
@@ -1920,6 +2154,53 @@
         await loadSeasons();
       }
 
+      async function addCurrentSubsToSeason() {
+        const selectedSeason = getSelectedSeason();
+
+        if (!selectedSeason) {
+          setStatus("Select a season first.", "warning");
+          return;
+        }
+
+        const existingIds = new Set((selectedSeason.seasonPlayers || []).map((row) => row.player_id));
+        const rowsToInsert = clubPlayers
+          .filter((player) => !existingIds.has(player.id))
+          .filter((player) => player.status === "sub")
+          .map((player) =>
+            buildSeasonPlayerInsertPayload(selectedSeason, player, {
+              registration_tier: player.status,
+              tier_status: player.status,
+              payment_status: "unknown",
+              tier_reason: "Added as season depth from the current sub tier.",
+              movement_note: "Use when Core + Flex availability is short on a weekly roster.",
+              is_eligible: true,
+            })
+          );
+
+        if (!rowsToInsert.length) {
+          setStatus("No missing current Subs are available to add.", "warning");
+          return;
+        }
+
+        seedSubsButton.disabled = true;
+        seedSubsButton.textContent = "Adding...";
+        setStatus(`Adding ${rowsToInsert.length} current Subs to ${selectedSeason.name}...`);
+
+        const { error } = await supabaseClient.from("season_players").insert(rowsToInsert);
+
+        seedSubsButton.disabled = false;
+        seedSubsButton.textContent = "Add current Subs";
+
+        if (error) {
+          setStatus(readableError(error), "error");
+          return;
+        }
+
+        setStatus(`Added ${rowsToInsert.length} current Subs to ${selectedSeason.name}.`, "success");
+        openRosterDisclosure("players");
+        await loadSeasons();
+      }
+
       async function syncSeasonTiersFromDirectory() {
         const selectedSeason = getSelectedSeason();
 
@@ -2051,6 +2332,149 @@
             triggerButton.disabled = false;
             triggerButton.textContent = originalButtonText;
           }
+        }
+      }
+
+      async function deleteSelectedSeason(triggerButton = null) {
+        const selectedSeason = getSelectedSeason();
+
+        if (!selectedSeason) {
+          setStatus("Select a season first.", "warning");
+          return;
+        }
+
+        const seasonName = selectedSeason.name;
+        const matchdayCountForSeason = (selectedSeason.matchdays || []).length;
+        const rosterCountForSeason = (selectedSeason.seasonPlayers || []).length;
+        const requestCountForSeason = seasonRosterRequests.filter(
+          (row) => Number(row.season_id) === Number(selectedSeason.id)
+        ).length;
+        const originalButtonText = triggerButton?.textContent || "Delete season";
+        const confirmed = window.confirm(
+          `Delete ${seasonName}? This removes ${formatCountLabel(matchdayCountForSeason, "matchday")}, ${formatCountLabel(rosterCountForSeason, "season squad player")}, ${formatCountLabel(requestCountForSeason, "season request")}, and all scores, stats, assignments, suggestions, and captains tied to this season.`
+        );
+
+        if (!confirmed) {
+          setStatus(`${seasonName} stays in place.`);
+          return;
+        }
+
+        const typedSeasonName = normalizeText(
+          window.prompt(`Type ${seasonName} to delete this season.`, "") || ""
+        ).toLowerCase();
+
+        if (typedSeasonName !== normalizeText(seasonName).toLowerCase()) {
+          setStatus("Season delete cancelled because the typed name did not match.", "warning");
+          return;
+        }
+
+        if (triggerButton?.isConnected) {
+          triggerButton.disabled = true;
+          triggerButton.textContent = "Deleting...";
+        }
+
+        try {
+          setStatus(`Deleting ${seasonName} and everything tied to it...`, "loading");
+          const { data, error } = await supabaseClient
+            .from("seasons")
+            .delete()
+            .eq("id", selectedSeason.id)
+            .select("id, name");
+
+          if (error) {
+            throw error;
+          }
+
+          if (!Array.isArray(data) || !data.length) {
+            throw new Error("Season delete was blocked or rejected by the live database policy.");
+          }
+
+          if (selectedSeasonId === selectedSeason.id) {
+            selectedSeasonId = null;
+            lastRosterDisclosureSeasonId = null;
+          }
+
+          await loadSeasons();
+          setSeasonView("list", { scroll: true });
+          setStatus(
+            `${seasonName} was deleted. Create it again whenever you are ready to rebuild from scratch.`,
+            "success"
+          );
+        } catch (error) {
+          setStatus(readableError(error), "error");
+        } finally {
+          if (triggerButton?.isConnected) {
+            triggerButton.disabled = false;
+            triggerButton.textContent = originalButtonText;
+          }
+        }
+      }
+
+      async function handleSeasonFlowAction(action) {
+        const selectedSeason = getSelectedSeason();
+
+        if (action === "open_create") {
+          setSeasonView("create", { focus: true, scroll: true });
+          return;
+        }
+
+        if (action === "open_list") {
+          setSeasonView("list", { scroll: true });
+          return;
+        }
+
+        if (action === "open_settings") {
+          setSeasonView("roster", { scroll: true });
+          openRosterDisclosure("settings");
+          selectedCoreSpotsInput.focus();
+          return;
+        }
+
+        if (action === "open_schedule") {
+          setSeasonView("schedule", { scroll: true });
+          return;
+        }
+
+        if (action === "open_prep") {
+          setSeasonView("roster", { scroll: true });
+          openRosterDisclosure("prep");
+          return;
+        }
+
+        if (action === "open_tools") {
+          setSeasonView("roster", { scroll: true });
+          openRosterDisclosure("tools");
+          seasonRosterAddSelect.focus();
+          return;
+        }
+
+        if (action === "open_players") {
+          setSeasonView("roster", { scroll: true });
+          openRosterDisclosure("players");
+          seasonRosterSearch.focus();
+          return;
+        }
+
+        if (action === "seed_core_flex") {
+          await addCoreAndRotationDefaults();
+          return;
+        }
+
+        if (action === "seed_subs") {
+          await addCurrentSubsToSeason();
+          return;
+        }
+
+        if ((action === "open_weekly_roster" || action === "open_balance") && selectedSeason) {
+          window.location.href = seasonMatchdayHref(
+            selectedSeason.id,
+            action === "open_balance" ? "#teams-step" : ""
+          );
+          return;
+        }
+
+        if (action === "reset_season") {
+          await deleteSelectedSeason();
         }
       }
 
@@ -2638,12 +3062,23 @@
       seasonRefreshButton.addEventListener("click", loadSeasons);
       rosterRefreshButton.addEventListener("click", loadSeasons);
       seedRosterButton.addEventListener("click", addCoreAndRotationDefaults);
+      seedSubsButton.addEventListener("click", addCurrentSubsToSeason);
       syncSeasonTierButton.addEventListener("click", syncSeasonTiersFromDirectory);
       saveSeasonSettingsButton.addEventListener("click", saveSeasonSettings);
       applyScheduleDefaultsButton.addEventListener("click", fillUnscheduledMatchdaysFromDefaults);
+      resetSeasonButton.addEventListener("click", () => deleteSelectedSeason(resetSeasonButton));
       seasonRosterAddButton.addEventListener("click", addPlayerToSeason);
       seasonRosterSearch.addEventListener("input", renderSeasonRoster);
       seasonRosterAddSelect.addEventListener("change", syncRosterAddDefaultsFromSelection);
+      seasonFlowGrid.addEventListener("click", async (event) => {
+        const button = event.target.closest("[data-season-flow-action]");
+
+        if (!button) {
+          return;
+        }
+
+        await handleSeasonFlowAction(button.dataset.seasonFlowAction);
+      });
       seasonRosterFlowRow.addEventListener("click", (event) => {
         const button = event.target.closest("[data-open-roster-disclosure]");
 
