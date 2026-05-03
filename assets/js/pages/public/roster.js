@@ -61,6 +61,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let allPlayers = [];
   let allStandings = [];
   let playerDetailsMap = new Map();
+  let playedSeasonPlayerIds = new Set();
   let directoryPlayers = [];
   let seasonRosterRequests = [];
   let rosterRequestsSupported = true;
@@ -103,6 +104,52 @@ document.addEventListener("DOMContentLoaded", async () => {
       status: desiredTier,
       positions: Array.isArray(player?.positions) && player.positions.length ? player.positions : ["MID"],
     };
+  }
+
+  function seasonTier(player) {
+    return normalizeTierValue(
+      player?.registration_tier || player?.tier_status || player?.season_status || player?.status,
+      "sub"
+    );
+  }
+
+  function normalizeAttendanceStatus(stat) {
+    const rawStatus = normalizeText(stat?.attendance_status || "").toLowerCase();
+    if (rawStatus && rawStatus !== "out") {
+      return rawStatus === "attended" ? "in" : rawStatus;
+    }
+    return stat?.attended ? "in" : "out";
+  }
+
+  function buildPlayedSeasonPlayerIds(playerStats) {
+    const ids = new Set();
+
+    (playerStats || []).forEach((stat) => {
+      const playerId = Number(stat?.player_id);
+      if (!Number.isFinite(playerId)) {
+        return;
+      }
+
+      if (normalizeAttendanceStatus(stat) === "in") {
+        ids.add(playerId);
+      }
+    });
+
+    return ids;
+  }
+
+  function hasPlayedForSeason(player) {
+    const playerId = Number(player?.id);
+    return Number.isFinite(playerId) && playedSeasonPlayerIds.has(playerId);
+  }
+
+  function countsTowardSeasonRegistration(player) {
+    const tier = seasonTier(player);
+    return tier === "core" || tier === "flex" || hasPlayedForSeason(player);
+  }
+
+  function countedSeasonPlayers() {
+    return allPlayers.filter((player) => countsTowardSeasonRegistration(player));
   }
 
   function normalizeRosterRequestRow(row) {
@@ -349,7 +396,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           return false;
         }
 
-        if (tierFilter !== "all" && player.status !== tierFilter) {
+        if (tierFilter !== "all" && seasonTier(player) !== tierFilter) {
           return false;
         }
 
@@ -635,7 +682,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     playerList.innerHTML = rows
       .map((player) => {
         const nameParts = playerNameParts(player);
-        const subtitle = [nameParts.secondary, formatStatusLabel(player.status)]
+        const tier = seasonTier(player);
+        const subtitle = [nameParts.secondary, formatStatusLabel(tier)]
           .filter(Boolean)
           .join(" · ");
         const isActive = Number(player.id) === Number(selectedPlayerId);
@@ -648,7 +696,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 <div class="compact-row-copy">${escapeHtml(subtitle || "Club player")}</div>
               </div>
               <div class="list-actions">
-                <span class="tier-pill ${escapeHtml(player.status)}">${escapeHtml(formatStatusLabel(player.status))}</span>
+                <span class="tier-pill ${escapeHtml(tier)}">${escapeHtml(formatStatusLabel(tier))}</span>
                 <button class="secondary-button" type="button">${isActive ? "Hide" : "View"}</button>
               </div>
             </div>
@@ -702,10 +750,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function updateSummaryStats() {
-    totalPlayersEl.textContent = String(allPlayers.length);
-    corePlayersEl.textContent = String(allPlayers.filter((player) => player.status === "core").length);
+    totalPlayersEl.textContent = String(countedSeasonPlayers().length);
+    corePlayersEl.textContent = String(allPlayers.filter((player) => seasonTier(player) === "core").length);
     rotationPlayersEl.textContent = String(
-      allPlayers.filter((player) => player.status === "flex").length
+      allPlayers.filter((player) => seasonTier(player) === "flex").length
     );
   }
 
@@ -803,7 +851,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       (player) => !pendingPlayerIds.has(Number(player.id))
     );
 
-    rosterRequestCopy.textContent = `${selectedSeason.name} is using ${allPlayers.length} live season-squad players. If you are missing from this season but already in the full squad register, request your spot here. If you are new to the club, send a full-squad request first. Admin approval is required before your name reaches the live season squad.`;
+    rosterRequestCopy.textContent = `${selectedSeason.name} currently counts ${countedSeasonPlayers().length} active season-squad players. If you are missing from this season but already in the full squad register, request your spot here. If you are new to the club, send a full-squad request first. Admin approval is required before your name reaches the live season squad.`;
 
     if (!addablePlayers.length) {
       existingDirectoryPlayerSelect.innerHTML =
@@ -903,6 +951,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       allPlayers = [];
       allStandings = [];
       playerDetailsMap = new Map();
+      playedSeasonPlayerIds = new Set();
       selectedPlayerId = null;
       rosterLoadedMessage = "No seasons found.";
       statusLine.classList.remove("loading", "success", "error");
@@ -927,6 +976,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       const bundle = await fetchSeasonBundle(selectedSeason.id);
       allPlayers = bundle.players || [];
+      playedSeasonPlayerIds = buildPlayedSeasonPlayerIds(bundle.playerStats || []);
 
       const completedMatchdays = buildCompletedMatchdays(bundle.matchdays, bundle.matches);
       allStandings = buildBadgeStandings(
@@ -961,18 +1011,24 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       statusLine.classList.remove("loading", "error", "warning");
       statusLine.classList.add("success");
-      rosterLoadedMessage = `${selectedSeason.name} · ${allPlayers.length} players loaded`;
+      rosterLoadedMessage = `${selectedSeason.name} · ${countedSeasonPlayers().length} registered players counted`;
       statusText.textContent = rosterLoadedMessage;
     } catch (error) {
       const message = readableError(error);
       rosterLoadedMessage = "";
+      allPlayers = [];
+      allStandings = [];
+      playerDetailsMap = new Map();
       directoryPlayers = [];
       seasonRosterRequests = [];
+      playedSeasonPlayerIds = new Set();
+      selectedPlayerId = null;
       statusLine.classList.remove("loading", "success", "warning");
       statusLine.classList.add("error");
       statusText.textContent = message;
       playerList.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
       playerDetail.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
+      updateSummaryStats();
       renderRosterRequestTools();
     }
   }
