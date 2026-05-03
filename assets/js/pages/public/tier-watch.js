@@ -70,6 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let seasons = [];
   let activeSeasonId = querySeasonIdFromUrl();
   let tierRows = [];
+  let seasonRosterPlayers = [];
   let activeFilter = "all";
   let sortCol = "suggested";
   let sortDir = DEFAULT_SORT_DIRECTIONS.suggested;
@@ -95,6 +96,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function currentTier(row) {
     return normalizeTierValue(row?.tier_status || row?.default_status, "sub");
+  }
+
+  function registrationTier(row) {
+    return normalizeTierValue(
+      row?.registration_tier || row?.tier_status || row?.season_status || row?.default_status,
+      "sub"
+    );
   }
 
   function normalizeTierRow(row) {
@@ -652,25 +660,20 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderSummary() {
-    const spotMixUsed = tierRows.reduce(
-      (total, row) => total + Number(row.suggestion_spot_value || 0),
-      0
-    );
+    const registeredPlayers = seasonRosterPlayers || [];
 
-    spotMixCount.textContent = `${formatSpotValue(spotMixUsed)} / ${formatSpotValue(
-      suggestionSlotLimit
-    )}`;
+    spotMixCount.textContent = String(registeredPlayers.length);
     coreCount.textContent = String(
-      tierRows.filter((row) => row.recommended_tier_status === "core").length
+      registeredPlayers.filter((row) => registrationTier(row) === "core").length
     );
     rotationCount.textContent = String(
-      tierRows.filter((row) => row.recommended_tier_status === "flex").length
+      registeredPlayers.filter((row) => registrationTier(row) === "flex").length
     );
     flexCount.textContent = String(
-      tierRows.filter((row) => row.recommended_tier_status === "sub").length
+      registeredPlayers.filter((row) => registrationTier(row) === "sub").length
     );
     changeCount.textContent = String(
-      tierRows.filter((row) => currentTier(row) !== row.recommended_tier_status).length
+      registeredPlayers.filter((row) => row?.is_eligible !== false).length
     );
   }
 
@@ -890,6 +893,7 @@ document.addEventListener("DOMContentLoaded", () => {
         bundle.matches || [],
         bundle.season || null
       );
+      seasonRosterPlayers = bundle.players || [];
       activeQueueMode = rotationQueueMode(
         bundle.season || null,
         bundle.matchdays || [],
@@ -905,6 +909,7 @@ document.addEventListener("DOMContentLoaded", () => {
           : `${bundle.season.name} shows the live flex queue first and keeps the recommendation center separate. Fewer appearances stay at the front, and tied players are split by season points, goals, goal keeps, and clean sheets.`;
       setTierStatus();
     } catch (error) {
+      seasonRosterPlayers = [];
       standingsByPlayerId = new Map();
       activeQueueMode = "regular";
       const message = readableError(error);
