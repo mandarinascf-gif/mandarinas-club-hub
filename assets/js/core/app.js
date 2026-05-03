@@ -52,7 +52,6 @@
     historicalSeasonIds,
     attendanceStatus,
     buildCompletedMatchdays,
-    compareStandingsPriority,
     summarizeMatchdayProgress,
     buildStandings,
     buildPlayerMatchdayDetails,
@@ -522,44 +521,32 @@
     return apps ? Number((points / apps).toFixed(2)) : 0;
   }
 
-  function badgeMinimumAppsForRank(completedMatchdaysCount) {
-    const completedCount = Math.max(0, Number(completedMatchdaysCount || 0));
-    return Math.max(4, Math.ceil(completedCount * 0.4));
-  }
-
-  function compareBadgeStandingsByMode(mode, left, right) {
-    if (mode === "points") {
-      const pointsDiff = Number(right?.total_points || 0) - Number(left?.total_points || 0);
-      if (pointsDiff !== 0) {
-        return pointsDiff;
-      }
-
-      const ppgDiff = badgePointsPerGame(right) - badgePointsPerGame(left);
-      if (Math.abs(ppgDiff) > 0.0001) {
-        return ppgDiff;
-      }
-    } else {
-      const ppgDiff = badgePointsPerGame(right) - badgePointsPerGame(left);
-      if (Math.abs(ppgDiff) > 0.0001) {
-        return ppgDiff;
-      }
-
-      const pointsDiff = Number(right?.total_points || 0) - Number(left?.total_points || 0);
-      if (pointsDiff !== 0) {
-        return pointsDiff;
-      }
-    }
-
-    const appsDiff = Number(right?.days_attended || 0) - Number(left?.days_attended || 0);
-    if (appsDiff !== 0) {
-      return appsDiff;
-    }
-
-    return compareStandingsPriority(left, right);
+  function badgeRankScore(entry) {
+    return (Number(entry?.wins || 0) * 3) + Number(entry?.draws || 0);
   }
 
   function compareBadgeStandings(left, right) {
-    return compareBadgeStandingsByMode("ppg", left, right);
+    const scoreDiff = badgeRankScore(right) - badgeRankScore(left);
+    if (scoreDiff !== 0) {
+      return scoreDiff;
+    }
+
+    const winsDiff = Number(right?.wins || 0) - Number(left?.wins || 0);
+    if (winsDiff !== 0) {
+      return winsDiff;
+    }
+
+    const drawsDiff = Number(right?.draws || 0) - Number(left?.draws || 0);
+    if (drawsDiff !== 0) {
+      return drawsDiff;
+    }
+
+    const lossesDiff = Number(left?.losses || 0) - Number(right?.losses || 0);
+    if (lossesDiff !== 0) {
+      return lossesDiff;
+    }
+
+    return playerDisplayName(left?.player || left).localeCompare(playerDisplayName(right?.player || right));
   }
 
   function badgeEntryKey(entry) {
@@ -567,9 +554,9 @@
     return Number.isFinite(playerId) ? playerId : null;
   }
 
-  function buildBadgeRankMap(entries, mode) {
+  function buildBadgeRankMap(entries) {
     return [...(entries || [])]
-      .sort((left, right) => compareBadgeStandingsByMode(mode, left, right))
+      .sort(compareBadgeStandings)
       .reduce((map, entry, index) => {
         const key = badgeEntryKey(entry);
         if (key != null) {
@@ -579,59 +566,25 @@
       }, new Map());
   }
 
-  function finalizeBadgeStandings(entries, options = {}) {
+  function finalizeBadgeStandings(entries) {
     const normalizedEntries = [...(entries || [])]
       .map((entry) => ({
         ...entry,
         points_per_game: badgePointsPerGame(entry),
+        rank_score: badgeRankScore(entry),
       }));
-    const minimumApps = badgeMinimumAppsForRank(options.completedMatchdaysCount);
-    const qualifiedEntries = normalizedEntries.filter(
-      (entry) => Number(entry?.days_attended || 0) >= minimumApps
-    );
-    const provisionalEntries = normalizedEntries.filter(
-      (entry) => Number(entry?.days_attended || 0) < minimumApps
-    );
-    const pointsRankMap = buildBadgeRankMap(normalizedEntries, "points");
-    const qualifiedPpgRankMap = buildBadgeRankMap(qualifiedEntries, "ppg");
-    const provisionalPpgRankMap = buildBadgeRankMap(provisionalEntries, "ppg");
+    const rankMap = buildBadgeRankMap(normalizedEntries);
 
-    return [
-      ...qualifiedEntries.sort(compareBadgeStandings),
-      ...provisionalEntries.sort(compareBadgeStandings),
-    ].map((entry) => {
+    return normalizedEntries
+      .sort(compareBadgeStandings)
+      .map((entry) => {
         const entryKey = badgeEntryKey(entry);
-        const qualifiedForPpgRank = Number(entry?.days_attended || 0) >= minimumApps;
-        const ppgRank = entryKey != null
-          ? (
-            qualifiedForPpgRank
-              ? qualifiedPpgRankMap.get(entryKey)
-              : provisionalPpgRankMap.get(entryKey)
-          ) ?? null
-          : null;
-        const ppgRankDisplay =
-          ppgRank == null
-            ? "--"
-            : qualifiedForPpgRank
-              ? String(ppgRank)
-              : `P${ppgRank}`;
-        const ppgRankLabel = qualifiedForPpgRank
-          ? "Qualified PPG Rank"
-          : "Provisional PPG Rank";
-        const pointsRank = entryKey != null ? pointsRankMap.get(entryKey) ?? null : null;
+        const rank = entryKey != null ? rankMap.get(entryKey) ?? null : null;
 
         return {
           ...entry,
-          rank: qualifiedForPpgRank ? ppgRank : null,
-          rank_status: qualifiedForPpgRank ? "qualified" : "provisional",
-          qualified_for_ppg_rank: qualifiedForPpgRank,
-          minimum_apps_for_rank: minimumApps,
-          ppg_rank: ppgRank,
-          ppg_rank_display: ppgRankDisplay,
-          ppg_rank_label: ppgRankLabel,
-          points_rank: pointsRank,
-          points_rank_display: pointsRank != null ? String(pointsRank) : "--",
-          points_rank_label: "Points Rank",
+          rank,
+          rank_label: "Wins x3 + Draws x1",
         };
       });
   }
@@ -644,9 +597,7 @@
       completedMatchdays,
       scoringSource
     );
-    return finalizeBadgeStandings(standings, {
-      completedMatchdaysCount: completedMatchdays?.length || 0,
-    });
+    return finalizeBadgeStandings(standings);
   }
 
   function buildAllTimeStandings(players, seasons, matchdays, matches, assignments, playerStats) {
@@ -688,8 +639,6 @@
     const seasonAssignments = new Map();
     const seasonPlayerStats = new Map();
     const matchdaySeasonMap = new Map();
-    let totalCompletedMatchdays = 0;
-
     (matchdays || []).forEach((matchday) => {
       const seasonId = Number(matchday.season_id);
       if (!Number.isFinite(seasonId)) {
@@ -743,7 +692,6 @@
 
       const matchesForSeason = seasonMatches.get(seasonId) || [];
       const completedMatchdays = buildCompletedMatchdays(matchdaysForSeason, matchesForSeason);
-      totalCompletedMatchdays += completedMatchdays.length;
       const standings = buildStandings(
         normalizedPlayers,
         seasonAssignments.get(seasonId) || [],
@@ -766,8 +714,7 @@
     });
 
     return finalizeBadgeStandings(
-      Array.from(standingsSeed.values()).filter((entry) => entry.days_attended > 0),
-      { completedMatchdaysCount: totalCompletedMatchdays }
+      Array.from(standingsSeed.values()).filter((entry) => entry.days_attended > 0)
     );
   }
 
