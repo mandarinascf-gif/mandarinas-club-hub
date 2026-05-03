@@ -3,17 +3,13 @@ const path = require("path");
 const { spawnSync } = require("child_process");
 const { pathToFileURL } = require("url");
 const { SUPABASE_URL, authHeaders } = require("./supabase_config.js");
+const { ROOT, resolveSeasonWorkbookPath } = require("./reseed_paths.js");
 const SEASON_NAME = "2026 Spring";
-const ROOT = path.resolve(__dirname, "..");
-const DEFAULT_WORKBOOK_PATH = path.join(
-  process.env.HOME || "",
-  "Downloads",
-  "current 2026 SPRING season - mandarinas cf (2).xlsx"
-);
 const EXPORT_SCRIPT = path.join(__dirname, "export_2026_spring_seed_data.py");
 
 function resolveWorkbookPath() {
-  const explicitPath = process.argv[3] || process.env.MCF_WORKBOOK_PATH || DEFAULT_WORKBOOK_PATH;
+  const explicitPath =
+    process.argv[3] || process.env.MCF_WORKBOOK_PATH || resolveSeasonWorkbookPath(SEASON_NAME);
   return path.resolve(explicitPath);
 }
 

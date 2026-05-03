@@ -11,9 +11,9 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Iterable
 
+from reseed_paths import SQL_ROOT, relative_to_root
 
 ROOT = Path(__file__).resolve().parent.parent
-SQL_ROOT = ROOT / "sql"
 ARCHIVE_SQL_ROOT = SQL_ROOT / "archive"
 BASE_SCRIPT_PATH = ROOT / "scripts" / "generate_2026_spring_seed.py"
 GOALS_AS_POINTS_START = 5
@@ -530,7 +530,7 @@ def build_sql(workbook_path: Path, season_name: str, alias_workbooks: list[Path]
     season_player_values_sql = values_block(season_player_value_rows, "import_label, tier_status")
 
     return f"""-- Historical season seed generated from a Mandarinas workbook.
--- Source workbook: {workbook_path}
+-- Source workbook: {relative_to_root(workbook_path)}
 -- Season name: {season_name}
 -- Historical rules applied:
 -- 1. Only the target season is deleted and recreated. Existing players stay in place.
@@ -770,7 +770,7 @@ def main() -> None:
     output_path = (args.output or default_output_path(args.season_name)).expanduser().resolve()
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(build_sql(workbook_path, args.season_name, alias_workbooks), encoding="utf-8")
-    print(f"Wrote {output_path} from {workbook_path}")
+    print(f"Wrote {relative_to_root(output_path)} from {relative_to_root(workbook_path)}")
 
 
 if __name__ == "__main__":

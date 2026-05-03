@@ -26,7 +26,16 @@ from reportlab.platypus import (
 )
 
 SKILL_SCRIPTS = Path(
-    "/Users/andresaguayo/.codex/plugins/cache/openai-primary-runtime/documents/26.430.10722/skills/documents/scripts"
+    Path.home()
+    / ".codex"
+    / "plugins"
+    / "cache"
+    / "openai-primary-runtime"
+    / "documents"
+    / "26.430.10722"
+    / "skills"
+    / "documents"
+    / "scripts"
 )
 if str(SKILL_SCRIPTS) not in sys.path:
     sys.path.append(str(SKILL_SCRIPTS))
@@ -34,7 +43,7 @@ if str(SKILL_SCRIPTS) not in sys.path:
 from table_geometry import apply_table_geometry, column_widths_from_weights, section_content_width_dxa
 
 
-ROOT = Path("/Users/andresaguayo/mandarinas-club-hub")
+ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = ROOT / "deliverables" / "guides"
 OUTPUT_BASENAME = "mandarinas-rotation-queue-explainer-en"
 DOCX_PATH = OUTPUT_DIR / f"{OUTPUT_BASENAME}.docx"

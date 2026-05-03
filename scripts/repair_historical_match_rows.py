@@ -11,15 +11,13 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
+from reseed_paths import resolve_season_workbook
 
 ROOT = Path(__file__).resolve().parent.parent
 SEED_SCRIPT_PATH = ROOT / "scripts" / "generate_2026_spring_seed.py"
 DEFAULT_SUPABASE_URL = "https://kreryiryoorlmiqqhpcj.supabase.co"
 DEFAULT_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_aJ-TKJ-t1vr4dCit4s3-lQ_ZcYLuCO-"
-SEASON_WORKBOOKS = {
-    "2025 Winter": ROOT / "data" / "reseed_source" / "2025_winter" / "workbook.xlsx",
-    "2025 Spring": ROOT / "data" / "reseed_source" / "2025_spring" / "workbook.xlsx",
-}
+DEFAULT_SEASONS = ("2025 Winter", "2025 Spring")
 
 
 def load_seed_module():
@@ -131,12 +129,10 @@ def fetch_single_row(base_url: str, path: str, publishable_key: str):
 
 def main() -> None:
     args = parse_args()
-    target_seasons = args.seasons or list(SEASON_WORKBOOKS.keys())
+    target_seasons = args.seasons or list(DEFAULT_SEASONS)
 
     for season_name in target_seasons:
-        workbook_path = SEASON_WORKBOOKS.get(season_name)
-        if workbook_path is None:
-            raise RuntimeError(f"Unsupported season {season_name!r}. Known seasons: {', '.join(SEASON_WORKBOOKS)}")
+        workbook_path = resolve_season_workbook(season_name)
         if not workbook_path.exists():
             raise FileNotFoundError(f"Workbook not found for {season_name}: {workbook_path}")
 

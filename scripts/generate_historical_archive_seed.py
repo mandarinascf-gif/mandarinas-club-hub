@@ -6,18 +6,17 @@ import importlib.util
 import sys
 from pathlib import Path
 
+from reseed_paths import SQL_ROOT, relative_to_root, resolve_season_workbook
 
 ROOT = Path(__file__).resolve().parent.parent
-SQL_ROOT = ROOT / "sql"
-DOWNLOADS = Path.home() / "Downloads"
 HISTORICAL_SCRIPT_PATH = ROOT / "scripts" / "generate_historical_season_seed.py"
 DEFAULT_OUTPUT_PATH = SQL_ROOT / "season_history_seed.sql"
-DEFAULT_SEASONS: list[tuple[str, tuple[Path, ...]]] = [
-    ("2025 Summer", (DOWNLOADS / "Copy of 2025 MANDARINAS CF CURRENT SUMMER SEASON.xlsx",)),
-    ("2025 Fall", (DOWNLOADS / "2025 FALL season - mandarinas cf.xlsx",)),
-    ("2025 Solstice", (DOWNLOADS / "Copy of FINISHED 2025 SOLSTICE SESON.xlsx",)),
-    ("2025 Holiday", (DOWNLOADS / "2025 HOLIDAY season - mandarinas cf.xlsx",)),
-    ("2026 Winter", (DOWNLOADS / "Copy of 2026 WINTER season - mandarinas cf.xlsx",)),
+DEFAULT_SEASON_NAMES = [
+    "2025 Summer",
+    "2025 Fall",
+    "2025 Solstice",
+    "2025 Holiday",
+    "2026 Winter",
 ]
 
 
@@ -45,11 +44,11 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def resolve_workbook(season_name: str, candidates: tuple[Path, ...]) -> Path:
-    for candidate in candidates:
-        if candidate.exists():
-            return candidate.resolve()
-    raise FileNotFoundError(f"Could not find a workbook for {season_name}. Checked: {', '.join(str(path) for path in candidates)}")
+def resolve_workbook(season_name: str) -> Path:
+    workbook_path = resolve_season_workbook(season_name)
+    if workbook_path.exists():
+        return workbook_path
+    raise FileNotFoundError(f"Could not find the canonical workbook for {season_name}: {relative_to_root(workbook_path)}")
 
 
 def extract_transaction_body(sql: str) -> str:
@@ -86,7 +85,7 @@ def build_archive_sql(historical_module, resolved_seasons: list[tuple[str, Path]
     )
 
     source_rows = "\n".join(
-        f"-- {index}. {season_name}: {workbook_path}"
+        f"-- {index}. {season_name}: {relative_to_root(workbook_path)}"
         for index, (season_name, workbook_path) in enumerate(resolved_seasons, start=1)
     )
 
@@ -119,8 +118,8 @@ def main() -> None:
     args = parse_args()
     historical_module = load_historical_module()
     resolved_seasons = [
-        (season_name, resolve_workbook(season_name, candidates))
-        for season_name, candidates in DEFAULT_SEASONS
+        (season_name, resolve_workbook(season_name))
+        for season_name in DEFAULT_SEASON_NAMES
     ]
 
     output_path = args.output.expanduser().resolve()

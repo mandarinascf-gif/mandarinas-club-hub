@@ -13,14 +13,22 @@ from typing import Iterable
 
 import generate_2026_spring_seed as seed
 import generate_historical_season_seed as historical
+from reseed_paths import (
+    RESEED_CONFIG_ROOT,
+    RESEED_REPORT_ROOT,
+    RESEED_SOURCE_ROOT,
+    relative_to_root,
+    resolve_inventory_row_season_folder,
+    resolve_inventory_row_workbook,
+)
 
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_CONFIG_ROOT = ROOT / "data" / "reseed_config"
-DEFAULT_REPORT_ROOT = ROOT / "data" / "reseed_reports"
+DEFAULT_CONFIG_ROOT = RESEED_CONFIG_ROOT
+DEFAULT_REPORT_ROOT = RESEED_REPORT_ROOT
 WEEKLY_SHEET_CANDIDATES = ("WEEKLY_TEAMS", "WEEKLY_ROSTER")
 MATCH_DATE_SHEET_CANDIDATES = ("MATCH_DATES", "MATCH DATES")
-OPTIONAL_REFERENCE_PROFILE_DIR = ROOT / "data" / "reseed_source" / "reference_profiles"
+OPTIONAL_REFERENCE_PROFILE_DIR = RESEED_SOURCE_ROOT / "reference_profiles"
 REQUIRED_SHEETS = ("MATCH_INPUT",)
 IGNORED_PLACEHOLDER_LABELS = frozenset({"UNKNOWN", "IMPORTED", "IMPORTED PLAYER"})
 
@@ -522,15 +530,14 @@ def build_season_report(
     override_lookup: dict[tuple[str, int, str], BuddyOverride],
 ) -> dict[str, object]:
     season_name = seed.normalize_space(row.get("season_name", ""))
-    season_folder = (ROOT / seed.normalize_space(row.get("season_folder", ""))).resolve()
-    workbook_name = seed.normalize_space(row.get("workbook_file", "")) or "workbook.xlsx"
-    workbook_path = (season_folder / workbook_name).resolve()
+    season_folder = resolve_inventory_row_season_folder(row)
+    workbook_path = resolve_inventory_row_workbook(row)
     ready_for_import = normalize_bool(row.get("ready_for_import"))
 
     report: dict[str, object] = {
         "season_name": season_name,
-        "season_folder": str(season_folder),
-        "workbook_path": str(workbook_path),
+        "season_folder": relative_to_root(season_folder),
+        "workbook_path": relative_to_root(workbook_path),
         "ready_for_import": ready_for_import,
         "workbook_exists": workbook_path.exists(),
         "match_dates_sheet": None,
@@ -556,7 +563,7 @@ def build_season_report(
             {
                 "type": "missing_workbook",
                 "reason": "Workbook file not found.",
-                "path": str(workbook_path),
+                "path": relative_to_root(workbook_path),
             }
         )
         return report
@@ -993,10 +1000,10 @@ def main() -> None:
     report = {
         "generated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
         "config": {
-            "config_root": str(config_root),
-            "inventory_path": str(inventory_path),
-            "identity_map_path": str(identity_map_path),
-            "buddy_overrides_path": str(buddy_overrides_path),
+            "config_root": relative_to_root(config_root),
+            "inventory_path": relative_to_root(inventory_path),
+            "identity_map_path": relative_to_root(identity_map_path),
+            "buddy_overrides_path": relative_to_root(buddy_overrides_path),
             "include_not_ready": args.include_not_ready,
         },
         "summary": summary,

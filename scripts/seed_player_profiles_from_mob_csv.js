@@ -1,12 +1,19 @@
 const fs = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
 
 const { SUPABASE_URL, authHeaders } = require("./supabase_config.js");
 
 const ROOT = path.resolve(__dirname, "..");
-const DEFAULT_CSV_PATH = "/Users/andresaguayo/Downloads/Mandarinas CF Player Profile and Ratings - MOB.csv";
-const DEFAULT_PROFILE_CSV_PATH =
-  "/Users/andresaguayo/Downloads/Mandarinas CF Player Profile and Ratings - PLAYER_PROFILE.csv";
+const DOWNLOADS_DIR = path.join(os.homedir(), "Downloads");
+const DEFAULT_CSV_PATH = path.join(
+  DOWNLOADS_DIR,
+  "Mandarinas CF Player Profile and Ratings - MOB.csv"
+);
+const DEFAULT_PROFILE_CSV_PATH = path.join(
+  DOWNLOADS_DIR,
+  "Mandarinas CF Player Profile and Ratings - PLAYER_PROFILE.csv"
+);
 const DEFAULT_REPORT_PATH = path.join(
   ROOT,
   "data",

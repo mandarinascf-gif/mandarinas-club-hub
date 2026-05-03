@@ -37,6 +37,11 @@ default local source of truth is `assets/js/core/runtime_config.js`, where `admi
 in one place. `window.__MANDARINAS_SUPABASE_CONFIG__`, `ADMIN_CODE`, and `NEXT_PUBLIC_ADMIN_CODE`
 are still accepted as fallback override keys. If no override is present, it falls back to `1234`.
 
+For workbook-backed reseed scripts, the folder source of truth is
+`data/reseed_config/season_inventory.csv`. Current-season generation, historical repair helpers,
+and canonical reseed/report scripts should resolve workbooks from that inventory instead of from
+machine-specific `Downloads` paths.
+
 ## Current caveats
 
 - Busses access is currently a client-side code gate, not real authentication.

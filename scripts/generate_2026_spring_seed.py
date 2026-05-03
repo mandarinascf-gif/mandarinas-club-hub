@@ -12,15 +12,10 @@ from pathlib import Path
 from xml.etree import ElementTree as ET
 import zipfile
 
+from reseed_paths import SQL_ROOT, relative_to_root, resolve_season_workbook
 
 ROOT = Path(__file__).resolve().parent.parent
-SQL_ROOT = ROOT / "sql"
 DOWNLOADS = Path.home() / "Downloads"
-WORKBOOK_CANDIDATES = [
-    DOWNLOADS / "current 2026 SPRING season - mandarinas cf (2).xlsx",
-    DOWNLOADS / "current 2026 SPRING season - mandarinas cf (1).xlsx",
-    DOWNLOADS / "current 2026 SPRING season - mandarinas cf.xlsx",
-]
 PLAYER_CSV_CANDIDATES = [
     DOWNLOADS / "UPDATING SOCCER APP - PLAYERS.csv",
 ]
@@ -296,13 +291,13 @@ def resolve_workbook_path() -> Path:
             raise FileNotFoundError(candidate)
         return candidate
 
-    for candidate in WORKBOOK_CANDIDATES:
-        if candidate.exists():
-            return candidate
-
-    raise FileNotFoundError(
-        "No default workbook was found. Pass the .xlsx path explicitly to scripts/generate_2026_spring_seed.py."
-    )
+    workbook_path = resolve_season_workbook(SEASON_NAME)
+    if not workbook_path.exists():
+        raise FileNotFoundError(
+            f"Default workbook not found for {SEASON_NAME}: {relative_to_root(workbook_path)}. "
+            "Update data/reseed_config/season_inventory.csv or pass the .xlsx path explicitly."
+        )
+    return workbook_path
 
 
 def resolve_player_csv_path() -> Path | None:
@@ -1111,7 +1106,7 @@ def main() -> None:
     workbook_path = resolve_workbook_path()
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_PATH.write_text(build_sql(), encoding="utf-8")
-    print(f"Wrote {OUTPUT_PATH} from {workbook_path}")
+    print(f"Wrote {relative_to_root(OUTPUT_PATH)} from {relative_to_root(workbook_path)}")
 
 
 if __name__ == "__main__":

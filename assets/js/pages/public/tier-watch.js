@@ -42,6 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const rotationCount = document.getElementById("rotation-count");
   const flexCount = document.getElementById("flex-count");
   const changeCount = document.getElementById("change-count");
+  const summarySubCard = document.getElementById("summary-sub-card");
   const tierStatusLine = document.getElementById("tier-status-line");
   const queueTableWrap = document.getElementById("queue-table-wrap");
   const suggestionPanelCopy = document.getElementById("suggestion-panel-copy");
@@ -661,6 +662,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderSummary() {
     const registeredPlayers = seasonRosterPlayers || [];
+    const subCount = registeredPlayers.filter((row) => registrationTier(row) === "sub").length;
 
     spotMixCount.textContent = String(registeredPlayers.length);
     coreCount.textContent = String(
@@ -669,12 +671,13 @@ document.addEventListener("DOMContentLoaded", () => {
     rotationCount.textContent = String(
       registeredPlayers.filter((row) => registrationTier(row) === "flex").length
     );
-    flexCount.textContent = String(
-      registeredPlayers.filter((row) => registrationTier(row) === "sub").length
-    );
+    flexCount.textContent = String(subCount);
     changeCount.textContent = String(
       registeredPlayers.filter((row) => row?.is_eligible !== false).length
     );
+    if (summarySubCard) {
+      summarySubCard.hidden = subCount === 0;
+    }
   }
 
   function renderQueue() {

@@ -3,13 +3,13 @@
 -- Run this AFTER 01_schema.sql.
 -- IMPORTANT: Set the dropdown to "No limit" before running.
 -- Included workbooks:
--- 1. 2025 Winter: /Users/andresaguayo/mandarinas-club-hub/data/reseed_source/2025_winter/workbook.xlsx
--- 2. 2025 Spring: /Users/andresaguayo/mandarinas-club-hub/data/reseed_source/2025_spring/workbook.xlsx
--- 3. 2025 Summer: /Users/andresaguayo/mandarinas-club-hub/data/reseed_source/2025_summer/workbook.xlsx
--- 4. 2025 Fall: /Users/andresaguayo/mandarinas-club-hub/data/reseed_source/2025_fall/workbook.xlsx
--- 5. 2025 Holiday: /Users/andresaguayo/mandarinas-club-hub/data/reseed_source/2025_holiday/workbook.xlsx
--- 6. 2025 Solstice: /Users/andresaguayo/mandarinas-club-hub/data/reseed_source/2025_solstice/workbook.xlsx
--- 7. 2026 Winter: /Users/andresaguayo/mandarinas-club-hub/data/reseed_source/2026_winter/workbook.xlsx
+-- 1. 2025 Winter: data/reseed_source/2025_winter/workbook.xlsx
+-- 2. 2025 Spring: data/reseed_source/2025_spring/workbook.xlsx
+-- 3. 2025 Summer: data/reseed_source/2025_summer/workbook.xlsx
+-- 4. 2025 Fall: data/reseed_source/2025_fall/workbook.xlsx
+-- 5. 2025 Holiday: data/reseed_source/2025_holiday/workbook.xlsx
+-- 6. 2025 Solstice: data/reseed_source/2025_solstice/workbook.xlsx
+-- 7. 2026 Winter: data/reseed_source/2026_winter/workbook.xlsx
 -- Canonical rebuild rules applied:
 -- 1. Player identities come from data/reseed_config/identity_map.csv and approved workbook sources.
 -- 2. Slash/buddy rows are duplicated into each real player.
@@ -238,7 +238,7 @@ values (
   '2025 Winter',
   8,
   30,
-  12,
+  0,
   1,
   2,
   2,
@@ -1162,7 +1162,7 @@ values (
   '2025 Spring',
   8,
   46,
-  5,
+  0,
   1,
   2,
   2,
@@ -2066,7 +2066,7 @@ values (
   '2025 Summer',
   8,
   45,
-  9,
+  0,
   1,
   2,
   2,
@@ -3004,7 +3004,7 @@ values (
   '2025 Fall',
   8,
   28,
-  20,
+  0,
   1,
   2,
   2,
@@ -3993,7 +3993,7 @@ values (
   '2025 Holiday',
   6,
   29,
-  16,
+  0,
   1,
   2,
   2,
@@ -4775,7 +4775,7 @@ values (
   '2025 Solstice',
   8,
   44,
-  11,
+  0,
   1,
   2,
   2,
@@ -5744,7 +5744,7 @@ values (
   '2026 Winter',
   8,
   25,
-  22,
+  0,
   1,
   2,
   2,

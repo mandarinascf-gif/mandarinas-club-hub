@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-04-28T11:09:52-07:00",
+  "generated_at": "2026-05-02T21:18:36-07:00",
   "config": {
-    "config_root": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_config",
-    "inventory_path": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_config/season_inventory.csv",
-    "identity_map_path": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_config/identity_map.csv",
-    "buddy_overrides_path": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_config/buddy_overrides.csv",
+    "config_root": "data/reseed_config",
+    "inventory_path": "data/reseed_config/season_inventory.csv",
+    "identity_map_path": "data/reseed_config/identity_map.csv",
+    "buddy_overrides_path": "data/reseed_config/buddy_overrides.csv",
     "include_not_ready": false
   },
   "summary": {
@@ -26,8 +26,8 @@
   "seasons": [
     {
       "season_name": "2025 Winter",
-      "season_folder": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_winter",
-      "workbook_path": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_winter/workbook.xlsx",
+      "season_folder": "data/reseed_source/2025_winter",
+      "workbook_path": "data/reseed_source/2025_winter/workbook.xlsx",
       "ready_for_import": true,
       "workbook_exists": true,
       "match_dates_sheet": "MATCH DATES",
@@ -40,7 +40,7 @@
         "generated_stat_rows": 101,
         "canonical_player_count": 53,
         "matchday_count": 8,
-        "match_count": 0,
+        "match_count": 32,
         "stat_source": "WEEKLY_TEAMS fallback"
       },
       "issues": [
@@ -62,8 +62,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -77,8 +77,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -92,8 +92,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -122,8 +122,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -137,8 +137,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -152,8 +152,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -167,8 +167,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -197,8 +197,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -212,8 +212,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -227,8 +227,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -242,8 +242,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -257,8 +257,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -272,8 +272,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -287,8 +287,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -302,8 +302,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -317,8 +317,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -332,8 +332,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -362,8 +362,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -377,8 +377,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -407,8 +407,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -452,8 +452,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -467,8 +467,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -482,8 +482,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -512,8 +512,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -527,8 +527,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -542,8 +542,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -557,8 +557,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -587,8 +587,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -602,8 +602,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -647,8 +647,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -662,8 +662,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -677,8 +677,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -692,8 +692,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -707,8 +707,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -722,8 +722,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -737,8 +737,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -752,8 +752,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -767,8 +767,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -782,8 +782,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -797,8 +797,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -812,8 +812,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -827,8 +827,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -842,16 +842,16 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         }
       ]
     },
     {
       "season_name": "2025 Spring",
-      "season_folder": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_spring",
-      "workbook_path": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_spring/workbook.xlsx",
+      "season_folder": "data/reseed_source/2025_spring",
+      "workbook_path": "data/reseed_source/2025_spring/workbook.xlsx",
       "ready_for_import": true,
       "workbook_exists": true,
       "match_dates_sheet": "MATCH DATES",
@@ -864,7 +864,7 @@
         "generated_stat_rows": 98,
         "canonical_player_count": 51,
         "matchday_count": 8,
-        "match_count": 0,
+        "match_count": 32,
         "stat_source": "WEEKLY_TEAMS fallback"
       },
       "issues": [
@@ -886,8 +886,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -901,8 +901,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -916,8 +916,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -946,8 +946,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -961,8 +961,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -976,8 +976,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -991,8 +991,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1006,8 +1006,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1021,8 +1021,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1036,8 +1036,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -1051,8 +1051,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1066,8 +1066,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -1081,8 +1081,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -1096,8 +1096,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1111,8 +1111,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1126,8 +1126,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1141,8 +1141,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1171,8 +1171,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1186,8 +1186,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1216,8 +1216,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1246,8 +1246,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1261,8 +1261,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1306,8 +1306,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1336,8 +1336,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1351,8 +1351,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -1366,8 +1366,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1396,8 +1396,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1411,8 +1411,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1441,8 +1441,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1456,8 +1456,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1471,8 +1471,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1486,8 +1486,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1501,8 +1501,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1516,8 +1516,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1531,8 +1531,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1546,8 +1546,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1561,8 +1561,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1576,8 +1576,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1591,8 +1591,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1606,8 +1606,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1621,8 +1621,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1636,16 +1636,16 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         }
       ]
     },
     {
       "season_name": "2025 Summer",
-      "season_folder": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_summer",
-      "workbook_path": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_summer/workbook.xlsx",
+      "season_folder": "data/reseed_source/2025_summer",
+      "workbook_path": "data/reseed_source/2025_summer/workbook.xlsx",
       "ready_for_import": true,
       "workbook_exists": true,
       "match_dates_sheet": "MATCH_DATES",
@@ -1675,8 +1675,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1690,8 +1690,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1705,8 +1705,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1720,8 +1720,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1735,8 +1735,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1750,8 +1750,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1765,8 +1765,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -1780,8 +1780,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1795,8 +1795,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1810,8 +1810,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1825,8 +1825,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1840,8 +1840,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -1855,8 +1855,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1870,8 +1870,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1885,8 +1885,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -1900,8 +1900,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1915,8 +1915,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1930,8 +1930,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1945,8 +1945,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1975,8 +1975,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -1990,8 +1990,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -2005,8 +2005,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -2020,8 +2020,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -2050,8 +2050,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -2095,8 +2095,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2110,8 +2110,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2140,8 +2140,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2170,8 +2170,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -2185,8 +2185,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -2200,8 +2200,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2230,8 +2230,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2245,8 +2245,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2275,8 +2275,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2290,8 +2290,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2305,8 +2305,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2320,8 +2320,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2335,8 +2335,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2350,8 +2350,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2365,8 +2365,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2380,8 +2380,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2395,8 +2395,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2410,8 +2410,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2425,8 +2425,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2440,8 +2440,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -2455,8 +2455,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2470,16 +2470,16 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         }
       ]
     },
     {
       "season_name": "2025 Fall",
-      "season_folder": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_fall",
-      "workbook_path": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_fall/workbook.xlsx",
+      "season_folder": "data/reseed_source/2025_fall",
+      "workbook_path": "data/reseed_source/2025_fall/workbook.xlsx",
       "ready_for_import": true,
       "workbook_exists": true,
       "match_dates_sheet": "MATCH_DATES",
@@ -2509,8 +2509,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2524,8 +2524,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -2539,8 +2539,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2554,8 +2554,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2569,8 +2569,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2584,8 +2584,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -2599,8 +2599,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -2614,8 +2614,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2629,8 +2629,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2644,8 +2644,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2659,8 +2659,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2674,8 +2674,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -2689,8 +2689,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2719,8 +2719,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -2734,8 +2734,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -2749,8 +2749,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -2764,8 +2764,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2779,8 +2779,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -2794,8 +2794,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2824,8 +2824,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -2839,8 +2839,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2854,8 +2854,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -2869,8 +2869,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -2929,8 +2929,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -2944,8 +2944,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -2974,8 +2974,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -2989,8 +2989,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -3004,8 +3004,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3034,8 +3034,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3079,8 +3079,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3094,8 +3094,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3109,8 +3109,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -3124,8 +3124,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3139,8 +3139,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3154,8 +3154,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3169,8 +3169,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -3184,8 +3184,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3199,8 +3199,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3214,8 +3214,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -3229,8 +3229,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3244,8 +3244,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -3259,8 +3259,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3274,8 +3274,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3289,8 +3289,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3304,16 +3304,16 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         }
       ]
     },
     {
       "season_name": "2025 Holiday",
-      "season_folder": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_holiday",
-      "workbook_path": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_holiday/workbook.xlsx",
+      "season_folder": "data/reseed_source/2025_holiday",
+      "workbook_path": "data/reseed_source/2025_holiday/workbook.xlsx",
       "ready_for_import": true,
       "workbook_exists": true,
       "match_dates_sheet": "MATCH_DATES",
@@ -3343,8 +3343,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3358,8 +3358,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -3388,8 +3388,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3403,8 +3403,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3418,8 +3418,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3433,8 +3433,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -3448,8 +3448,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -3463,8 +3463,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3478,8 +3478,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3493,8 +3493,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -3508,8 +3508,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -3523,8 +3523,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3538,8 +3538,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3568,8 +3568,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -3583,8 +3583,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -3598,8 +3598,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3613,8 +3613,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -3628,8 +3628,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3643,8 +3643,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3673,8 +3673,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3688,8 +3688,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3703,8 +3703,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -3733,8 +3733,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -3748,8 +3748,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3793,8 +3793,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -3808,8 +3808,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -3823,8 +3823,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3853,8 +3853,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3898,8 +3898,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3913,8 +3913,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3928,8 +3928,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3943,8 +3943,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3958,8 +3958,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3973,8 +3973,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -3988,8 +3988,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4003,8 +4003,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4018,8 +4018,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4033,8 +4033,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -4048,8 +4048,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4063,8 +4063,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4078,8 +4078,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4093,16 +4093,16 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         }
       ]
     },
     {
       "season_name": "2025 Solstice",
-      "season_folder": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_solstice",
-      "workbook_path": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2025_solstice/workbook.xlsx",
+      "season_folder": "data/reseed_source/2025_solstice",
+      "workbook_path": "data/reseed_source/2025_solstice/workbook.xlsx",
       "ready_for_import": true,
       "workbook_exists": true,
       "match_dates_sheet": "MATCH_DATES",
@@ -4132,8 +4132,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -4162,8 +4162,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4177,8 +4177,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4207,8 +4207,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4222,8 +4222,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4237,8 +4237,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -4252,8 +4252,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4267,8 +4267,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4282,8 +4282,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4297,8 +4297,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4312,8 +4312,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -4327,8 +4327,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4342,8 +4342,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -4357,8 +4357,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -4372,8 +4372,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4387,8 +4387,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4402,8 +4402,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4417,8 +4417,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4447,8 +4447,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -4462,8 +4462,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4477,8 +4477,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -4492,8 +4492,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -4552,8 +4552,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4567,8 +4567,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4612,8 +4612,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -4627,8 +4627,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -4642,8 +4642,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4672,8 +4672,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4687,8 +4687,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4717,8 +4717,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4732,8 +4732,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4747,8 +4747,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -4762,8 +4762,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -4777,8 +4777,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4792,8 +4792,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -4807,8 +4807,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4822,8 +4822,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4837,8 +4837,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4852,8 +4852,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4867,8 +4867,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4882,8 +4882,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -4897,8 +4897,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -4912,8 +4912,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4927,8 +4927,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4942,16 +4942,16 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         }
       ]
     },
     {
       "season_name": "2026 Winter",
-      "season_folder": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2026_winter",
-      "workbook_path": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2026_winter/workbook.xlsx",
+      "season_folder": "data/reseed_source/2026_winter",
+      "workbook_path": "data/reseed_source/2026_winter/workbook.xlsx",
       "ready_for_import": true,
       "workbook_exists": true,
       "match_dates_sheet": "MATCH_DATES",
@@ -4981,8 +4981,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -4996,8 +4996,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -5011,8 +5011,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5026,8 +5026,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5041,8 +5041,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5056,8 +5056,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5071,8 +5071,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5086,8 +5086,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -5101,8 +5101,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5116,8 +5116,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5131,8 +5131,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -5146,8 +5146,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -5161,8 +5161,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5176,8 +5176,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -5191,8 +5191,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5206,8 +5206,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -5221,8 +5221,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5236,8 +5236,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -5251,8 +5251,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5266,8 +5266,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5296,8 +5296,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -5311,8 +5311,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -5326,8 +5326,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -5356,8 +5356,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5386,8 +5386,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -5401,8 +5401,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5461,8 +5461,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -5476,8 +5476,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5491,8 +5491,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -5506,8 +5506,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5521,8 +5521,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5551,8 +5551,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5611,8 +5611,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5626,8 +5626,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5641,8 +5641,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -5656,8 +5656,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5671,8 +5671,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5686,8 +5686,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5701,8 +5701,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5716,8 +5716,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5731,8 +5731,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5746,8 +5746,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5761,8 +5761,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5776,8 +5776,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5791,8 +5791,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5806,16 +5806,16 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         }
       ]
     },
     {
       "season_name": "2026 Spring",
-      "season_folder": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2026_spring",
-      "workbook_path": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_source/2026_spring/workbook.xlsx",
+      "season_folder": "data/reseed_source/2026_spring",
+      "workbook_path": "data/reseed_source/2026_spring/workbook.xlsx",
       "ready_for_import": true,
       "workbook_exists": true,
       "match_dates_sheet": "MATCH_DATES",
@@ -5845,8 +5845,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5860,8 +5860,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5875,8 +5875,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5890,8 +5890,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5905,8 +5905,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5920,8 +5920,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5935,8 +5935,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5950,8 +5950,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -5965,8 +5965,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5980,8 +5980,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -5995,8 +5995,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -6025,8 +6025,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -6040,8 +6040,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -6070,8 +6070,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -6085,8 +6085,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -6100,8 +6100,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -6115,8 +6115,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -6145,8 +6145,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -6160,8 +6160,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -6175,8 +6175,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -6190,8 +6190,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -6205,8 +6205,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -6220,8 +6220,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -6250,8 +6250,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -6265,8 +6265,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -6295,8 +6295,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -6310,8 +6310,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -6325,8 +6325,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -6340,8 +6340,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -6355,8 +6355,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -6385,8 +6385,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -6400,8 +6400,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -6430,8 +6430,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "split_shared_row"
         },
         {
@@ -6460,8 +6460,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -6475,8 +6475,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -6490,8 +6490,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -6505,8 +6505,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -6520,8 +6520,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -6535,8 +6535,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -6550,8 +6550,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -6565,8 +6565,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -6580,8 +6580,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -6595,8 +6595,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -6610,8 +6610,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         },
         {
@@ -6625,8 +6625,8 @@
           "positions": [
             "MID"
           ],
-          "default_tier": "flex",
-          "status": "flex",
+          "default_tier": "rotation",
+          "status": "rotation",
           "source": "identity_map"
         }
       ]

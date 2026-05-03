@@ -6,6 +6,8 @@ Files:
 - `buddy_overrides.csv`
 
 Workflow:
+0. `season_inventory.csv` is the folder source of truth for workbook-backed scripts. Keep each
+   season row aligned with the real folder under `data/reseed_source/`.
 1. Put one raw workbook export in each season folder under `data/reseed_source/<season_slug>/workbook.xlsx`.
 2. Put any shared player profile workbook exports under `data/reseed_source/reference_profiles/`.
 3. Mark `ready_for_import=yes` in `season_inventory.csv` only when that season has the workbook in place and the identity rules are reviewed.

@@ -6,10 +6,15 @@ from collections import Counter
 from pathlib import Path
 
 import generate_canonical_import_report as canonical
+from reseed_paths import (
+    SQL_ROOT,
+    relative_to_root,
+    resolve_inventory_row_season_folder,
+    resolve_inventory_row_workbook,
+)
 
 
 ROOT = Path(__file__).resolve().parent.parent
-SQL_ROOT = ROOT / "sql"
 DEFAULT_HISTORY_OUTPUT = SQL_ROOT / "02_seed_history.sql"
 DEFAULT_CURRENT_OUTPUT = SQL_ROOT / "03_seed_current.sql"
 IGNORED_DISPLAY_NAMES = frozenset({"Imported", "Imported Player", "Unknown"})
@@ -114,15 +119,14 @@ def build_canonical_season_dataset(
     override_lookup: dict[tuple[str, int, str], canonical.BuddyOverride],
 ) -> dict[str, object]:
     season_name = canonical.seed.normalize_space(row.get("season_name", ""))
-    season_folder = (ROOT / canonical.seed.normalize_space(row.get("season_folder", ""))).resolve()
-    workbook_name = canonical.seed.normalize_space(row.get("workbook_file", "")) or "workbook.xlsx"
-    workbook_path = (season_folder / workbook_name).resolve()
+    season_folder = resolve_inventory_row_season_folder(row)
+    workbook_path = resolve_inventory_row_workbook(row)
     ready_for_import = canonical.normalize_bool(row.get("ready_for_import"))
 
     dataset: dict[str, object] = {
         "season_name": season_name,
-        "season_folder": str(season_folder),
-        "workbook_path": str(workbook_path),
+        "season_folder": relative_to_root(season_folder),
+        "workbook_path": relative_to_root(workbook_path),
         "ready_for_import": ready_for_import,
         "workbook_exists": workbook_path.exists(),
         "weekly_sheet": None,
@@ -156,7 +160,7 @@ def build_canonical_season_dataset(
             {
                 "type": "missing_workbook",
                 "reason": "Workbook file not found.",
-                "path": str(workbook_path),
+                "path": relative_to_root(workbook_path),
             }
         )
         return dataset
