@@ -230,7 +230,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       losses: 0,
       points_per_game: 0,
       rank: "-",
-      rank_label: "Wins x3 + Draws x1",
+      rank_label: "Attendance, then W3+D1",
     };
   }
 
@@ -544,7 +544,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       birth_date: player.birth_date,
       overall_rating: overall,
       rank: playerRankDisplay(stats.rank),
-      rank_label: normalizeText(stats.rank_label, "Wins x3 + Draws x1"),
+      rank_label: normalizeText(stats.rank_label, "Attendance, then W3+D1"),
       ppg: Number(pointsPerGame),
       primary_position: positions[0] || normalizeText(player.primary_position || "", "N/A"),
       position_label: positionLabel,
@@ -560,7 +560,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       goal_keeps: Number(stats.goal_keeps || 0),
       clean_sheets: Number(stats.clean_sheets || 0),
       rank: playerRankDisplay(stats.rank),
-      rank_label: normalizeText(stats.rank_label, "Wins x3 + Draws x1"),
+      rank_label: normalizeText(stats.rank_label, "Attendance, then W3+D1"),
       ppg: pointsPerGame,
       points_per_game: pointsPerGame,
       seasons_won: Number(stats.seasons_won || 0),
