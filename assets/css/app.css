@@ -2257,6 +2257,59 @@ table {
   margin-top: var(--space-4);
 }
 
+.queue-header-tools {
+  align-items: end;
+}
+
+.queue-top-grid {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.queue-top-card {
+  display: grid;
+  gap: var(--space-3);
+  padding: clamp(1rem, 2.4vw, 1.25rem);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background:
+    linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(255, 255, 255, 0)),
+    var(--surface);
+}
+
+.queue-top-card-primary {
+  border-color: rgba(59, 130, 246, 0.26);
+  background:
+    linear-gradient(135deg, rgba(59, 130, 246, 0.14), rgba(255, 180, 87, 0.06)),
+    var(--surface);
+}
+
+.queue-top-step {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.queue-top-name {
+  margin: 0;
+  font-size: clamp(1.1rem, 3.2vw, 1.4rem);
+  line-height: 1.15;
+}
+
+.queue-top-copy {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.queue-compact-heading {
+  display: grid;
+  gap: var(--space-2);
+}
+
 .sortable-th {
   cursor: pointer;
   user-select: none;
@@ -4263,6 +4316,32 @@ body.manager-touch::before {
 }
 
 .public-app .summary-card > span:first-child {
+  color: #ffd19b;
+}
+
+.public-app .queue-top-card {
+  border-color: rgba(93, 118, 143, 0.72);
+  background:
+    linear-gradient(180deg, rgba(18, 29, 43, 0.98), rgba(12, 21, 32, 0.98)),
+    linear-gradient(90deg, rgba(255, 180, 87, 0.04), transparent 52%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 36px rgba(2, 6, 12, 0.2);
+}
+
+.public-app .queue-top-card-primary {
+  border-color: rgba(255, 180, 87, 0.44);
+  background:
+    linear-gradient(180deg, rgba(24, 36, 52, 0.98), rgba(14, 24, 38, 0.98)),
+    linear-gradient(135deg, rgba(255, 180, 87, 0.16), rgba(59, 130, 246, 0.08));
+}
+
+.public-app .queue-top-step,
+.public-app .queue-top-copy {
+  color: #9fb0c5;
+}
+
+.public-app .queue-top-card-primary .queue-top-step {
   color: #ffd19b;
 }
 
