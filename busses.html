@@ -100,10 +100,9 @@
                 id="busses-code"
                 name="code"
                 type="text"
-                maxlength="6"
-                inputmode="numeric"
+                maxlength="160"
+                inputmode="text"
                 autocomplete="one-time-code"
-                pattern="[0-9]{6}"
               />
             </div>
           </div>
@@ -116,7 +115,7 @@
             </button>
           </div>
           <p class="micro-note" id="busses-code-help" hidden>
-            Enter the 6-digit code from the email. This avoids the redirect problems from the old link flow.
+            Enter the code from the email. A 6-digit OTP is best, but this field also accepts a longer Supabase token if your template is still sending one.
           </p>
         </form>
         <p class="status-line" id="busses-access-status">Busses tools stay separate from the public club pages.</p>
