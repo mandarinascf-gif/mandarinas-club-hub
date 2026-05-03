@@ -109,11 +109,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!access.isAdmin) {
       setSignedInState(true, false);
       accessCopy.textContent =
-        "This browser session is signed in, but that email is not on the active Busses admin allowlist.";
+        "This browser session is signed in, but that email is not attached to a player with Busses access turned on.";
       setStatus(
         access.adminEmail
-          ? `${access.adminEmail} is signed in, but it is not authorized for the Busses workspace.`
-          : "This signed-in account is not authorized for the Busses workspace.",
+          ? `${access.adminEmail} is signed in, but it is not linked to a Busses-enabled player record.`
+          : "This signed-in account is not linked to a Busses-enabled player record.",
         "error"
       );
       return access;

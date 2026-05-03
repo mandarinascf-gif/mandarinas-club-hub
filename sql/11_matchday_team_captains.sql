@@ -210,32 +210,61 @@ execute procedure public.enforce_matchday_team_captain_eligibility();
 alter table public.matchday_team_captains enable row level security;
 
 drop policy if exists "Anyone can read matchday team captains" on public.matchday_team_captains;
-create policy "Anyone can read matchday team captains"
-on public.matchday_team_captains
-for select
-to anon
-using (true);
-
 drop policy if exists "Anyone can add matchday team captains" on public.matchday_team_captains;
-create policy "Anyone can add matchday team captains"
-on public.matchday_team_captains
-for insert
-to anon
-with check (true);
-
 drop policy if exists "Anyone can update matchday team captains" on public.matchday_team_captains;
-create policy "Anyone can update matchday team captains"
-on public.matchday_team_captains
-for update
-to anon
-using (true)
-with check (true);
-
 drop policy if exists "Anyone can delete matchday team captains" on public.matchday_team_captains;
-create policy "Anyone can delete matchday team captains"
-on public.matchday_team_captains
-for delete
-to anon
-using (true);
+drop policy if exists "Admins can add matchday team captains" on public.matchday_team_captains;
+drop policy if exists "Admins can update matchday team captains" on public.matchday_team_captains;
+drop policy if exists "Admins can delete matchday team captains" on public.matchday_team_captains;
+
+do $$
+begin
+  create policy "Anyone can read matchday team captains"
+  on public.matchday_team_captains
+  for select
+  to anon, authenticated
+  using (true);
+
+  if to_regprocedure('public.is_admin()') is not null then
+    create policy "Admins can add matchday team captains"
+    on public.matchday_team_captains
+    for insert
+    to authenticated
+    with check (public.is_admin());
+
+    create policy "Admins can update matchday team captains"
+    on public.matchday_team_captains
+    for update
+    to authenticated
+    using (public.is_admin())
+    with check (public.is_admin());
+
+    create policy "Admins can delete matchday team captains"
+    on public.matchday_team_captains
+    for delete
+    to authenticated
+    using (public.is_admin());
+  else
+    create policy "Anyone can add matchday team captains"
+    on public.matchday_team_captains
+    for insert
+    to anon
+    with check (true);
+
+    create policy "Anyone can update matchday team captains"
+    on public.matchday_team_captains
+    for update
+    to anon
+    using (true)
+    with check (true);
+
+    create policy "Anyone can delete matchday team captains"
+    on public.matchday_team_captains
+    for delete
+    to anon
+    using (true);
+  end if;
+end
+$$;
 
 commit;

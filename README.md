@@ -34,22 +34,28 @@ For local env reference, see `.env.example`.
 
 ## Busses admin access
 
-Busses pages now require a real Supabase Auth session plus an active
+Busses pages now require a real Supabase Auth session plus a player-linked
 `public.admin_allowed_emails` row that matches the signed-in email address.
 
 For an existing live project:
 
 - run `sql/09_admin_auth_hardening.sql`
 - run `sql/13_admin_magic_link_allowlist.sql`
+- run `sql/14_player_linked_busses_access.sql`
 - in Supabase Auth URL Configuration, set the site URL and add the production `busses.html` URL
   to Redirect URLs
-- insert each admin email into `public.admin_allowed_emails`
+- add the first admin email to `public.admin_allowed_emails`, linked to the right `players.id`
+
+After the first admin can sign in, manage these fields from the Busses Squad player editor:
+
+- `Admin sign-in email`
+- `Busses access`
 
 Example:
 
 ```sql
-insert into public.admin_allowed_emails (email, note)
-values ('you@example.com', 'Primary Busses admin');
+insert into public.admin_allowed_emails (player_id, email, is_active, note)
+values (123, 'you@example.com', true, 'Primary Busses admin');
 ```
 
 For fresh setups, `sql/01_schema.sql` now creates the same table/function/policies directly.

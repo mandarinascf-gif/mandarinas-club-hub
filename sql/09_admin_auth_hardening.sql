@@ -316,37 +316,43 @@ for delete
 to authenticated
 using (public.is_admin());
 
-drop policy if exists "Anyone can read matchday team captains" on public.matchday_team_captains;
-drop policy if exists "Anyone can add matchday team captains" on public.matchday_team_captains;
-drop policy if exists "Anyone can update matchday team captains" on public.matchday_team_captains;
-drop policy if exists "Anyone can delete matchday team captains" on public.matchday_team_captains;
-drop policy if exists "Admins can add matchday team captains" on public.matchday_team_captains;
-drop policy if exists "Admins can update matchday team captains" on public.matchday_team_captains;
-drop policy if exists "Admins can delete matchday team captains" on public.matchday_team_captains;
+do $$
+begin
+  if to_regclass('public.matchday_team_captains') is not null then
+    drop policy if exists "Anyone can read matchday team captains" on public.matchday_team_captains;
+    drop policy if exists "Anyone can add matchday team captains" on public.matchday_team_captains;
+    drop policy if exists "Anyone can update matchday team captains" on public.matchday_team_captains;
+    drop policy if exists "Anyone can delete matchday team captains" on public.matchday_team_captains;
+    drop policy if exists "Admins can add matchday team captains" on public.matchday_team_captains;
+    drop policy if exists "Admins can update matchday team captains" on public.matchday_team_captains;
+    drop policy if exists "Admins can delete matchday team captains" on public.matchday_team_captains;
 
-create policy "Anyone can read matchday team captains"
-on public.matchday_team_captains
-for select
-to anon, authenticated
-using (true);
+    create policy "Anyone can read matchday team captains"
+    on public.matchday_team_captains
+    for select
+    to anon, authenticated
+    using (true);
 
-create policy "Admins can add matchday team captains"
-on public.matchday_team_captains
-for insert
-to authenticated
-with check (public.is_admin());
+    create policy "Admins can add matchday team captains"
+    on public.matchday_team_captains
+    for insert
+    to authenticated
+    with check (public.is_admin());
 
-create policy "Admins can update matchday team captains"
-on public.matchday_team_captains
-for update
-to authenticated
-using (public.is_admin())
-with check (public.is_admin());
+    create policy "Admins can update matchday team captains"
+    on public.matchday_team_captains
+    for update
+    to authenticated
+    using (public.is_admin())
+    with check (public.is_admin());
 
-create policy "Admins can delete matchday team captains"
-on public.matchday_team_captains
-for delete
-to authenticated
-using (public.is_admin());
+    create policy "Admins can delete matchday team captains"
+    on public.matchday_team_captains
+    for delete
+    to authenticated
+    using (public.is_admin());
+  end if;
+end
+$$;
 
 commit;

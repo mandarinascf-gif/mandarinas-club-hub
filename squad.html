@@ -183,6 +183,34 @@
               </fieldset>
 
               <fieldset>
+                <legend>Busses access</legend>
+                <div class="field-row">
+                  <div class="field">
+                    <label for="admin-email">Admin sign-in email</label>
+                    <input
+                      id="admin-email"
+                      name="admin-email"
+                      type="email"
+                      maxlength="120"
+                      autocomplete="email"
+                      placeholder="name@example.com"
+                    />
+                  </div>
+                  <div class="field">
+                    <label for="busses-access">Busses access</label>
+                    <label class="checkbox-field">
+                      <input id="busses-access" name="busses-access" type="checkbox" />
+                      <span>Allow this player email into the Busses side</span>
+                    </label>
+                  </div>
+                </div>
+                <p class="micro-note">
+                  Use the same email on <strong>Busses Access</strong>. If Busses access is on, that
+                  magic-link sign-in email can open protected pages.
+                </p>
+              </fieldset>
+
+              <fieldset>
                 <legend>Playing details</legend>
                 <div class="field-row">
                   <div class="field">
@@ -251,6 +279,6 @@
       <div class="club-footer-copy">Busses · Full Squad</div>
     </footer>
 
-    <script src="./assets/js/pages/admin/players.js?v=20260503b"></script>
+    <script src="./assets/js/pages/admin/players.js?v=20260503d"></script>
   </body>
 </html>

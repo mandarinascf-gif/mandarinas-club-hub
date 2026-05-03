@@ -31,6 +31,8 @@ const firstNameInput = document.getElementById("first-name");
 const lastNameInput = document.getElementById("last-name");
 const nicknameInput = document.getElementById("nickname");
 const phoneInput = document.getElementById("phone");
+const adminEmailInput = document.getElementById("admin-email");
+const bussesAccessInput = document.getElementById("busses-access");
 const nationalityInput = document.getElementById("nationality");
 const birthDateInput = document.getElementById("birth-date");
 const statusInput = document.getElementById("status-select");
@@ -92,6 +94,14 @@ function normalizeText(value) {
   return String(value || "").trim().replace(/\s+/g, " ");
 }
 
+function normalizeEmail(value) {
+  return normalizeText(value).toLowerCase();
+}
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
 function setStatus(message, tone = "") {
   statusLine.textContent = message;
   statusLine.className = tone ? `status-line ${tone}` : "status-line";
@@ -113,11 +123,23 @@ function readableError(error) {
     return "Player Card cannot open until live club data is ready.";
   }
 
+  if (
+    (lowerMessage.includes("relation") ||
+      lowerMessage.includes("column") ||
+      lowerMessage.includes("schema cache")) &&
+    lowerMessage.includes("admin_allowed_emails")
+  ) {
+    return "Busses player access fields are waiting for the latest Supabase admin migration.";
+  }
+
   if (lowerMessage.includes("column") || lowerMessage.includes("schema cache")) {
     return "Player Card is waiting for the latest live club update.";
   }
 
   if (error?.code === "23505") {
+    if (lowerMessage.includes("admin_allowed_emails") || lowerMessage.includes("email_key")) {
+      return "That admin sign-in email is already linked to another player.";
+    }
     return "Another player already uses that same first and last name.";
   }
 
@@ -320,6 +342,8 @@ function populateForm(playerRow) {
   lastNameInput.value = player.last_name || "";
   nicknameInput.value = player.nickname || "";
   phoneInput.value = player.phone || "";
+  adminEmailInput.value = player.admin_email || "";
+  bussesAccessInput.checked = player.is_busses_admin === true;
   nationalityInput.value = player.nationality || "";
   birthDateInput.value = player.birth_date || "";
   statusInput.value = player.status || "flex";
@@ -410,6 +434,14 @@ function renderDetail() {
           <div>
             <dt>Phone</dt>
             <dd>${escapeHtml(player.phone || "Not set")}</dd>
+          </div>
+          <div>
+            <dt>Admin email</dt>
+            <dd>${escapeHtml(player.admin_email || "Not set")}</dd>
+          </div>
+          <div>
+            <dt>Busses access</dt>
+            <dd>${escapeHtml(player.is_busses_admin ? "Enabled" : "Off")}</dd>
           </div>
           <div>
             <dt>Current / next-season tier</dt>
@@ -694,6 +726,31 @@ async function loadPlayer() {
     return;
   }
 
+  const { data: accessRow, error: accessError } = await supabaseClient
+    .from("admin_allowed_emails")
+    .select("player_id, email, is_active")
+    .eq("player_id", playerId)
+    .maybeSingle();
+
+  if (accessError) {
+    showEmptyState(readableError(accessError));
+    return;
+  }
+
+  if (accessRow) {
+    data = {
+      ...data,
+      admin_email: normalizeEmail(accessRow.email),
+      is_busses_admin: accessRow.is_active === true,
+    };
+  } else {
+    data = {
+      ...data,
+      admin_email: "",
+      is_busses_admin: false,
+    };
+  }
+
   showShell();
   populateForm(data);
   renderDetail();
@@ -712,6 +769,8 @@ async function savePlayer(event) {
   const nationality = normalizeText(nationalityInput.value);
   const birthDate = birthDateInput.value || null;
   const phone = normalizeText(phoneInput.value);
+  const adminEmail = normalizeEmail(adminEmailInput.value);
+  const hasBussesAccess = bussesAccessInput.checked;
   const notes = normalizeText(notesInput.value);
   const skillRating = Number(skillRatingInput.value);
 
@@ -722,6 +781,16 @@ async function savePlayer(event) {
 
   if (!selectedRoles.length || selectedRoles.length > 3) {
     setStatus("Select between 1 and 3 roles for this player.", "error");
+    return;
+  }
+
+  if (adminEmail && !isValidEmail(adminEmail)) {
+    setStatus("Enter a valid admin sign-in email.", "error");
+    return;
+  }
+
+  if (hasBussesAccess && !adminEmail) {
+    setStatus("Add an admin sign-in email before turning on Busses access.", "error");
     return;
   }
 
@@ -764,6 +833,23 @@ async function savePlayer(event) {
         notes: notes || null,
       })
       .eq("id", playerId));
+  }
+
+  if (!error && adminEmail) {
+    ({ error } = await supabaseClient.from("admin_allowed_emails").upsert(
+      {
+        player_id: playerId,
+        email: adminEmail,
+        is_active: hasBussesAccess,
+      },
+      {
+        onConflict: "player_id",
+      }
+    ));
+  }
+
+  if (!error && !adminEmail) {
+    ({ error } = await supabaseClient.from("admin_allowed_emails").delete().eq("player_id", playerId));
   }
 
   saveButton.disabled = false;
