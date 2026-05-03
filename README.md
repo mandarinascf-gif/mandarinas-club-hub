@@ -30,6 +30,12 @@ The browser app reads Supabase config from:
 - `window.__MANDARINAS_SUPABASE_CONFIG__`, if provided at runtime
 - fallback values in `assets/js/core/supabase_config.js`
 
+Optional app URL config can also be provided at runtime through `window.__MANDARINAS_APP_CONFIG__`.
+Useful keys:
+
+- `siteUrl`
+- `bussesMagicLinkRedirectUrl`
+
 For local env reference, see `.env.example`.
 
 ## Busses admin access
