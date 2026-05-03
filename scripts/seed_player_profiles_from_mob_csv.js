@@ -3,6 +3,7 @@ const os = require("node:os");
 const path = require("node:path");
 
 const { SUPABASE_URL, authHeaders } = require("./supabase_config.js");
+const { portablePath } = require("./reseed_paths.js");
 
 const ROOT = path.resolve(__dirname, "..");
 const DOWNLOADS_DIR = path.join(os.homedir(), "Downloads");
@@ -504,8 +505,8 @@ async function main() {
 
   const report = {
     generated_at: new Date().toISOString(),
-    csv_path: options.csvPath,
-    profile_csv_path: profileRows.length ? options.profileCsvPath : null,
+    csv_path: portablePath(options.csvPath),
+    profile_csv_path: profileRows.length ? portablePath(options.profileCsvPath) : null,
     dry_run: options.dryRun,
     summary: {
       csv_rows: csvRows.length,

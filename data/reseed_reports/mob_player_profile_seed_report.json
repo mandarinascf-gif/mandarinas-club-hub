@@ -1,7 +1,7 @@
 {
   "generated_at": "2026-04-28T18:12:10.774Z",
-  "csv_path": "/Users/andresaguayo/Downloads/Mandarinas CF Player Profile and Ratings - MOB.csv",
-  "profile_csv_path": "/Users/andresaguayo/Downloads/Mandarinas CF Player Profile and Ratings - PLAYER_PROFILE.csv",
+  "csv_path": "~/Downloads/Mandarinas CF Player Profile and Ratings - MOB.csv",
+  "profile_csv_path": "~/Downloads/Mandarinas CF Player Profile and Ratings - PLAYER_PROFILE.csv",
   "dry_run": false,
   "summary": {
     "csv_rows": 47,

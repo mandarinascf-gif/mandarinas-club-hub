@@ -2,6 +2,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const { SUPABASE_URL, authHeaders } = require("./supabase_config.js");
+const { portablePath } = require("./reseed_paths.js");
 
 const ROOT = path.resolve(__dirname, "..");
 const DEFAULT_CSV_PATH = path.join(
@@ -214,7 +215,7 @@ async function main() {
     error.reportPath = options.reportPath;
     error.report = {
       generated_at: new Date().toISOString(),
-      csv_path: options.csvPath,
+      csv_path: portablePath(options.csvPath),
       dry_run: options.dryRun,
       summary: {
         csv_rows: csvRows.length,
@@ -235,7 +236,7 @@ async function main() {
 
   const report = {
     generated_at: new Date().toISOString(),
-    csv_path: options.csvPath,
+    csv_path: portablePath(options.csvPath),
     dry_run: options.dryRun,
     summary: {
       csv_rows: csvRows.length,

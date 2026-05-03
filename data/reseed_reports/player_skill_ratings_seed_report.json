@@ -1,6 +1,6 @@
 {
   "generated_at": "2026-04-28T18:25:48.132Z",
-  "csv_path": "/Users/andresaguayo/mandarinas-club-hub copy/data/reseed_reports/player_skill_ratings_db_import.csv",
+  "csv_path": "data/reseed_reports/player_skill_ratings_db_import.csv",
   "dry_run": true,
   "summary": {
     "csv_rows": 66,

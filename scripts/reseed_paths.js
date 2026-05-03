@@ -1,7 +1,9 @@
 const fs = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
 
 const ROOT = path.resolve(__dirname, "..");
+const HOME_DIR = os.homedir();
 const DATA_ROOT = path.join(ROOT, "data");
 const RESEED_CONFIG_ROOT = path.join(DATA_ROOT, "reseed_config");
 const RESEED_SOURCE_ROOT = path.join(DATA_ROOT, "reseed_source");
@@ -25,6 +27,21 @@ function relativeToRoot(targetPath) {
   const resolved = path.resolve(targetPath);
   const relative = path.relative(ROOT, resolved);
   return relative && !relative.startsWith("..") && !path.isAbsolute(relative) ? relative : resolved;
+}
+
+function portablePath(targetPath) {
+  const resolved = path.resolve(targetPath);
+  const relative = path.relative(ROOT, resolved);
+  if (relative && !relative.startsWith("..") && !path.isAbsolute(relative)) {
+    return relative;
+  }
+
+  const homeRelative = path.relative(HOME_DIR, resolved);
+  if (homeRelative && !homeRelative.startsWith("..") && !path.isAbsolute(homeRelative)) {
+    return `~/${homeRelative}`;
+  }
+
+  return resolved;
 }
 
 function parseCsvLine(line) {
@@ -117,6 +134,7 @@ module.exports = {
   SEASON_INVENTORY_PATH,
   normalizeSpace,
   relativeToRoot,
+  portablePath,
   readSeasonInventory,
   resolveSeasonInventoryEntry,
   resolveSeasonWorkbookPath,
