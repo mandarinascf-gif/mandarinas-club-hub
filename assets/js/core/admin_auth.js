@@ -12,6 +12,41 @@
     return normalizeText(value).toLowerCase();
   }
 
+  function normalizeOtpOrHash(value) {
+    const normalizedValue = normalizeText(value);
+
+    if (!normalizedValue) {
+      return "";
+    }
+
+    try {
+      const directUrl = new URL(normalizedValue);
+      const confirmationUrl = directUrl.searchParams.get("confirmation_url");
+      if (confirmationUrl) {
+        try {
+          const nestedUrl = new URL(confirmationUrl);
+          return (
+            normalizeText(nestedUrl.searchParams.get("token_hash")) ||
+            normalizeText(nestedUrl.searchParams.get("token")) ||
+            normalizeText(nestedUrl.searchParams.get("code")) ||
+            normalizedValue
+          );
+        } catch (error) {
+          // Fall through to direct token extraction below.
+        }
+      }
+
+      return (
+        normalizeText(directUrl.searchParams.get("token_hash")) ||
+        normalizeText(directUrl.searchParams.get("token")) ||
+        normalizeText(directUrl.searchParams.get("code")) ||
+        normalizedValue
+      );
+    } catch (error) {
+      return normalizedValue.replace(/\s+/g, "");
+    }
+  }
+
   function resolveUrl(href) {
     try {
       return new URL(href, window.location.href);
@@ -257,7 +292,7 @@
     }
 
     const normalizedEmail = normalizeEmail(email);
-    const normalizedToken = normalizeText(token).replace(/\s+/g, "");
+    const normalizedToken = normalizeOtpOrHash(token);
 
     if (!normalizedEmail) {
       setCachedAdminAccess(false);
@@ -277,11 +312,19 @@
       };
     }
 
-    const { error } = await boot.supabaseClient.auth.verifyOtp({
-      email: normalizedEmail,
-      token: normalizedToken,
-      type: "email",
-    });
+    const isSixDigitOtp = /^\d{6}$/.test(normalizedToken);
+    const verificationPayload = isSixDigitOtp
+      ? {
+          email: normalizedEmail,
+          token: normalizedToken,
+          type: "email",
+        }
+      : {
+          token_hash: normalizedToken,
+          type: "email",
+        };
+
+    const { error } = await boot.supabaseClient.auth.verifyOtp(verificationPayload);
 
     if (error) {
       setCachedAdminAccess(false);
