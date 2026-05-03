@@ -115,17 +115,21 @@
     }
 
     if (
-      lowerMessage.includes("email not confirmed")
-    ) {
-      return "Finish the email confirmation flow from the magic link first.";
-    }
-
-    if (
       lowerMessage.includes("security purposes") ||
       lowerMessage.includes("rate limit") ||
       lowerMessage.includes("60 seconds")
     ) {
-      return "A magic link was already requested recently. Wait a minute, then try again.";
+      return "A Busses code was already requested recently. Wait a minute, then try again.";
+    }
+
+    if (
+      lowerMessage.includes("otp") ||
+      (lowerMessage.includes("token") &&
+        (lowerMessage.includes("expired") ||
+          lowerMessage.includes("invalid") ||
+          lowerMessage.includes("not found")))
+    ) {
+      return "That email code was not accepted. Request a new code and try again.";
     }
 
     if (lowerMessage.includes("invalid email")) {
@@ -205,7 +209,7 @@
     };
   }
 
-  async function sendMagicLink(email, redirectTo) {
+  async function sendEmailOtp(email) {
     const boot = bootClient();
     if (!boot.ok) {
       setCachedAdminAccess(false);
@@ -213,7 +217,6 @@
     }
 
     const normalizedEmail = normalizeEmail(email);
-    const normalizedRedirectTo = normalizeText(redirectTo);
 
     if (!normalizedEmail) {
       setCachedAdminAccess(false);
@@ -224,33 +227,72 @@
       };
     }
 
-    const options = {
-      shouldCreateUser: true,
-    };
-
-    if (normalizedRedirectTo) {
-      options.emailRedirectTo = normalizedRedirectTo;
-    }
-
     const { error } = await boot.supabaseClient.auth.signInWithOtp({
       email: normalizedEmail,
-      options,
+      options: {
+        shouldCreateUser: true,
+      },
     });
 
     if (error) {
       setCachedAdminAccess(false);
       return {
         ok: false,
-        code: "magic_link_failed",
-        message: error.message || "Magic-link request failed.",
+        code: "otp_send_failed",
+        message: error.message || "Email code request failed.",
       };
     }
 
     return {
       ok: true,
       email: normalizedEmail,
-      redirectTo: normalizedRedirectTo || null,
     };
+  }
+
+  async function verifyEmailOtp(email, token) {
+    const boot = bootClient();
+    if (!boot.ok) {
+      setCachedAdminAccess(false);
+      return boot;
+    }
+
+    const normalizedEmail = normalizeEmail(email);
+    const normalizedToken = normalizeText(token).replace(/\s+/g, "");
+
+    if (!normalizedEmail) {
+      setCachedAdminAccess(false);
+      return {
+        ok: false,
+        code: "missing_email",
+        message: "Enter the admin email address first.",
+      };
+    }
+
+    if (!normalizedToken) {
+      setCachedAdminAccess(false);
+      return {
+        ok: false,
+        code: "missing_otp",
+        message: "Enter the email code first.",
+      };
+    }
+
+    const { error } = await boot.supabaseClient.auth.verifyOtp({
+      email: normalizedEmail,
+      token: normalizedToken,
+      type: "email",
+    });
+
+    if (error) {
+      setCachedAdminAccess(false);
+      return {
+        ok: false,
+        code: "otp_verify_failed",
+        message: error.message || "Email code verification failed.",
+      };
+    }
+
+    return resolveAccess();
   }
 
   async function signOut() {
@@ -283,7 +325,8 @@
     readableAccessError,
     resolveAccess,
     setCachedAdminAccess,
-    sendMagicLink,
+    sendEmailOtp,
     signOut,
+    verifyEmailOtp,
   });
 })();

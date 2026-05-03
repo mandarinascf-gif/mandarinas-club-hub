@@ -15,7 +15,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/js/core/supabase_config.js?v=20260503b"></script>
     <script src="./assets/js/core/runtime_config.js?v=20260503b"></script>
-    <script src="./assets/js/core/admin_auth.js?v=20260503c"></script>
+    <script src="./assets/js/core/admin_auth.js?v=20260503d"></script>
     <script src="./assets/js/ui/shell.js?v=20260503b" defer></script>
   </head>
   <body class="manager-touch admin-app page-busses">
@@ -44,7 +44,7 @@
           <div class="section-label">Busses Workspace</div>
           <h1>Busses Access</h1>
           <p>
-            Club pages stay public-facing. Use an authorized admin email and a magic link before
+            Club pages stay public-facing. Use an authorized admin email and an email code before
             you open the protected workspace.
           </p>
         </div>
@@ -70,7 +70,7 @@
           </div>
           <div class="summary-card">
             <span>Busses side</span>
-            <strong>Magic link</strong>
+            <strong>Email code</strong>
             <span class="summary-copy">Protected tools now require a real Supabase session from an authorized email.</span>
           </div>
           <div class="summary-card">
@@ -83,10 +83,10 @@
 
       <section class="panel panel-spotlight">
         <div class="section-label">Next step</div>
-        <h2>Email yourself a busses magic link</h2>
+        <h2>Email yourself a busses code</h2>
         <p id="busses-access-copy">
-          Use an authorized Busses admin email. If you came here from a protected page, you will
-          return there after access is confirmed.
+          Use an authorized Busses admin email. We will send a 6-digit code here, and if you came
+          from a protected page, you will return there after access is confirmed.
         </p>
         <form id="busses-sign-in-form">
           <div class="field-grid">
@@ -94,12 +94,30 @@
               <label for="busses-email">Admin email</label>
               <input id="busses-email" name="email" type="email" autocomplete="email" />
             </div>
+            <div class="field" id="busses-code-field" hidden>
+              <label for="busses-code">Email code</label>
+              <input
+                id="busses-code"
+                name="code"
+                type="text"
+                maxlength="6"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                pattern="[0-9]{6}"
+              />
+            </div>
           </div>
           <div class="actions">
-            <button class="primary-button" id="busses-sign-in-button" type="submit">
-              Email me a magic link
+            <button class="primary-button" id="busses-send-code-button" type="button">
+              Email me a code
+            </button>
+            <button class="secondary-button" id="busses-verify-code-button" type="submit" hidden>
+              Verify code
             </button>
           </div>
+          <p class="micro-note" id="busses-code-help" hidden>
+            Enter the 6-digit code from the email. This avoids the redirect problems from the old link flow.
+          </p>
         </form>
         <p class="status-line" id="busses-access-status">Busses tools stay separate from the public club pages.</p>
       </section>
@@ -157,6 +175,6 @@
     <footer class="club-footer">
       <div class="club-footer-copy">Busses Access · Mandarinas CF</div>
     </footer>
-    <script src="./assets/js/pages/admin/busses.js?v=20260503c"></script>
+    <script src="./assets/js/pages/admin/busses.js?v=20260503d"></script>
   </body>
 </html>

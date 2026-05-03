@@ -1,11 +1,16 @@
 document.addEventListener("DOMContentLoaded", async () => {
   const adminAuth = window.MandarinasAdminAuth;
+  const PENDING_EMAIL_KEY = "mcfPendingAdminOtpEmail";
   const statusLine = document.getElementById("busses-access-status");
   const accessCopy = document.getElementById("busses-access-copy");
   const quickActions = document.getElementById("busses-quick-actions");
   const signInForm = document.getElementById("busses-sign-in-form");
   const emailInput = document.getElementById("busses-email");
-  const signInButton = document.getElementById("busses-sign-in-button");
+  const codeInput = document.getElementById("busses-code");
+  const codeField = document.getElementById("busses-code-field");
+  const codeHelp = document.getElementById("busses-code-help");
+  const sendCodeButton = document.getElementById("busses-send-code-button");
+  const verifyCodeButton = document.getElementById("busses-verify-code-button");
   const continueButton = document.getElementById("busses-continue-button");
   const signOutButton = document.getElementById("busses-sign-out-button");
 
@@ -35,31 +40,86 @@ document.addEventListener("DOMContentLoaded", async () => {
     statusLine.className = tone ? `status-line ${tone}` : "status-line";
   }
 
-  function magicLinkRedirectHref() {
-    const appConfig = window.__MANDARINAS_APP_CONFIG__ || {};
-    const configuredRedirect = String(appConfig.bussesMagicLinkRedirectUrl || "").trim();
-    if (configuredRedirect) {
-      return configuredRedirect;
-    }
-
-    const configuredSiteUrl = String(appConfig.siteUrl || "").trim();
-
+  function getPendingEmail() {
     try {
-      if (configuredSiteUrl) {
-        const siteUrl = new URL(configuredSiteUrl);
-        const currentUrl = new URL(window.location.href);
-        siteUrl.pathname = currentUrl.pathname;
-        siteUrl.search = currentUrl.search;
-        siteUrl.hash = "";
-        return siteUrl.toString();
+      return window.sessionStorage.getItem(PENDING_EMAIL_KEY) || "";
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function setPendingEmail(value) {
+    try {
+      const normalizedValue = String(value || "").trim().toLowerCase();
+      if (normalizedValue) {
+        window.sessionStorage.setItem(PENDING_EMAIL_KEY, normalizedValue);
+        return;
       }
 
-      const redirectUrl = new URL(window.location.href);
-      redirectUrl.hash = "";
-      return redirectUrl.toString();
+      window.sessionStorage.removeItem(PENDING_EMAIL_KEY);
     } catch (error) {
-      return window.location.href;
+      console.warn("[MandarinasBusses] Could not store pending admin email.", error);
     }
+  }
+
+  function showCodeStep(email = "") {
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+    if (normalizedEmail && emailInput) {
+      emailInput.value = normalizedEmail;
+    }
+
+    if (codeField) {
+      codeField.hidden = false;
+    }
+    if (codeHelp) {
+      codeHelp.hidden = false;
+    }
+    if (verifyCodeButton) {
+      verifyCodeButton.hidden = false;
+    }
+    if (sendCodeButton) {
+      sendCodeButton.textContent = "Send a new code";
+    }
+  }
+
+  function hideCodeStep() {
+    if (codeInput) {
+      codeInput.value = "";
+    }
+    if (codeField) {
+      codeField.hidden = true;
+    }
+    if (codeHelp) {
+      codeHelp.hidden = true;
+    }
+    if (verifyCodeButton) {
+      verifyCodeButton.hidden = true;
+    }
+    if (sendCodeButton) {
+      sendCodeButton.textContent = "Email me a code";
+    }
+  }
+
+  function codeValue() {
+    return String(codeInput?.value || "").trim().replace(/\s+/g, "");
+  }
+
+  function initializeCodeStep() {
+    const pendingEmail = getPendingEmail();
+    if (!pendingEmail) {
+      hideCodeStep();
+      return;
+    }
+
+    showCodeStep(pendingEmail);
+  }
+
+  function resetSignInFlow() {
+    setPendingEmail("");
+    if (signInForm) {
+      signInForm.reset();
+    }
+    hideCodeStep();
   }
 
   function setSignedInState(isSignedIn, isAdmin = false) {
@@ -68,7 +128,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (signInForm) {
-      signInForm.hidden = isSignedIn && isAdmin;
+      signInForm.hidden = isSignedIn;
     }
 
     if (continueButton) {
@@ -84,8 +144,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (emailInput) {
       emailInput.disabled = isBusy;
     }
-    if (signInButton) {
-      signInButton.disabled = isBusy;
+    if (codeInput) {
+      codeInput.disabled = isBusy;
+    }
+    if (sendCodeButton) {
+      sendCodeButton.disabled = isBusy;
+    }
+    if (verifyCodeButton) {
+      verifyCodeButton.disabled = isBusy;
     }
     if (continueButton) {
       continueButton.disabled = isBusy;
@@ -97,9 +163,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (!adminAuth) {
     setSignedInState(false, false);
+    initializeCodeStep();
     setStatus("Shared admin auth failed to load on this page.", "error");
-    if (signInButton) {
-      signInButton.disabled = true;
+    if (sendCodeButton) {
+      sendCodeButton.disabled = true;
+    }
+    if (verifyCodeButton) {
+      verifyCodeButton.disabled = true;
     }
     return;
   }
@@ -117,14 +187,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (!access.session?.user) {
       setSignedInState(false, false);
+      initializeCodeStep();
       accessCopy.textContent =
-        "Use an authorized Busses admin email to receive a magic link and open the protected workspace.";
-      setStatus("Busses tools stay separate until an authorized admin email completes the magic-link sign-in.", "");
+        "Use an authorized Busses admin email to receive a 6-digit code and open the protected workspace.";
+      setStatus(
+        getPendingEmail()
+          ? "Enter the email code to finish Busses access."
+          : "Busses tools stay separate until an authorized admin email completes the email-code sign-in.",
+        ""
+      );
       return access;
     }
 
     if (!access.isAdmin) {
       setSignedInState(true, false);
+      setPendingEmail("");
+      hideCodeStep();
       accessCopy.textContent =
         "This browser session is signed in, but that email is not attached to a player with Busses access turned on.";
       setStatus(
@@ -137,6 +215,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     setSignedInState(true, true);
+    setPendingEmail("");
+    hideCodeStep();
     accessCopy.textContent =
       "This browser session already has active Busses access. Continue into the protected workspace or open a quick action below.";
     setStatus("Busses access is active for this browser session.", "success");
@@ -157,19 +237,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    if (signInForm) {
-      signInForm.reset();
-    }
+    resetSignInFlow();
     await syncAccessState();
   });
 
-  signInForm?.addEventListener("submit", async (event) => {
-    event.preventDefault();
-
+  sendCodeButton?.addEventListener("click", async () => {
     setBusy(true);
-    setStatus("Sending Busses magic link...", "");
+    setStatus("Sending Busses email code...", "");
 
-    const result = await adminAuth.sendMagicLink(emailInput?.value, magicLinkRedirectHref());
+    const result = await adminAuth.sendEmailOtp(emailInput?.value);
     setBusy(false);
 
     if (!result.ok) {
@@ -179,11 +255,58 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    setStatus(
-      `Magic link sent to ${result.email}. Open that email on this device to finish Busses access.`,
-      "success"
-    );
+    setPendingEmail(result.email);
+    showCodeStep(result.email);
+    setStatus(`Code sent to ${result.email}. Enter the 6-digit code to finish Busses access.`, "success");
+    codeInput?.focus();
+    codeInput?.select();
   });
 
+  signInForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const pendingEmail = getPendingEmail() || String(emailInput?.value || "").trim().toLowerCase();
+    if (!pendingEmail) {
+      setStatus("Enter the admin email first, then request a code.", "error");
+      emailInput?.focus();
+      return;
+    }
+
+    if (codeValue().length !== 6) {
+      setStatus("Enter the 6-digit code from the email.", "error");
+      codeInput?.focus();
+      codeInput?.select();
+      return;
+    }
+
+    setBusy(true);
+    setStatus("Checking Busses email code...", "");
+
+    const result = await adminAuth.verifyEmailOtp(pendingEmail, codeValue());
+    setBusy(false);
+
+    if (!result.ok) {
+      setStatus(adminAuth.readableAccessError(result.message), "error");
+      codeInput?.focus();
+      codeInput?.select();
+      return;
+    }
+
+    setPendingEmail("");
+
+    if (!result.isAdmin) {
+      hideCodeStep();
+      setSignedInState(true, false);
+      setStatus("This code worked, but that signed-in email is not authorized for the Busses workspace.", "error");
+      return;
+    }
+
+    hideCodeStep();
+    setSignedInState(true, true);
+    setStatus("Busses access confirmed. Opening the protected workspace...", "success");
+    window.location.href = safeNextHref();
+  });
+
+  initializeCodeStep();
   await syncAccessState();
 });

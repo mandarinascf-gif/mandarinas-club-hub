@@ -30,12 +30,6 @@ The browser app reads Supabase config from:
 - `window.__MANDARINAS_SUPABASE_CONFIG__`, if provided at runtime
 - fallback values in `assets/js/core/supabase_config.js`
 
-Optional app URL config can also be provided at runtime through `window.__MANDARINAS_APP_CONFIG__`.
-Useful keys:
-
-- `siteUrl`
-- `bussesMagicLinkRedirectUrl`
-
 For local env reference, see `.env.example`.
 
 ## Busses admin access
@@ -48,14 +42,17 @@ For an existing live project:
 - run `sql/09_admin_auth_hardening.sql`
 - run `sql/13_admin_magic_link_allowlist.sql`
 - run `sql/14_player_linked_busses_access.sql`
-- in Supabase Auth URL Configuration, set the site URL and add the production `busses.html` URL
-  to Redirect URLs
+- in Supabase Auth Email Templates, switch the email sign-in template to send the 6-digit OTP
+  code using `{{ .Token }}`
 - add the first admin email to `public.admin_allowed_emails`, linked to the right `players.id`
 
 After the first admin can sign in, manage these fields from the Busses Squad player editor:
 
 - `Admin sign-in email`
 - `Busses access`
+
+The Busses sign-in page now uses email OTP instead of magic links, which is more reliable for a
+home-screen bookmark flow because it does not depend on redirect handling.
 
 Example:
 

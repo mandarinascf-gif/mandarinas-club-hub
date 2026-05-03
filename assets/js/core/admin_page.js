@@ -113,7 +113,7 @@
 
       renderGate({
         title: `${pageTitle} needs Busses access`,
-        body: "Use an authorized admin email and finish the Busses magic-link sign-in to open this page.",
+        body: "Use an authorized admin email and finish the Busses email-code sign-in to open this page.",
       });
       return { ok: false };
     }
