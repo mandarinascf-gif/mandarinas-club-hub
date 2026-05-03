@@ -11,7 +11,7 @@
     <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png" />
     <link rel="stylesheet" href="./assets/css/app.css?v=20260502c" />
-    <title>Club · Flex Tier Queue</title>
+    <title>Club · Flex Queue</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/js/core/club_logic.js?v=20260501e"></script>
     <script src="./assets/js/core/supabase_config.js"></script>
@@ -32,7 +32,7 @@
           <a class="nav-link" href="./roster.html">Squad</a>
           <a class="nav-link" href="./public_standings.html">Standings</a>
           <a class="nav-link" href="./submissions.html" title="Submit your matchday stats">Report</a>
-          <a class="nav-link nav-link-extra active" href="./tier_watch.html" title="Flex tier waiting list">Queue</a>
+          <a class="nav-link nav-link-extra active" href="./tier_watch.html" title="Open the flex queue">Queue</a>
           <a class="nav-link nav-link-extra" href="./videos.html">Videos</a>
         </div>
       </div>
@@ -41,161 +41,124 @@
     <main class="page">
       <section class="panel page-header">
         <div class="page-header-main">
-          <div class="section-label">Club · Flex Tier Queue</div>
-          <h1>Who plays next?</h1>
+          <div class="section-label">Club · Flex Queue</div>
+          <h1>See the flex line in one place</h1>
           <p id="hero-copy">
-            This is the waiting list for flex-tier players. The person at the top gets the next open spot. After they play, they move to the back of the line.
+            This page shows the live flex queue for the selected season. The player at the top gets the next open spot, and after they play they move to the back of the line.
           </p>
-          <div class="field">
-            <label for="season-select">Season</label>
-            <select id="season-select" class="select-input"></select>
+          <div class="field-row queue-header-tools">
+            <div class="field">
+              <label for="season-select">Season</label>
+              <select id="season-select" class="select-input"></select>
+            </div>
+            <div class="field">
+              <label for="queue-search">Find a player</label>
+              <input
+                id="queue-search"
+                class="search-input"
+                type="search"
+                placeholder="Search the flex queue"
+              />
+            </div>
           </div>
         </div>
         <div class="actions">
-          <a class="primary-button" href="#queue-table-wrap">Who is next</a>
-          <a class="secondary-button" href="./public_standings.html">Open standings</a>
+          <a class="primary-button" href="#queue-spotlight">Who is next</a>
+          <a class="secondary-button" href="#queue-table-wrap">Open full line</a>
           <a class="secondary-button" href="./tier_system.html">How tiers work</a>
         </div>
       </section>
 
+      <section class="panel panel-spotlight">
+        <div class="section-label">Top of the line</div>
+        <h2>Who is next?</h2>
+        <p class="section-copy" id="queue-spotlight-copy">
+          Loading the players closest to the next flex spot.
+        </p>
+        <div class="queue-top-grid" id="queue-spotlight">
+          <div class="empty-state">Loading the flex queue...</div>
+        </div>
+      </section>
+
       <section class="panel panel-overview" id="summary-bar">
-        <div class="section-label">Season registration</div>
-        <h2>Registered this season</h2>
+        <div class="section-label">Queue snapshot</div>
+        <h2>What matters today</h2>
         <div class="summary-grid">
           <div class="summary-card">
-            <span>Registered</span>
-            <strong id="spot-mix-count">0</strong>
-            <span class="summary-copy">Players on this season roster</span>
+            <span>Flex players</span>
+            <strong id="queue-flex-count">0</strong>
+            <span class="summary-copy">Registered as flex this season</span>
           </div>
           <div class="summary-card">
-            <span>Core</span>
-            <strong id="core-count">0</strong>
-            <span class="summary-copy">Registered as core</span>
+            <span>In line today</span>
+            <strong id="queue-eligible-count">0</strong>
+            <span class="summary-copy">Eligible for the next opening</span>
           </div>
           <div class="summary-card">
-            <span>Flex</span>
-            <strong id="rotation-count">0</strong>
-            <span class="summary-copy">Registered as flex</span>
-          </div>
-          <div class="summary-card" id="summary-sub-card">
-            <span>Sub</span>
-            <strong id="flex-count">0</strong>
-            <span class="summary-copy">Registered as sub</span>
+            <span>Rule today</span>
+            <strong id="queue-mode-label">-</strong>
+            <span class="summary-copy" id="queue-mode-copy">Waiting for season data.</span>
           </div>
           <div class="summary-card">
-            <span>Eligible</span>
-            <strong id="change-count">0</strong>
-            <span class="summary-copy">Available for queue planning</span>
+            <span>After you play</span>
+            <strong id="queue-cycle-label">Back of line</strong>
+            <span class="summary-copy" id="queue-cycle-copy">
+              Your next turn starts behind the players still waiting.
+            </span>
           </div>
         </div>
       </section>
 
       <section class="panel panel-focus">
         <div class="section-label">Live waiting list</div>
-        <h2>The line</h2>
-        <p class="section-copy">The player at the top has priority for the next available spot. Position starts with season appearances, and tied players are split by season totals.</p>
+        <h2>Full flex queue</h2>
+        <p class="section-copy" id="queue-table-copy">
+          Search for your name or read from the top down. Lower number means you are closer to the next spot.
+        </p>
         <div class="status-line" id="tier-status-line">Loading the flex queue...</div>
         <div class="table-shell tw-table-wrap" id="queue-table-wrap"></div>
       </section>
 
-      <section class="panel panel-spotlight" id="suggestion-summary-panel">
-        <div class="section-label">Recommendation center</div>
-        <h2>What tier does the app suggest next?</h2>
-        <p id="suggestion-panel-copy">
-          <strong>Now</strong> is the active tier today. <strong>Suggested next</strong> is the attendance-based recommendation the manager can review.
-        </p>
-        <div class="summary-pill-grid" id="suggestion-summary-pills" aria-live="polite"></div>
-        <button class="secondary-button" type="button" id="open-tier-suggestion-modal">
-          Open recommendation center
-        </button>
-      </section>
-
       <section class="panel panel-guide">
-        <div class="section-label">How it works</div>
-        <h2>How the line is sorted</h2>
+        <div class="section-label">How to read it</div>
+        <h2>Four simple rules</h2>
         <div class="quick-action-grid">
           <div class="list-item">
             <div class="list-item-main">
-              <div class="list-item-title">Fewer games = front of line</div>
-              <div class="compact-row-copy">If you've played 2 games and someone else played 4, you go first.</div>
+              <div class="list-item-title">1. Lower number = sooner</div>
+              <div class="compact-row-copy">If you are #1, you get the next flex opening. If you are #2, you are next after that.</div>
             </div>
           </div>
           <div class="list-item">
             <div class="list-item-main">
-              <div class="list-item-title">Ties break on season performance</div>
-              <div class="compact-row-copy">Same number of games? Higher points go first, then goals, goal keeps, and clean sheets.</div>
+              <div class="list-item-title">2. Fewer games stays in front</div>
+              <div class="compact-row-copy">On normal weeks, players with fewer season appearances stay closer to the front of the line.</div>
             </div>
           </div>
           <div class="list-item">
             <div class="list-item-main">
-              <div class="list-item-title">Final matchday flips the order</div>
-              <div class="compact-row-copy">On the last night of the season, it's all about performance — highest points go first regardless of games played.</div>
+              <div class="list-item-title">3. Ties use season totals</div>
+              <div class="compact-row-copy">If two players have played the same number of games, the app breaks the tie with season points, then goals, goal keeps, and clean sheets.</div>
+            </div>
+          </div>
+          <div class="list-item">
+            <div class="list-item-main">
+              <div class="list-item-title">4. Final night uses points first</div>
+              <div class="compact-row-copy">On the final matchday, the order flips and season performance takes priority for the finale.</div>
             </div>
           </div>
         </div>
-        <p style="margin-top: var(--space-md);"><a href="./tier_system.html">Learn how tiers and recommendations work</a></p>
+        <p style="margin-top: var(--space-md);">
+          Only players who are both <strong>flex</strong> and <strong>eligible</strong> appear in this line.
+          <a href="./tier_system.html">Learn more about tiers and queue rules.</a>
+        </p>
       </section>
     </main>
 
     <footer class="club-footer">
-      <div class="club-footer-copy">Club · Flex Tier Queue</div>
+      <div class="club-footer-copy">Club · Flex Queue</div>
     </footer>
 
-    <script src="./assets/js/pages/public/tier-watch.js?v=20260502a"></script>
-    <div class="site-modal" id="tier-suggestion-modal" hidden>
-      <div class="site-modal-backdrop" data-modal-close></div>
-      <div
-        class="site-modal-card site-modal-card-wide"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="tier-suggestion-modal-title"
-      >
-        <div class="site-modal-head">
-          <div>
-            <div class="section-label">Read this first</div>
-            <h2 class="site-modal-title" id="tier-suggestion-modal-title">Tier Recommendation Center</h2>
-            <p class="site-modal-copy" id="tier-suggestion-modal-copy">
-              Start with Changes if you only want to see movement. Now is active today. Suggested next is the attendance-based recommendation.
-            </p>
-          </div>
-          <button class="ghost-button" type="button" data-modal-close>Close</button>
-        </div>
-        <div class="site-modal-tools">
-          <input
-            id="tier-search"
-            class="search-input"
-            type="search"
-            placeholder="Search players, tiers, or notes..."
-          />
-          <div class="filter-row" id="tier-filter-row">
-            <button class="chip-button" type="button" data-filter="changes">Changes</button>
-            <button class="chip-button active" type="button" data-filter="all">All</button>
-            <button class="chip-button" type="button" data-filter="core">Core</button>
-            <button class="chip-button" type="button" data-filter="flex">Flex</button>
-            <button class="chip-button" type="button" data-filter="sub">Sub</button>
-          </div>
-        </div>
-        <div class="site-modal-body" id="tier-table-summary"></div>
-        <div class="table-shell tw-table-wrap" id="tier-table-wrap"></div>
-      </div>
-    </div>
-    <div class="site-modal" id="tier-detail-modal" hidden>
-      <div class="site-modal-backdrop" data-modal-close></div>
-      <div
-        class="site-modal-card"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="tier-detail-modal-title"
-      >
-        <div class="site-modal-head">
-          <div>
-            <div class="section-label">Why it was recommended</div>
-            <h2 class="site-modal-title" id="tier-detail-modal-title">Recommendation Details</h2>
-          </div>
-          <button class="ghost-button" type="button" data-modal-close>Close</button>
-        </div>
-        <div class="site-modal-body" id="tier-detail-content"></div>
-      </div>
-    </div>
+    <script src="./assets/js/pages/public/tier-watch.js?v=20260502b"></script>
   </body>
 </html>
