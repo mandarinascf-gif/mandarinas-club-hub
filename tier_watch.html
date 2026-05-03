@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png" />
-    <link rel="stylesheet" href="./assets/css/app.css?v=20260502a" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260502c" />
     <title>Club · Flex Tier Queue</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/js/core/club_logic.js?v=20260501e"></script>
@@ -58,7 +58,7 @@
         </div>
       </section>
 
-      <section class="panel" id="summary-bar">
+      <section class="panel panel-overview" id="summary-bar">
         <div class="section-label">Season numbers</div>
         <h2>Right now</h2>
         <div class="summary-grid">
@@ -90,7 +90,7 @@
         </div>
       </section>
 
-      <section class="panel">
+      <section class="panel panel-focus">
         <div class="section-label">Live waiting list</div>
         <h2>The line</h2>
         <p class="section-copy">The player at the top has priority for the next available spot. Position starts with season appearances, and tied players are split by season totals.</p>
@@ -98,7 +98,7 @@
         <div class="table-shell tw-table-wrap" id="queue-table-wrap"></div>
       </section>
 
-      <section class="panel" id="suggestion-summary-panel">
+      <section class="panel panel-spotlight" id="suggestion-summary-panel">
         <div class="section-label">Recommendation center</div>
         <h2>What tier does the app suggest next?</h2>
         <p id="suggestion-panel-copy">
@@ -110,7 +110,7 @@
         </button>
       </section>
 
-      <section class="panel">
+      <section class="panel panel-guide">
         <div class="section-label">How it works</div>
         <h2>How the line is sorted</h2>
         <div class="quick-action-grid">

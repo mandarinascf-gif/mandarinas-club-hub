@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png" />
-    <link rel="stylesheet" href="./assets/css/app.css?v=20260502b" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260502c" />
     <title>Club · Season</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/js/core/club_logic.js?v=20260429d"></script>
@@ -57,7 +57,7 @@
         </div>
       </section>
 
-      <section class="panel">
+      <section class="panel panel-overview">
         <div class="section-label">Overview</div>
         <h2>Matchday snapshot</h2>
         <div class="summary-grid">
@@ -85,7 +85,7 @@
       </section>
 
       <section class="master-detail">
-        <section class="panel master-panel" id="matchday-list-panel">
+        <section class="panel master-panel panel-focus" id="matchday-list-panel">
           <div class="section-label">Timeline</div>
           <h2>Matchday timeline</h2>
           <div class="status-line" id="schedule-status-line">Loading the schedule...</div>
@@ -93,7 +93,7 @@
         </section>
 
         <div class="detail-stack">
-          <section class="panel detail-panel">
+          <section class="panel detail-panel panel-spotlight">
             <div class="section-label">Match Centre</div>
             <h2>Selected matchday</h2>
             <div id="matchday-detail" class="history-shell">

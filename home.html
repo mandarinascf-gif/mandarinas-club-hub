@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png" />
-    <link rel="stylesheet" href="./assets/css/app.css?v=20260501h" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260502c" />
     <title>Club · Home</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/js/core/club_logic.js?v=20260429d"></script>
@@ -86,14 +86,14 @@
         </div>
       </section>
 
-      <section class="panel detail-panel" id="latest-results-card" hidden>
+      <section class="panel detail-panel panel-spotlight" id="latest-results-card" hidden>
         <div class="section-label">Latest</div>
         <h2 id="latest-results-title">Results coming soon</h2>
         <p id="latest-results-copy">Completed matchdays appear here with scores and scorers.</p>
         <div id="latest-results-body"></div>
       </section>
 
-      <section class="panel">
+      <section class="panel panel-spotlight">
         <div class="section-label">Leaders</div>
         <h2>Current leaders</h2>
         <div class="feature-grid feature-grid-wide">
@@ -112,7 +112,7 @@
         </div>
       </section>
 
-      <section class="panel">
+      <section class="panel panel-actions">
         <div class="section-label">Quick Actions</div>
         <h2>What should I tap next?</h2>
         <div class="quick-action-grid">
@@ -154,14 +154,14 @@
         </div>
       </section>
 
-      <section class="panel detail-panel" id="mvp-card" hidden>
+      <section class="panel detail-panel panel-spotlight" id="mvp-card" hidden>
         <div class="section-label">Spotlight</div>
         <h2 id="mvp-name">Loading season leader</h2>
         <p id="mvp-subtitle">Top-ranked player this season.</p>
         <div id="mvp-body"></div>
       </section>
 
-      <section class="panel detail-panel" id="past-winners-card" hidden>
+      <section class="panel detail-panel panel-guide" id="past-winners-card" hidden>
         <div class="section-label">History</div>
         <h2>Past champions</h2>
         <p class="section-copy">A look back at the players who finished previous seasons on top.</p>
