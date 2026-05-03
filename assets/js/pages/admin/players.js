@@ -1,5 +1,19 @@
-const supabaseConfig = window.MandarinasSupabaseConfig;
-const supabaseClient = supabaseConfig.createClient();
+(async function () {
+  "use strict";
+
+  const adminPage = window.MandarinasAdminPage;
+  if (!adminPage) {
+    return;
+  }
+
+  const access = await adminPage.requireAccess({
+    pageTitle: "Busses squad",
+  });
+  if (!access.ok) {
+    return;
+  }
+
+  const { supabaseClient } = access;
 const normalizePlayerDesiredTier =
   window.MandarinasLogic?.normalizePlayerDesiredTier || ((player) => player);
 const normalizeTierValue =
@@ -587,3 +601,4 @@ window.addEventListener("hashchange", () => {
 setPlayerView(resolvePlayerView(), { updateHash: false });
 resetForm({ focus: false });
 loadPlayers();
+})();

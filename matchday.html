@@ -10,14 +10,16 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="icon" type="image/png" sizes="192x192" href="./assets/icons/icon-192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png" />
-    <link rel="stylesheet" href="./assets/css/app.css?v=20260502c" />
+    <link rel="stylesheet" href="./assets/css/app.css?v=20260503c" />
     <title>Busses · Match Centre</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./assets/js/core/club_logic.js"></script>
-    <script src="./assets/js/core/supabase_config.js"></script>
+    <script src="./assets/js/core/club_logic.js?v=20260503b"></script>
+    <script src="./assets/js/core/supabase_config.js?v=20260503b"></script>
     <script src="./assets/js/core/weather.js"></script>
-    <script src="./assets/js/core/runtime_config.js?v=20260427a"></script>
-    <script src="./assets/js/ui/shell.js?v=20260427a"></script>
+    <script src="./assets/js/core/runtime_config.js?v=20260503b"></script>
+    <script src="./assets/js/core/admin_auth.js?v=20260503b"></script>
+    <script src="./assets/js/core/admin_page.js?v=20260503b"></script>
+    <script src="./assets/js/ui/shell.js?v=20260503b"></script>
   </head>
   <body class="manager-touch admin-app page-matchday">
     <nav class="site-nav">
@@ -75,6 +77,11 @@
             <span>Teams at full size</span>
             <strong id="full-team-count">0</strong>
             <span class="summary-copy">Ready to play</span>
+          </div>
+          <div class="summary-card">
+            <span>Captains set</span>
+            <strong id="captain-count">0/0</strong>
+            <span class="summary-copy">Eligible teams with a saved captain</span>
           </div>
         </div>
       </section>
@@ -312,6 +319,6 @@
       <div class="club-footer-copy">Busses · Match Centre</div>
     </footer>
 
-    <script src="./assets/js/pages/admin/matchday.js?v=20260428b"></script>
+    <script src="./assets/js/pages/admin/matchday.js?v=20260503c"></script>
   </body>
 </html>

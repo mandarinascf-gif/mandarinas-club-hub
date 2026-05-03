@@ -1,15 +1,13 @@
 (function () {
   "use strict";
 
-  const DEFAULT_ADMIN_CODE = "1234";
-  const ADMIN_STATE_KEY = "mcfAdminUnlocked";
-  const PUBLIC_FALLBACK = "./home.html";
   const BUSSES_ACCESS_PAGE = "busses.html";
   const SEASON_CONTEXT_PAGES = new Set([
     "schedule.html",
     "public_standings.html",
     "roster.html",
     "submissions.html",
+    "tier_system.html",
     "tier_watch.html",
     "videos.html",
   ]);
@@ -37,35 +35,11 @@
     "seasons.html",
     "setup.html",
   ]);
-  let adminAccessModalRefs = null;
-  let pendingAdminAccess = null;
+  const ADMIN_ACCESS_CACHE_KEY = "mcfAdminAccess";
   const scrollHintRefs = new WeakMap();
   const mobileNavPortalRefs = new WeakMap();
   let historyListenersInstalled = false;
   let mobileNavListenersInstalled = false;
-
-  function normalizeConfigValue(value) {
-    return typeof value === "string" ? value.trim() : "";
-  }
-
-  function currentAdminCode() {
-    const runtimeOverrides =
-      window.__MANDARINAS_APP_CONFIG__ || window.__MANDARINAS_SUPABASE_CONFIG__ || {};
-
-    return (
-      normalizeConfigValue(
-        runtimeOverrides.adminCode ||
-          runtimeOverrides.ADMIN_CODE ||
-          runtimeOverrides.NEXT_PUBLIC_ADMIN_CODE
-      ) || DEFAULT_ADMIN_CODE
-    );
-  }
-
-  function currentPageName() {
-    const path = window.location.pathname || "";
-    const name = path.split("/").pop();
-    return name || "index.html";
-  }
 
   function resolveUrl(href) {
     try {
@@ -122,150 +96,27 @@
     return relativeHrefFromUrl(accessUrl);
   }
 
-  function readWindowState() {
-    try {
-      const raw = String(window.name || "").trim();
-      if (!raw || !raw.startsWith("{")) {
-        return {};
-      }
-      const parsed = JSON.parse(raw);
-      return parsed && typeof parsed === "object" ? parsed : {};
-    } catch (error) {
-      return {};
-    }
-  }
-
-  function writeWindowState(nextState) {
-    try {
-      const current = readWindowState();
-      window.name = JSON.stringify({
-        ...current,
-        ...nextState,
-      });
-    } catch (error) {
-      window.name = JSON.stringify(nextState);
-    }
-  }
-
   function hasAdminAccess() {
-    return readWindowState()[ADMIN_STATE_KEY] === true;
+    if (window.MandarinasAdminAuth?.hasCachedAdminAccess) {
+      return window.MandarinasAdminAuth.hasCachedAdminAccess();
+    }
+
+    try {
+      return window.sessionStorage.getItem(ADMIN_ACCESS_CACHE_KEY) === "1";
+    } catch (error) {
+      return false;
+    }
   }
 
-  function setAdminAccess(value) {
-    writeWindowState({
-      [ADMIN_STATE_KEY]: Boolean(value),
-    });
-  }
-
-  function setModalOpen(isOpen) {
-    const refs = adminAccessModalRefs;
-    if (!refs) {
+  function requestAdminAccess(onSuccess) {
+    if (hasAdminAccess()) {
+      if (typeof onSuccess === "function") {
+        onSuccess();
+      }
       return;
     }
 
-    refs.root.hidden = !isOpen;
-    document.body.classList.toggle("modal-open", isOpen);
-
-    if (isOpen) {
-      refs.form.reset();
-      refs.status.hidden = true;
-      refs.status.textContent = "";
-      window.setTimeout(() => refs.input.focus(), 0);
-      return;
-    }
-
-    refs.status.hidden = true;
-    refs.status.textContent = "";
-  }
-
-  function ensureAdminAccessModal() {
-    if (adminAccessModalRefs) {
-      return adminAccessModalRefs;
-    }
-
-    const root = document.createElement("div");
-    root.className = "site-modal";
-    root.id = "admin-access-modal";
-    root.hidden = true;
-    root.innerHTML = `
-      <div class="site-modal-backdrop" data-admin-modal-close></div>
-      <div
-        class="site-modal-card"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="admin-access-title"
-      >
-        <div class="site-modal-head">
-          <div>
-            <div class="section-label">Busses Access</div>
-            <h2 class="site-modal-title" id="admin-access-title">Enter busses code</h2>
-            <p class="mini-sub">Use the current busses code to open the busses workspace in this browser tab.</p>
-          </div>
-          <button class="ghost-button" type="button" data-admin-modal-close>Cancel</button>
-        </div>
-        <form class="site-modal-body" id="admin-access-form">
-          <div class="field">
-            <label for="admin-access-input">Busses code</label>
-            <input id="admin-access-input" name="admin_code" type="password" autocomplete="off" />
-          </div>
-          <p class="status-line error" id="admin-access-status" hidden></p>
-          <div class="actions">
-            <button class="primary-button" type="submit">Open busses workspace</button>
-            <button class="secondary-button" type="button" data-admin-modal-close>Stay on current page</button>
-          </div>
-        </form>
-      </div>
-    `;
-
-    document.body.appendChild(root);
-
-    const form = root.querySelector("#admin-access-form");
-    const input = root.querySelector("#admin-access-input");
-    const status = root.querySelector("#admin-access-status");
-
-    function cancelRequest() {
-      const request = pendingAdminAccess;
-      pendingAdminAccess = null;
-      setModalOpen(false);
-      if (request?.onCancel) {
-        request.onCancel();
-      }
-    }
-
-    root.querySelectorAll("[data-admin-modal-close]").forEach((element) => {
-      element.addEventListener("click", cancelRequest);
-    });
-
-    root.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        cancelRequest();
-      }
-    });
-
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
-
-      const entered = String(input.value || "").trim();
-      if (entered !== currentAdminCode()) {
-        status.textContent = "Incorrect busses code.";
-        status.hidden = false;
-        input.focus();
-        input.select();
-        return;
-      }
-
-      const request = pendingAdminAccess;
-      pendingAdminAccess = null;
-      setAdminAccess(true);
-      setModalOpen(false);
-      if (request?.onSuccess) {
-        request.onSuccess();
-      }
-    });
-
-    adminAccessModalRefs = { root, form, input, status };
-    return adminAccessModalRefs;
+    window.location.href = bussesAccessHref(window.location.href);
   }
 
   function ensureSiteIcon() {
@@ -541,25 +392,7 @@
     });
   }
 
-  function requestAdminAccess(onSuccess, onCancel) {
-    if (hasAdminAccess()) {
-      if (typeof onSuccess === "function") {
-        onSuccess();
-      }
-      return;
-    }
-
-    pendingAdminAccess = {
-      onSuccess: typeof onSuccess === "function" ? onSuccess : null,
-      onCancel: typeof onCancel === "function" ? onCancel : null,
-    };
-    ensureAdminAccessModal();
-    setModalOpen(true);
-  }
-
   function initAdminAccess() {
-    const isProtectedPage = isProtectedUrl(window.location.href);
-
     document.querySelectorAll("a[href]").forEach((link) => {
       const href = link.getAttribute("href");
       if (!href) {
@@ -576,18 +409,9 @@
         }
 
         event.preventDefault();
-        requestAdminAccess(
-          () => {
-            window.location.href = href;
-          },
-          () => {}
-        );
+        window.location.href = bussesAccessHref(href);
       });
     });
-
-    if (isProtectedPage && !hasAdminAccess()) {
-      window.location.replace(bussesAccessHref(window.location.href));
-    }
   }
 
   function init() {

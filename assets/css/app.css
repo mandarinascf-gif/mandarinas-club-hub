@@ -6290,6 +6290,111 @@ body.manager-touch::before {
   align-items: flex-start;
 }
 
+.captain-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.7rem;
+  min-height: 1.7rem;
+  padding: 0;
+  border-color: rgba(96, 165, 250, 0.38);
+  background: rgba(96, 165, 250, 0.14);
+  color: #dbeafe;
+  border: 1px solid rgba(96, 165, 250, 0.38);
+  border-radius: 999px;
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.captain-mode-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  border-radius: 16px;
+  background: rgba(96, 165, 250, 0.08);
+}
+
+.captain-mode-panel.is-disabled {
+  background: rgba(126, 153, 181, 0.08);
+  border-color: rgba(126, 153, 181, 0.18);
+}
+
+.team-captain-panel {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  border-radius: 16px;
+  background: rgba(96, 165, 250, 0.08);
+}
+
+.team-captain-panel.is-empty,
+.team-captain-panel.is-disabled {
+  background: rgba(126, 153, 181, 0.08);
+  border-color: rgba(126, 153, 181, 0.18);
+}
+
+.team-captain-copy {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.captain-select-wrap {
+  display: grid;
+  gap: 0.4rem;
+  max-width: 22rem;
+}
+
+.captain-badges {
+  align-items: flex-start;
+}
+
+.captain-note {
+  margin: 0;
+  color: var(--muted);
+}
+
+.captain-tracker-panel {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(96, 165, 250, 0.12), rgba(121, 232, 198, 0.08)),
+    rgba(255, 255, 255, 0.02);
+}
+
+.captain-tracker-note {
+  margin: 0;
+}
+
+.captain-tracker-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.captain-tracker-table th,
+.captain-tracker-table td {
+  padding: 0.7rem 0.8rem;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  font-size: 0.95rem;
+}
+
+.captain-tracker-table th {
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .team-player-card {
   display: grid;
   gap: var(--space-3);
@@ -6444,6 +6549,10 @@ body.manager-touch::before {
   .team-balance-banner-actions,
   .assignment-actions {
     justify-content: flex-start;
+  }
+
+  .captain-select-wrap {
+    max-width: none;
   }
 
   .team-player-controls {

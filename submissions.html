@@ -19,9 +19,7 @@
 
         let unlocked = false;
         try {
-          const raw = String(window.name || "").trim();
-          const state = raw.startsWith("{") ? JSON.parse(raw) : {};
-          unlocked = state?.mcfAdminUnlocked === true;
+          unlocked = window.sessionStorage.getItem("mcfAdminAccess") === "1";
         } catch (error) {
           unlocked = false;
         }
@@ -38,10 +36,11 @@
     <title>Match Centre · Night Report</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/js/core/club_logic.js?v=20260428b"></script>
-    <script src="./assets/js/core/supabase_config.js"></script>
+    <script src="./assets/js/core/supabase_config.js?v=20260503b"></script>
     <script src="./assets/js/core/app.js?v=20260501i" defer></script>
-    <script src="./assets/js/core/runtime_config.js?v=20260427a"></script>
-    <script src="./assets/js/ui/shell.js?v=20260427a"></script>
+    <script src="./assets/js/core/runtime_config.js?v=20260503b"></script>
+    <script src="./assets/js/core/admin_auth.js?v=20260503b"></script>
+    <script src="./assets/js/ui/shell.js?v=20260503b"></script>
   </head>
   <body class="manager-touch public-app page-submissions">
     <nav class="site-nav">
@@ -444,6 +443,6 @@
       <div class="club-footer-copy">Match Centre · Night Report</div>
     </footer>
 
-    <script src="./assets/js/pages/public/submissions.js?v=20260430b"></script>
+    <script src="./assets/js/pages/public/submissions.js?v=20260503b"></script>
   </body>
 </html>

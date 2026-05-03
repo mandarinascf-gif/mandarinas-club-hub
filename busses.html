@@ -12,8 +12,11 @@
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png" />
     <link rel="stylesheet" href="./assets/css/app.css?v=20260502c" />
     <title>Busses Access · Mandarinas CF</title>
-    <script src="./assets/js/core/runtime_config.js?v=20260427a"></script>
-    <script src="./assets/js/ui/shell.js?v=20260427a" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./assets/js/core/supabase_config.js?v=20260503b"></script>
+    <script src="./assets/js/core/runtime_config.js?v=20260503b"></script>
+    <script src="./assets/js/core/admin_auth.js?v=20260503b"></script>
+    <script src="./assets/js/ui/shell.js?v=20260503b" defer></script>
   </head>
   <body class="manager-touch admin-app page-busses">
     <nav class="site-nav">
@@ -41,14 +44,18 @@
           <div class="section-label">Busses Workspace</div>
           <h1>Busses Access</h1>
           <p>
-            Club pages stay public-facing. Busses tools open separately in this browser tab after
-            you enter the current busses code.
+            Club pages stay public-facing. Sign in with an active Busses admin account before you
+            open the protected workspace.
           </p>
         </div>
         <div class="actions">
-          <button class="primary-button" id="busses-enter-button" type="button">Enter busses workspace</button>
+          <button class="primary-button" id="busses-continue-button" type="button" hidden>
+            Continue to busses workspace
+          </button>
           <a class="secondary-button" href="./home.html">Back to home</a>
-          <a class="secondary-button" href="./schedule.html">Open season</a>
+          <button class="secondary-button" id="busses-sign-out-button" type="button" hidden>
+            Sign out
+          </button>
         </div>
       </section>
 
@@ -63,24 +70,41 @@
           </div>
           <div class="summary-card">
             <span>Busses side</span>
-            <strong>Intentional entry</strong>
-            <span class="summary-copy">Busses unlock the workspace only when they mean to leave the public flow.</span>
+            <strong>Real auth</strong>
+            <span class="summary-copy">Protected tools now require a real Supabase admin session.</span>
           </div>
           <div class="summary-card">
-            <span>Same browser tab</span>
-            <strong>No account switch</strong>
-            <span class="summary-copy">The busses code opens the workspace for this tab only.</span>
+            <span>Browser session</span>
+            <strong>Scoped access</strong>
+            <span class="summary-copy">The workspace stays available only while the signed-in admin session is active.</span>
           </div>
         </div>
       </section>
 
       <section class="panel panel-spotlight">
         <div class="section-label">Next step</div>
-        <h2>Open the busses workspace</h2>
+        <h2>Sign in to the busses workspace</h2>
         <p id="busses-access-copy">
-          Use the button above to unlock the busses workspace. If you came here from a protected
-          busses link, you will return to that page after the code is accepted.
+          Sign in with an active Busses admin account. If you came here from a protected page, you
+          will return there after access is confirmed.
         </p>
+        <form id="busses-sign-in-form">
+          <div class="field-grid">
+            <div class="field">
+              <label for="busses-email">Admin email</label>
+              <input id="busses-email" name="email" type="email" autocomplete="username" />
+            </div>
+            <div class="field">
+              <label for="busses-password">Password</label>
+              <input id="busses-password" name="password" type="password" autocomplete="current-password" />
+            </div>
+          </div>
+          <div class="actions">
+            <button class="primary-button" id="busses-sign-in-button" type="submit">
+              Sign in
+            </button>
+          </div>
+        </form>
         <p class="status-line" id="busses-access-status">Busses tools stay separate from the public club pages.</p>
       </section>
 
@@ -137,74 +161,6 @@
     <footer class="club-footer">
       <div class="club-footer-copy">Busses Access · Mandarinas CF</div>
     </footer>
-
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        const shell = window.MandarinasShell;
-        const enterButton = document.getElementById("busses-enter-button");
-        const statusLine = document.getElementById("busses-access-status");
-        const quickActions = document.getElementById("busses-quick-actions");
-
-        function syncUnlockedState(isUnlocked) {
-          if (quickActions) {
-            quickActions.hidden = !isUnlocked;
-          }
-
-          enterButton.textContent = isUnlocked ? "Continue to busses workspace" : "Enter busses workspace";
-        }
-
-        function safeNextHref() {
-          const params = new URLSearchParams(window.location.search);
-          const rawNext = params.get("next") || "./seasons.html";
-
-          try {
-            const nextUrl = new URL(rawNext, window.location.href);
-            if (nextUrl.origin !== window.location.origin) {
-              return "./seasons.html";
-            }
-
-            const pageName = nextUrl.pathname.split("/").pop() || "seasons.html";
-            if (pageName === "busses.html") {
-              return "./seasons.html";
-            }
-
-            return `./${pageName}${nextUrl.search || ""}${nextUrl.hash || ""}`;
-          } catch (error) {
-            return "./seasons.html";
-          }
-        }
-
-        if (!shell) {
-          statusLine.textContent = "Busses access is unavailable until the shared shell loads.";
-          statusLine.className = "status-line error";
-          enterButton.disabled = true;
-          return;
-        }
-
-        if (shell.hasAdminAccess()) {
-          statusLine.textContent = "Busses access is already open in this tab.";
-          statusLine.className = "status-line success";
-          syncUnlockedState(true);
-        } else {
-          syncUnlockedState(false);
-        }
-
-        enterButton.addEventListener("click", () => {
-          statusLine.textContent = "Waiting for the busses code.";
-          statusLine.className = "status-line";
-          shell.requestAdminAccess(
-            () => {
-              syncUnlockedState(true);
-              window.location.href = safeNextHref();
-            },
-            () => {
-              syncUnlockedState(shell.hasAdminAccess());
-              statusLine.textContent = "Busses access stays separate until you choose to open it.";
-              statusLine.className = "status-line";
-            }
-          );
-        });
-      });
-    </script>
+    <script src="./assets/js/pages/admin/busses.js?v=20260503b"></script>
   </body>
 </html>

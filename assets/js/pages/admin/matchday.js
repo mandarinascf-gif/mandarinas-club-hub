@@ -1,13 +1,20 @@
-      const supabaseConfig = window.MandarinasSupabaseConfig;
-      const { url: SUPABASE_URL } = supabaseConfig;
+(async function () {
+  "use strict";
 
-      const supabaseClient = supabaseConfig.createClient();
-
-      if (!window.MandarinasLogic) {
-        console.error("[Mandarinas] Fatal: MandarinasLogic is undefined — check browser console (F12)");
-        document.body.insertAdjacentHTML("afterbegin", '<p id="mcf-fatal-error" role="alert">Core app logic failed to load. Check the browser console (F12) for errors.</p>');
-        throw new Error("MandarinasLogic is undefined");
+      const adminPage = window.MandarinasAdminPage;
+      if (!adminPage) {
+        return;
       }
+
+      const access = await adminPage.requireAccess({
+        pageTitle: "Busses matchday",
+        requireLogic: true,
+      });
+      if (!access.ok) {
+        return;
+      }
+
+      const { supabaseClient, logic } = access;
 
       const {
         TEAM_ORDER,
@@ -24,7 +31,7 @@
         normalizePlayerDesiredTier,
         summarizeBalancedAssignments,
         summarizeMatchdayProgress,
-      } = window.MandarinasLogic;
+      } = logic;
 
       const TEAM_CONFIG = [
         { code: "magenta", label: "Magenta", maxPlayers: 9 },
@@ -83,6 +90,7 @@
       const attendingCount = document.getElementById("attending-count");
       const assignedCount = document.getElementById("assigned-count");
       const fullTeamCount = document.getElementById("full-team-count");
+      const captainCount = document.getElementById("captain-count");
       const attendanceBadge = document.getElementById("attendance-badge");
       const priorityFillButton = document.getElementById("priority-fill-button");
       const prioritySummaryGrid = document.getElementById("priority-summary-grid");
@@ -106,9 +114,12 @@
       let seasonRosterRows = [];
       let seasonRosterPlayerIds = new Set();
       let historicalAssignments = [];
+      let historicalCaptainRows = [];
       let statsByPlayerId = new Map();
       let assignments = [];
+      let captainRows = [];
       let matches = [];
+      let seasonMatchdayNumberById = new Map();
       let tierMetricsByPlayerId = new Map();
       let rotationStandingsByPlayerId = new Map();
       let activeRotationQueueMode = "regular";
@@ -121,6 +132,7 @@
       let launcherSeasons = [];
       let launcherTargetMatchdayId = null;
       let teamDisplayConfig = applyTeamDisplayConfig(null);
+      let captainTrackingSupported = true;
       let teamDisplaySupported = true;
       let seasonRosterMetadataSupported = true;
       let matchdayWeatherToken = 0;
@@ -168,6 +180,22 @@
         return (
           (message.includes("column") || message.includes("schema cache")) &&
           (message.includes("registration_tier") || message.includes("payment_status"))
+        );
+      }
+
+      function hasMissingCaptainTable(error) {
+        const message = String(error?.message || "").toLowerCase();
+        return (
+          (message.includes("relation") || message.includes("schema cache")) &&
+          message.includes("matchday_team_captains")
+        );
+      }
+
+      function hasMissingFinalCaptainModeColumn(error) {
+        const message = String(error?.message || "").toLowerCase();
+        return (
+          (message.includes("column") || message.includes("schema cache")) &&
+          message.includes("final_captain_order_enabled")
         );
       }
 
@@ -839,6 +867,7 @@
         return {
           total_points: Number(row?.total_points || 0),
           points_per_game: Number(row?.points_per_game || 0),
+          games_played: Number(row?.games_played || 0),
           wins: Number(row?.wins || 0),
           draws: Number(row?.draws || 0),
           losses: Number(row?.losses || 0),
@@ -1192,6 +1221,22 @@
           return "That player is not on this season squad yet. Add them on the Seasons page before saving matchday attendance, teams, or stats.";
         }
 
+        if (lowerMessage.includes("must be core or flex before saving a captain row")) {
+          return "Captains must come from the current core or flex pool for this season.";
+        }
+
+        if (lowerMessage.includes("must be assigned to team") && lowerMessage.includes("captain row")) {
+          return "Choose a player who is currently assigned to that team before saving the captain.";
+        }
+
+        if (lowerMessage.includes("captain tier") && lowerMessage.includes("does not match")) {
+          return "That captain selection is stale. Reload the page and choose from the current core or flex team list.";
+        }
+
+        if (lowerMessage.includes("final_captain_order_enabled")) {
+          return "This captain mode toggle needs the latest SQL update before it can be saved.";
+        }
+
         if (lowerMessage.includes("cannot move matchday")) {
           return "This matchday already has players tied to its current season. Add those players to the destination season squad or clear the matchday activity before changing seasons.";
         }
@@ -1314,6 +1359,352 @@
         return players.filter((player) => isAttending(player.id));
       }
 
+      function findSeasonRosterRowByPlayerId(playerId) {
+        return seasonRosterRows.find((row) => row.player_id === playerId) || null;
+      }
+
+      function findKnownPlayerById(playerId) {
+        return (
+          players.find((player) => player.id === playerId) ||
+          findSeasonRosterRowByPlayerId(playerId)?.player ||
+          clubPlayers.find((player) => player.id === playerId) ||
+          null
+        );
+      }
+
+      function currentTierStatusForPlayer(playerId) {
+        const seasonRow = findSeasonRosterRowByPlayerId(playerId);
+        const player = findKnownPlayerById(playerId);
+        return normalizeTierValue(seasonRow?.tier_status || player?.status || player?.desired_tier, "");
+      }
+
+      function isCaptainEligiblePlayer(player) {
+        const tierStatus = normalizeTierValue(player?.status || player?.desired_tier, "");
+        return tierStatus === "core" || tierStatus === "flex";
+      }
+
+      function captainRowsForHistory(includeCurrent = true) {
+        return includeCurrent ? [...historicalCaptainRows, ...captainRows] : [...historicalCaptainRows];
+      }
+
+      function buildCaptainHistoryCountMap(includeCurrent = true) {
+        const countsByPlayerId = new Map();
+
+        captainRowsForHistory(includeCurrent).forEach((row) => {
+          const playerId = Number(row?.player_id);
+          if (!Number.isFinite(playerId)) {
+            return;
+          }
+
+          countsByPlayerId.set(playerId, Number(countsByPlayerId.get(playerId) || 0) + 1);
+        });
+
+        return countsByPlayerId;
+      }
+
+      function captainCountForPlayer(playerId, includeCurrent = true) {
+        return Number(buildCaptainHistoryCountMap(includeCurrent).get(playerId) || 0);
+      }
+
+      function finalCaptainOrderEnabled() {
+        return matchday?.final_captain_order_enabled !== false;
+      }
+
+      function getCaptainByTeamCode(teamCode) {
+        return captainRows.find((row) => row.team_code === teamCode) || null;
+      }
+
+      function getCaptainByPlayerId(playerId) {
+        return captainRows.find((row) => row.player_id === playerId) || null;
+      }
+
+      function getAllTeamPlayers(teamCode) {
+        return players
+          .filter((player) => {
+            if (!isAttending(player.id)) {
+              return false;
+            }
+
+            return getAssignment(player.id)?.team_code === teamCode;
+          })
+          .sort(compareByRosterPlan);
+      }
+
+      function getCaptainCandidatePlayers(teamCode) {
+        return getAllTeamPlayers(teamCode).filter((player) => isCaptainEligiblePlayer(player));
+      }
+
+      function compareCaptainCandidates(left, right, countsByPlayerId) {
+        const leftCount = Number(countsByPlayerId.get(left.id) || 0);
+        const rightCount = Number(countsByPlayerId.get(right.id) || 0);
+
+        if (leftCount !== rightCount) {
+          return leftCount - rightCount;
+        }
+
+        const leftMetrics = priorityMetrics(left.id);
+        const rightMetrics = priorityMetrics(right.id);
+
+        if (rightMetrics.attendance_score !== leftMetrics.attendance_score) {
+          return rightMetrics.attendance_score - leftMetrics.attendance_score;
+        }
+
+        if (rightMetrics.recent_games_attended !== leftMetrics.recent_games_attended) {
+          return rightMetrics.recent_games_attended - leftMetrics.recent_games_attended;
+        }
+
+        if (leftMetrics.no_shows !== rightMetrics.no_shows) {
+          return leftMetrics.no_shows - rightMetrics.no_shows;
+        }
+
+        if (priorityWeight(left.status) !== priorityWeight(right.status)) {
+          return priorityWeight(left.status) - priorityWeight(right.status);
+        }
+
+        return compareNames(left, right);
+      }
+
+      function pickCaptainCandidateForTeam(teamCode, countsByPlayerId) {
+        const candidates = getCaptainCandidatePlayers(teamCode).sort((left, right) =>
+          compareCaptainCandidates(left, right, countsByPlayerId)
+        );
+
+        return candidates[0] || null;
+      }
+
+      function normalizeCaptainSelectionMethod(value) {
+        const normalized = normalizeText(value).toLowerCase();
+
+        if (normalized === "manual" || normalized === "replacement") {
+          return normalized;
+        }
+
+        return "auto";
+      }
+
+      function compareFinalCoreCaptainCandidates(left, right) {
+        const leftMetrics = rotationStandingsMetrics(left.id);
+        const rightMetrics = rotationStandingsMetrics(right.id);
+
+        if (rightMetrics.total_points !== leftMetrics.total_points) {
+          return rightMetrics.total_points - leftMetrics.total_points;
+        }
+
+        if (rightMetrics.points_per_game !== leftMetrics.points_per_game) {
+          return rightMetrics.points_per_game - leftMetrics.points_per_game;
+        }
+
+        if (rightMetrics.wins !== leftMetrics.wins) {
+          return rightMetrics.wins - leftMetrics.wins;
+        }
+
+        if (rightMetrics.draws !== leftMetrics.draws) {
+          return rightMetrics.draws - leftMetrics.draws;
+        }
+
+        if (leftMetrics.losses !== rightMetrics.losses) {
+          return leftMetrics.losses - rightMetrics.losses;
+        }
+
+        if (rightMetrics.goals !== leftMetrics.goals) {
+          return rightMetrics.goals - leftMetrics.goals;
+        }
+
+        if (rightMetrics.goal_keep_points_earned !== leftMetrics.goal_keep_points_earned) {
+          return rightMetrics.goal_keep_points_earned - leftMetrics.goal_keep_points_earned;
+        }
+
+        if (rightMetrics.clean_sheets !== leftMetrics.clean_sheets) {
+          return rightMetrics.clean_sheets - leftMetrics.clean_sheets;
+        }
+
+        if (rightMetrics.attendance_points !== leftMetrics.attendance_points) {
+          return rightMetrics.attendance_points - leftMetrics.attendance_points;
+        }
+
+        return compareNames(left, right);
+      }
+
+      function compareFinalFlexCaptainCandidates(left, right) {
+        const leftQueueRow = {
+          ...left,
+          ...priorityMetrics(left.id),
+          ...rotationStandingsMetrics(left.id),
+        };
+        const rightQueueRow = {
+          ...right,
+          ...priorityMetrics(right.id),
+          ...rotationStandingsMetrics(right.id),
+        };
+
+        return compareRotationQueuePriority(leftQueueRow, rightQueueRow, {
+          finalMatchday: true,
+        });
+      }
+
+      function buildCaptainPayload(teamCode, playerId, currentByTeam, options = {}) {
+        const currentCaptain = currentByTeam.get(teamCode) || null;
+
+        return {
+          matchday_id: matchday.id,
+          team_code: teamCode,
+          player_id: playerId,
+          captain_tier: currentTierStatusForPlayer(playerId) || "flex",
+          selection_method:
+            options.selectionMethod ||
+            (options.resetAll
+              ? "auto"
+              : currentCaptain
+                ? "replacement"
+                : "auto"),
+        };
+      }
+
+      function appendRankedCaptainTargets(
+        desiredRows,
+        candidates,
+        limit,
+        currentByTeam,
+        claimedTeamCodes,
+        usedPlayerIds,
+        options = {}
+      ) {
+        let selectedCount = 0;
+
+        candidates.forEach((player) => {
+          if (selectedCount >= limit) {
+            return;
+          }
+
+          const playerId = Number(player?.id);
+          const teamCode = normalizeText(getAssignment(playerId)?.team_code).toLowerCase();
+
+          if (!Number.isFinite(playerId) || !teamCode) {
+            return;
+          }
+
+          if (claimedTeamCodes.has(teamCode) || usedPlayerIds.has(playerId)) {
+            return;
+          }
+
+          desiredRows.push(buildCaptainPayload(teamCode, playerId, currentByTeam, options));
+          claimedTeamCodes.add(teamCode);
+          usedPlayerIds.add(playerId);
+          selectedCount += 1;
+        });
+      }
+
+      function buildFinalMatchdayCaptainRows(currentByTeam, options = {}) {
+        const resetAll = options.resetAll === true;
+        const desiredRows = [];
+        const claimedTeamCodes = new Set();
+        const usedPlayerIds = new Set();
+
+        if (!resetAll) {
+          TEAM_CONFIG.forEach((team) => {
+            const teamCode = team.code;
+            const currentCaptain = currentByTeam.get(teamCode) || null;
+
+            if (
+              !currentCaptain ||
+              !isCaptainRowValid(currentCaptain) ||
+              normalizeCaptainSelectionMethod(currentCaptain.selection_method) !== "manual"
+            ) {
+              return;
+            }
+
+            const playerId = Number(currentCaptain.player_id);
+            desiredRows.push(
+              buildCaptainPayload(teamCode, playerId, currentByTeam, {
+                resetAll,
+                selectionMethod: "manual",
+              })
+            );
+            claimedTeamCodes.add(teamCode);
+            usedPlayerIds.add(playerId);
+          });
+        }
+
+        const attendingEligiblePlayers = getAttendingPlayers().filter((player) => {
+          if (!isCaptainEligiblePlayer(player)) {
+            return false;
+          }
+
+          return Boolean(getAssignment(player.id)?.team_code);
+        });
+        const coreCandidates = attendingEligiblePlayers
+          .filter((player) => currentTierStatusForPlayer(player.id) === "core")
+          .sort(compareFinalCoreCaptainCandidates);
+        const flexCandidates = attendingEligiblePlayers
+          .filter((player) => currentTierStatusForPlayer(player.id) === "flex")
+          .sort(compareFinalFlexCaptainCandidates);
+
+        appendRankedCaptainTargets(
+          desiredRows,
+          coreCandidates,
+          2,
+          currentByTeam,
+          claimedTeamCodes,
+          usedPlayerIds,
+          { resetAll }
+        );
+        appendRankedCaptainTargets(
+          desiredRows,
+          flexCandidates,
+          2,
+          currentByTeam,
+          claimedTeamCodes,
+          usedPlayerIds,
+          { resetAll }
+        );
+        appendRankedCaptainTargets(
+          desiredRows,
+          [...coreCandidates, ...flexCandidates],
+          Number.POSITIVE_INFINITY,
+          currentByTeam,
+          claimedTeamCodes,
+          usedPlayerIds,
+          { resetAll }
+        );
+
+        return desiredRows;
+      }
+
+      function isCaptainRowValid(captainRow) {
+        if (!captainRow) {
+          return false;
+        }
+
+        const playerId = Number(captainRow.player_id);
+        const teamCode = normalizeText(captainRow.team_code).toLowerCase();
+        const player = findKnownPlayerById(playerId);
+        const assignment = getAssignment(playerId);
+
+        if (!player || !assignment || assignment.team_code !== teamCode) {
+          return false;
+        }
+
+        if (!isAttending(playerId)) {
+          return false;
+        }
+
+        return isCaptainEligiblePlayer(player);
+      }
+
+      function formatCaptainSelectionMethod(value) {
+        const normalized = normalizeCaptainSelectionMethod(value);
+
+        if (normalized === "manual") {
+          return "Manual";
+        }
+
+        if (normalized === "replacement") {
+          return "Auto re-pick";
+        }
+
+        return "Auto";
+      }
+
       function buildTeamBalanceOptions() {
         return {
           teamCodes: TEAM_CONFIG.map((team) => team.code),
@@ -1329,6 +1720,181 @@
           assignments,
           buildTeamBalanceOptions()
         );
+      }
+
+      function buildCaptainOverview() {
+        const activeTeamCodes = TEAM_CONFIG
+          .map((team) => team.code)
+          .filter((teamCode) => getTeamCount(teamCode) > 0);
+        const eligibleTeamCodes = activeTeamCodes.filter(
+          (teamCode) => getCaptainCandidatePlayers(teamCode).length > 0
+        );
+        const currentCaptains = activeTeamCodes.filter((teamCode) =>
+          isCaptainRowValid(getCaptainByTeamCode(teamCode))
+        );
+        const seasonHistoryRows = captainRowsForHistory(true);
+        const uniqueCaptainIds = new Set(
+          seasonHistoryRows
+            .map((row) => Number(row?.player_id))
+            .filter((playerId) => Number.isFinite(playerId))
+        );
+
+        return {
+          activeTeamCodes,
+          eligibleTeamCodes,
+          currentCaptains,
+          assignedCurrentCaptainCount: currentCaptains.length,
+          activeTeamCount: activeTeamCodes.length,
+          eligibleTeamCount: eligibleTeamCodes.length,
+          missingEligibleCaptainCount: Math.max(eligibleTeamCodes.length - currentCaptains.length, 0),
+          ineligibleActiveTeamCount: Math.max(activeTeamCodes.length - eligibleTeamCodes.length, 0),
+          totalCaptainSlotsTracked: seasonHistoryRows.length,
+          uniqueCaptainCount: uniqueCaptainIds.size,
+        };
+      }
+
+      function buildCaptainLeaderboardRows() {
+        const countsByPlayerId = buildCaptainHistoryCountMap(true);
+        const lastMatchdayByPlayerId = new Map();
+
+        captainRowsForHistory(true).forEach((row) => {
+          const playerId = Number(row?.player_id);
+          const matchdayNumber = Number(seasonMatchdayNumberById.get(Number(row?.matchday_id)) || 0);
+
+          if (!Number.isFinite(playerId)) {
+            return;
+          }
+
+          if (matchdayNumber > Number(lastMatchdayByPlayerId.get(playerId) || 0)) {
+            lastMatchdayByPlayerId.set(playerId, matchdayNumber);
+          }
+        });
+
+        return [...countsByPlayerId.entries()]
+          .map(([playerId, count]) => {
+            const player = findKnownPlayerById(playerId);
+            return {
+              playerId,
+              player,
+              name: player ? displayName(player) : `Player ${playerId}`,
+              captainCount: count,
+              lastMatchday: Number(lastMatchdayByPlayerId.get(playerId) || 0) || null,
+              tierStatus: currentTierStatusForPlayer(playerId),
+            };
+          })
+          .sort((left, right) => {
+            if (right.captainCount !== left.captainCount) {
+              return right.captainCount - left.captainCount;
+            }
+
+            if ((right.lastMatchday || 0) !== (left.lastMatchday || 0)) {
+              return (right.lastMatchday || 0) - (left.lastMatchday || 0);
+            }
+
+            return left.name.localeCompare(right.name);
+          });
+      }
+
+      async function syncCaptainsForCurrentTeams(options = {}) {
+        if (!captainTrackingSupported || !matchday) {
+          return { changed: false };
+        }
+
+        const resetAll = options.resetAll === true;
+        const forceAutoRepick = options.forceAutoRepick === true;
+        const currentByTeam = new Map(
+          captainRows.map((row) => [normalizeText(row.team_code).toLowerCase(), row])
+        );
+        const finalMatchday = activeRotationQueueMode === "final" && finalCaptainOrderEnabled();
+        const desiredRows = finalMatchday
+          ? buildFinalMatchdayCaptainRows(currentByTeam, { resetAll })
+          : [];
+
+        if (!finalMatchday) {
+          const historyCountsByPlayerId = buildCaptainHistoryCountMap(false);
+
+          TEAM_CONFIG.forEach((team) => {
+            const teamCode = team.code;
+            const currentCaptain = currentByTeam.get(teamCode) || null;
+            const eligiblePlayers = getCaptainCandidatePlayers(teamCode);
+
+            if (!eligiblePlayers.length) {
+              return;
+            }
+
+            const currentSelectionMethod = normalizeCaptainSelectionMethod(currentCaptain?.selection_method);
+
+            if (
+              !resetAll &&
+              currentCaptain &&
+              isCaptainRowValid(currentCaptain) &&
+              (!forceAutoRepick || currentSelectionMethod === "manual")
+            ) {
+              desiredRows.push(
+                buildCaptainPayload(teamCode, Number(currentCaptain.player_id), currentByTeam, {
+                  resetAll,
+                  selectionMethod: currentSelectionMethod,
+                })
+              );
+              return;
+            }
+
+            const nextCaptain = pickCaptainCandidateForTeam(teamCode, historyCountsByPlayerId);
+
+            if (!nextCaptain) {
+              return;
+            }
+
+            desiredRows.push(
+              buildCaptainPayload(teamCode, nextCaptain.id, currentByTeam, { resetAll })
+            );
+          });
+        }
+
+        const desiredByTeam = new Map(desiredRows.map((row) => [row.team_code, row]));
+        const deleteIds = captainRows
+          .filter((row) => !desiredByTeam.has(normalizeText(row.team_code).toLowerCase()))
+          .map((row) => row.id);
+        const upsertRows = desiredRows.filter((row) => {
+          const currentCaptain = currentByTeam.get(row.team_code);
+
+          if (!currentCaptain) {
+            return true;
+          }
+
+          return (
+            Number(currentCaptain.player_id) !== Number(row.player_id) ||
+            normalizeText(currentCaptain.captain_tier).toLowerCase() !== row.captain_tier ||
+            normalizeText(currentCaptain.selection_method).toLowerCase() !== row.selection_method
+          );
+        });
+
+        if (!deleteIds.length && !upsertRows.length) {
+          return { changed: false };
+        }
+
+        if (deleteIds.length) {
+          const { error: deleteError } = await supabaseClient
+            .from("matchday_team_captains")
+            .delete()
+            .in("id", deleteIds);
+
+          if (deleteError) {
+            throw deleteError;
+          }
+        }
+
+        if (upsertRows.length) {
+          const { error: upsertError } = await supabaseClient
+            .from("matchday_team_captains")
+            .upsert(upsertRows, { onConflict: "matchday_id,team_code" });
+
+          if (upsertError) {
+            throw upsertError;
+          }
+        }
+
+        return { changed: true };
       }
 
       function formatBalanceMetric(value, suffix = "", digits = 1) {
@@ -1361,6 +1927,210 @@
             <span class="tag-pill">${escapeHtml(formatTeamRoleCounts(teamSummary.primaryCounts))}</span>
             <span class="tag-pill">Repeat ${escapeHtml(formatBalanceMetric(teamSummary.teammateRepeatLoad, "", 0))}</span>
           </div>
+        `;
+      }
+
+      function captainBadgeMarkup(playerId) {
+        const captainRow = getCaptainByPlayerId(playerId);
+
+        if (!captainRow) {
+          return "";
+        }
+
+        return `<span class="captain-pill" aria-label="Captain" title="Captain">Ⓒ</span>`;
+      }
+
+      function captainControlsMarkup(teamCode) {
+        if (!captainTrackingSupported) {
+          return `
+            <div class="team-captain-panel is-disabled">
+              <strong>Captain</strong>
+              <p class="micro-note">Run the captain tracking SQL upgrade to edit captains here.</p>
+            </div>
+          `;
+        }
+
+        const captainRow = getCaptainByTeamCode(teamCode);
+        const candidates = getCaptainCandidatePlayers(teamCode);
+        const captainPlayer = captainRow ? findKnownPlayerById(Number(captainRow.player_id)) : null;
+        const seasonCaptainCount = captainRow ? captainCountForPlayer(Number(captainRow.player_id), true) : 0;
+
+        return `
+          <div class="team-captain-panel ${candidates.length ? "" : "is-empty"}">
+            <div class="team-captain-copy">
+              <strong>Captain</strong>
+              <p class="micro-note">
+                ${
+                  captainPlayer
+                    ? `${escapeHtml(displayName(captainPlayer))} is leading ${escapeHtml(teamLabel(teamCode))} right now.`
+                    : candidates.length
+                      ? `Pick a core or flex captain for ${escapeHtml(teamLabel(teamCode))}.`
+                      : `${escapeHtml(teamLabel(teamCode))} needs at least one core or flex player before a captain can be assigned.`
+                }
+              </p>
+            </div>
+            <div class="captain-select-wrap">
+              <label for="captain-select-${teamCode}">Captain</label>
+              <select
+                id="captain-select-${teamCode}"
+                data-captain-team-code="${escapeHtml(teamCode)}"
+                ${candidates.length ? "" : "disabled"}
+              >
+                ${
+                  candidates.length
+                    ? `
+                        ${!captainRow ? '<option value="" selected disabled>Select captain</option>' : ""}
+                        ${candidates
+                          .map((player) => {
+                            const captainCount = captainCountForPlayer(player.id, true);
+                            const tierLabel = formatStatusLabel(currentTierStatusForPlayer(player.id));
+                            return `
+                              <option value="${escapeHtml(player.id)}" ${
+                                Number(captainRow?.player_id) === Number(player.id) ? "selected" : ""
+                              }>
+                                ${escapeHtml(displayName(player))} · ${escapeHtml(tierLabel)} · ${escapeHtml(captainCount)} season
+                              </option>
+                            `;
+                          })
+                          .join("")}
+                      `
+                    : `<option value="">No eligible captain yet</option>`
+                }
+              </select>
+            </div>
+            ${
+              captainRow
+                ? `
+                  <div class="compact-badges captain-badges">
+                    <span class="tag-pill">${escapeHtml(formatStatusLabel(captainRow.captain_tier))}</span>
+                    <span class="tag-pill">Season count ${escapeHtml(seasonCaptainCount)}</span>
+                    <span class="tag-pill">${escapeHtml(formatCaptainSelectionMethod(captainRow.selection_method))}</span>
+                  </div>
+                `
+                : ""
+            }
+          </div>
+        `;
+      }
+
+      function captainTrackerMarkup() {
+        const overview = buildCaptainOverview();
+        const leaderboard = buildCaptainLeaderboardRows().slice(0, 8);
+        const isFinalCaptainMatchday = activeRotationQueueMode === "final";
+        const finalModeEnabled = finalCaptainOrderEnabled();
+
+        if (!captainTrackingSupported) {
+          return `
+            <section class="captain-tracker-panel">
+              <div class="panel-header">
+                <div>
+                  <h3 class="section-title">Captain tracker</h3>
+                  <p class="section-copy">
+                    Captains will appear here after the captain tracking SQL upgrade is applied.
+                  </p>
+                </div>
+              </div>
+            </section>
+          `;
+        }
+
+        return `
+          <section class="captain-tracker-panel">
+            <div class="panel-header">
+              <div>
+                <h3 class="section-title">Captain tracker</h3>
+                <p class="section-copy">
+                  ${
+                    isFinalCaptainMatchday && finalModeEnabled
+                      ? "Final matchday auto-picks lock to 1st and 2nd place in the core group and 1st and 2nd place in the flex group, with manual overrides still available."
+                      : isFinalCaptainMatchday
+                        ? "Final matchday rank mode is off, so captain auto-picks fall back to the regular history-first captain rotation."
+                      : "Auto-picks pull from current core and flex players, then rotate toward players with fewer prior captain nights."
+                  }
+                </p>
+              </div>
+            </div>
+            <div class="captain-mode-panel ${isFinalCaptainMatchday ? "" : "is-disabled"}">
+              <div class="team-captain-copy">
+                <strong>Final captain order</strong>
+                <p class="micro-note">
+                  ${
+                    isFinalCaptainMatchday
+                      ? "Toggle whether the final matchday auto-picks captains from the top 2 core and top 2 flex players. Manual captain edits still stay available."
+                      : "This switch only applies on the season's final matchday. It defaults to On there."
+                  }
+                </p>
+              </div>
+              <button
+                class="secondary-button toggle-button ${finalModeEnabled ? "active" : ""}"
+                type="button"
+                data-final-captain-mode-toggle="true"
+                ${isFinalCaptainMatchday ? "" : "disabled"}
+              >
+                ${finalModeEnabled ? "On" : "Off"}
+              </button>
+            </div>
+            <div class="summary-grid captain-summary-grid">
+              <div class="summary-card">
+                <span>Captains set</span>
+                <strong>${escapeHtml(overview.assignedCurrentCaptainCount)}/${escapeHtml(overview.eligibleTeamCount)}</strong>
+                <span class="summary-copy">Current active teams with an eligible captain</span>
+              </div>
+              <div class="summary-card">
+                <span>Unique captains</span>
+                <strong>${escapeHtml(overview.uniqueCaptainCount)}</strong>
+                <span class="summary-copy">Different players tracked this season</span>
+              </div>
+              <div class="summary-card">
+                <span>Captain slots</span>
+                <strong>${escapeHtml(overview.totalCaptainSlotsTracked)}</strong>
+                <span class="summary-copy">Saved matchday-team captain rows</span>
+              </div>
+            </div>
+            ${
+              overview.ineligibleActiveTeamCount
+                ? `
+                  <p class="micro-note captain-tracker-note">
+                    ${escapeHtml(overview.ineligibleActiveTeamCount)} active team${
+                      overview.ineligibleActiveTeamCount === 1 ? "" : "s"
+                    } currently only have sub players, so no captain can be assigned yet.
+                  </p>
+                `
+                : ""
+            }
+            ${
+              leaderboard.length
+                ? `
+                  <div class="table-wrap captain-tracker-table-wrap">
+                    <table class="captain-tracker-table">
+                      <thead>
+                        <tr>
+                          <th>Player</th>
+                          <th>Tier</th>
+                          <th>Captain nights</th>
+                          <th>Latest</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${leaderboard
+                          .map(
+                            (row) => `
+                              <tr>
+                                <td>${escapeHtml(row.name)}</td>
+                                <td>${escapeHtml(formatStatusLabel(row.tierStatus || "flex"))}</td>
+                                <td>${escapeHtml(row.captainCount)}</td>
+                                <td>${row.lastMatchday ? `MD ${escapeHtml(row.lastMatchday)}` : "—"}</td>
+                              </tr>
+                            `
+                          )
+                          .join("")}
+                      </tbody>
+                    </table>
+                  </div>
+                `
+                : `<p class="micro-note captain-tracker-note">No captain rows are saved for this season yet.</p>`
+            }
+          </section>
         `;
       }
 
@@ -1529,10 +2299,14 @@
         const attending = getAttendingPlayers().length;
         const assigned = assignments.length;
         const fullTeams = TEAM_CONFIG.filter((team) => getTeamCount(team.code) === team.maxPlayers).length;
+        const captainOverview = buildCaptainOverview();
 
         attendingCount.textContent = String(attending);
         assignedCount.textContent = String(assigned);
         fullTeamCount.textContent = String(fullTeams);
+        if (captainCount) {
+          captainCount.textContent = `${captainOverview.assignedCurrentCaptainCount}/${captainOverview.eligibleTeamCount}`;
+        }
         attendanceBadge.textContent = String(attending);
       }
 
@@ -1749,7 +2523,7 @@
         await saveRoundTwoPairings(state.rows);
       }
 
-      async function loadMatchdayEngine() {
+      async function loadMatchdayEngine(options = {}) {
         try {
           if (!Number.isInteger(matchdayId) || matchdayId <= 0) {
             await loadMatchdayLauncher();
@@ -1757,20 +2531,39 @@
           }
 
           setStatus("Loading Match Centre...");
+          captainTrackingSupported = true;
           teamDisplaySupported = true;
           seasonRosterMetadataSupported = true;
 
-          const { data: matchdayRow, error: matchdayError } = await supabaseClient
+          let { data: matchdayRow, error: matchdayError } = await supabaseClient
             .from("matchdays")
-            .select("id, season_id, matchday_number, kickoff_at, goals_count_as_points")
+            .select("id, season_id, matchday_number, kickoff_at, goals_count_as_points, final_captain_order_enabled")
             .eq("id", matchdayId)
             .single();
+
+          if (matchdayError && hasMissingFinalCaptainModeColumn(matchdayError)) {
+            ({ data: matchdayRow, error: matchdayError } = await supabaseClient
+              .from("matchdays")
+              .select("id, season_id, matchday_number, kickoff_at, goals_count_as_points")
+              .eq("id", matchdayId)
+              .single());
+
+            if (!matchdayError && matchdayRow) {
+              matchdayRow = {
+                ...matchdayRow,
+                final_captain_order_enabled: true,
+              };
+            }
+          }
 
           if (matchdayError) {
             throw matchdayError;
           }
 
-          matchday = matchdayRow;
+          matchday = {
+            ...matchdayRow,
+            final_captain_order_enabled: matchdayRow?.final_captain_order_enabled !== false,
+          };
           void syncMatchdayWeather(matchday);
 
           let { data: seasonRow, error: seasonError } = await supabaseClient
@@ -1945,6 +2738,25 @@
 
           assignments = assignmentRows || [];
 
+          let currentCaptainRows = [];
+
+          if (captainTrackingSupported) {
+            const { data: captainData, error: captainError } = await supabaseClient
+              .from("matchday_team_captains")
+              .select("id, matchday_id, team_code, player_id, captain_tier, selection_method, created_at, updated_at")
+              .eq("matchday_id", matchday.id);
+
+            if (captainError && hasMissingCaptainTable(captainError)) {
+              captainTrackingSupported = false;
+            } else if (captainError) {
+              throw captainError;
+            } else {
+              currentCaptainRows = captainData || [];
+            }
+          }
+
+          captainRows = currentCaptainRows;
+
           const { data: priorMatchdayRows, error: priorMatchdayError } = await supabaseClient
             .from("matchdays")
             .select("id, season_id, matchday_number, kickoff_at, goals_count_as_points")
@@ -1956,27 +2768,48 @@
           }
 
           const priorMatchdayIds = (priorMatchdayRows || []).map((row) => row.id);
+          seasonMatchdayNumberById = new Map(
+            [...(priorMatchdayRows || []), matchday].map((row) => [row.id, row.matchday_number])
+          );
 
           if (priorMatchdayIds.length) {
-            const [{ data: historicalAssignmentRows, error: historicalAssignmentsError }, { data: historicalMatchRows, error: historicalMatchesError }, { data: historicalPlayerStatRows, error: historicalPlayerStatsError }] =
+            const historyQueries = [
+              supabaseClient
+                .from("matchday_assignments")
+                .select("matchday_id, player_id, team_code")
+                .in("matchday_id", priorMatchdayIds),
+              supabaseClient
+                .from("matchday_matches")
+                .select("*")
+                .in("matchday_id", priorMatchdayIds)
+                .order("matchday_id", { ascending: true })
+                .order("round_number", { ascending: true })
+                .order("match_order", { ascending: true })
+                .limit(5000),
+              supabaseClient
+                .from("matchday_player_stats")
+                .select("*")
+                .in("matchday_id", priorMatchdayIds)
+                .limit(10000),
+            ];
+
+            if (captainTrackingSupported) {
+              historyQueries.push(
+                supabaseClient
+                  .from("matchday_team_captains")
+                  .select("id, matchday_id, team_code, player_id, captain_tier, selection_method, created_at, updated_at")
+                  .in("matchday_id", priorMatchdayIds)
+              );
+            }
+
+            const [
+              { data: historicalAssignmentRows, error: historicalAssignmentsError },
+              { data: historicalMatchRows, error: historicalMatchesError },
+              { data: historicalPlayerStatRows, error: historicalPlayerStatsError },
+              historicalCaptainQuery,
+            ] =
               await Promise.all([
-                supabaseClient
-                  .from("matchday_assignments")
-                  .select("matchday_id, player_id, team_code")
-                  .in("matchday_id", priorMatchdayIds),
-                supabaseClient
-                  .from("matchday_matches")
-                  .select("*")
-                  .in("matchday_id", priorMatchdayIds)
-                  .order("matchday_id", { ascending: true })
-                  .order("round_number", { ascending: true })
-                  .order("match_order", { ascending: true })
-                  .limit(5000),
-                supabaseClient
-                  .from("matchday_player_stats")
-                  .select("*")
-                  .in("matchday_id", priorMatchdayIds)
-                  .limit(10000),
+                ...historyQueries,
               ]);
 
             if (historicalAssignmentsError) {
@@ -1991,6 +2824,21 @@
               throw historicalPlayerStatsError;
             }
 
+            if (captainTrackingSupported) {
+              if (historicalCaptainQuery?.error && hasMissingCaptainTable(historicalCaptainQuery.error)) {
+                captainTrackingSupported = false;
+                currentCaptainRows = [];
+                captainRows = [];
+                historicalCaptainRows = [];
+              } else if (historicalCaptainQuery?.error) {
+                throw historicalCaptainQuery.error;
+              } else {
+                historicalCaptainRows = historicalCaptainQuery?.data || [];
+              }
+            } else {
+              historicalCaptainRows = [];
+            }
+
             historicalAssignments = historicalAssignmentRows || [];
             rotationStandingsByPlayerId = buildStandingsByPlayerId(
               players,
@@ -2002,6 +2850,7 @@
             );
           } else {
             historicalAssignments = [];
+            historicalCaptainRows = [];
             rotationStandingsByPlayerId = new Map();
           }
 
@@ -2073,17 +2922,33 @@
           renderTeams();
           renderMatches();
           updateHeroStats();
+          if (captainTrackingSupported && !options.skipCaptainSync) {
+            const captainSync = await syncCaptainsForCurrentTeams({
+              resetAll: options.resetCaptains === true,
+              forceAutoRepick: options.forceAutoCaptainRepick === true,
+            });
+
+            if (captainSync.changed) {
+              await loadMatchdayEngine({ skipCaptainSync: true });
+              return;
+            }
+          }
           setStatus(
             teamDisplaySupported
-              ? "Match Centre loaded."
+              ? captainTrackingSupported
+                ? "Match Centre loaded."
+                : "Match Centre loaded. Captain tracking will appear after the latest SQL update."
               : "Match Centre loaded. Team label saving is still limited on this club build.",
-            teamDisplaySupported ? "success" : "warning"
+            teamDisplaySupported && captainTrackingSupported ? "success" : "warning"
           );
         } catch (error) {
           seasonRosterRows = [];
           seasonRosterPlayerIds = new Set();
           clubPlayers = [];
           historicalAssignments = [];
+          historicalCaptainRows = [];
+          captainRows = [];
+          seasonMatchdayNumberById = new Map();
           rotationStandingsByPlayerId = new Map();
           activeRotationQueueMode = "regular";
           priorityFillButton.disabled = true;
@@ -2349,6 +3214,90 @@
         }
       }
 
+      async function saveTeamCaptain(teamCode, rawPlayerId) {
+        if (!captainTrackingSupported || !matchday) {
+          setStatus("Captain tracking is not available until the latest SQL upgrade is applied.", "warning");
+          return;
+        }
+
+        const playerId = Number(rawPlayerId);
+        const player = findKnownPlayerById(playerId);
+        const assignment = getAssignment(playerId);
+
+        if (!Number.isInteger(playerId) || playerId <= 0 || !player || assignment?.team_code !== teamCode) {
+          setStatus("Choose a player who is currently assigned to that team.", "warning");
+          return;
+        }
+
+        if (!isAttending(playerId)) {
+          setStatus("Only players marked IN can be saved as captains.", "warning");
+          return;
+        }
+
+        if (!isCaptainEligiblePlayer(player)) {
+          setStatus("Captains must come from the current core or flex pool.", "warning");
+          return;
+        }
+
+        try {
+          const { error } = await supabaseClient
+            .from("matchday_team_captains")
+            .upsert({
+              matchday_id: matchday.id,
+              team_code: teamCode,
+              player_id: playerId,
+              captain_tier: currentTierStatusForPlayer(playerId) || "flex",
+              selection_method: "manual",
+            }, { onConflict: "matchday_id,team_code" });
+
+          if (error) {
+            throw error;
+          }
+
+          await loadMatchdayEngine();
+          setStatus(`${teamLabel(teamCode)} captain updated.`, "success");
+        } catch (error) {
+          setStatus(readableError(error), "error");
+        }
+      }
+
+      async function toggleFinalCaptainMode(button = null) {
+        if (!matchday || activeRotationQueueMode !== "final") {
+          return;
+        }
+
+        const nextValue = !finalCaptainOrderEnabled();
+
+        try {
+          if (button) {
+            button.disabled = true;
+          }
+
+          const { error } = await supabaseClient
+            .from("matchdays")
+            .update({ final_captain_order_enabled: nextValue })
+            .eq("id", matchday.id);
+
+          if (error) {
+            throw error;
+          }
+
+          await loadMatchdayEngine({ forceAutoCaptainRepick: true });
+          setStatus(
+            nextValue
+              ? "Final-matchday captain order is on. Auto-captains now follow the top 2 core and top 2 flex ranks."
+              : "Final-matchday captain order is off. Auto-captains now fall back to the regular history-first captain rotation.",
+            "success"
+          );
+        } catch (error) {
+          setStatus(readableError(error), "error");
+        } finally {
+          if (button) {
+            button.disabled = false;
+          }
+        }
+      }
+
       async function autoBalanceTeams(button = null) {
         if (!matchday) {
           return;
@@ -2409,12 +3358,13 @@
             }
           }
 
-          await loadMatchdayEngine();
+          await loadMatchdayEngine({ resetCaptains: true });
+          const captainOverview = buildCaptainOverview();
           setStatus(
             `Auto-balance saved. Skill spread ${formatBalanceMetric(result.summary.skillSpread)} · age spread ${formatBalanceMetric(
               result.summary.ageSpread,
               "y"
-            )} · repeat load ${formatBalanceMetric(result.summary.teammateRepeatLoad, "", 0)}.`,
+            )} · repeat load ${formatBalanceMetric(result.summary.teammateRepeatLoad, "", 0)} · captains ${captainOverview.assignedCurrentCaptainCount}/${captainOverview.eligibleTeamCount}.`,
             "success"
           );
         } catch (error) {
@@ -2628,6 +3578,7 @@
                     <h3 class="player-name">${escapeHtml(displayName(player))}</h3>
                     <p class="compact-row-copy">${escapeHtml(subtitleParts.join(" · "))}</p>
                     <div class="player-tags">
+                      ${captainBadgeMarkup(player.id)}
                       ${planBadgeMarkup(player.id) || `<span class="tag-pill">${escapeHtml(formatStatusLabel(player.status))}</span>`}
                       <span class="tag-pill">${escapeHtml(prioritySummary.label)} ${escapeHtml(prioritySummary.value)}</span>
                       <span class="tag-pill">Games ${escapeHtml(prioritySummary.metrics.games_attended)}</span>
@@ -2666,7 +3617,10 @@
                         </div>
                         ${
                           currentTeamCode
-                            ? playerStatsFormMarkup(player.id, "season")
+                            ? `
+                                ${captainBadgeMarkup(player.id) ? '<p class="micro-note captain-note">Current team captain.</p>' : ""}
+                                ${playerStatsFormMarkup(player.id, "season")}
+                              `
                             : `<p class="micro-note">Choose a team on this card, or run auto-balance above the roster.</p>`
                         }
                       </div>
@@ -2703,6 +3657,7 @@
                 <h3 class="player-name">${escapeHtml(displayName(player))}</h3>
                 <p class="compact-row-copy">${escapeHtml(playerOriginLabel(player))}</p>
                 <div class="player-tags">
+                  ${captainBadgeMarkup(player.id)}
                   ${planBadgeMarkup(player.id)}
                   ${(player.positions || [])
                     .map((position) => `<span class="tag-pill">${escapeHtml(position)}</span>`)
@@ -2778,6 +3733,7 @@
                     <h2 class="group-title">${team.label}</h2>
                     <p class="group-copy">${team.maxPlayers} player cap for this team.</p>
                     ${teamBalanceSummaryMarkup(balanceSummary, team.code)}
+                    ${captainControlsMarkup(team.code)}
                   </div>
                   <div class="count-badge">
                     <span>Count</span>
@@ -2806,6 +3762,7 @@
         teamGrid.innerHTML = `
           ${teamBalanceBannerMarkup(balanceSummary)}
           ${teamWorkspaceTabsMarkup()}
+          ${captainTrackerMarkup()}
           ${visibleSectionMarkup}
         `;
       }
@@ -3141,12 +4098,29 @@
         zone.classList.remove("drag-target");
       });
 
+      teamGrid.addEventListener("change", async (event) => {
+        const captainSelect = event.target.closest("[data-captain-team-code]");
+
+        if (!captainSelect || !captainSelect.value) {
+          return;
+        }
+
+        await saveTeamCaptain(captainSelect.dataset.captainTeamCode, captainSelect.value);
+      });
+
       teamGrid.addEventListener("click", async (event) => {
         const teamViewTrigger = event.target.closest("[data-team-view-trigger]");
 
         if (teamViewTrigger) {
           activeTeamWorkspaceView = normalizeTeamWorkspaceView(teamViewTrigger.dataset.teamViewTrigger);
           renderTeams();
+          return;
+        }
+
+        const finalCaptainModeToggle = event.target.closest("[data-final-captain-mode-toggle]");
+
+        if (finalCaptainModeToggle) {
+          await toggleFinalCaptainMode(finalCaptainModeToggle);
           return;
         }
 
@@ -3266,4 +4240,4 @@
 
       setRosterView(activeRosterView);
       loadMatchdayEngine();
-    
+})();

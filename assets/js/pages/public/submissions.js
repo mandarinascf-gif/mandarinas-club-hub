@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const params = new URLSearchParams(window.location.search);
   const previewRequested = params.get("preview") === "1";
-  const previewMode = previewRequested && Boolean(window.MandarinasShell?.hasAdminAccess?.());
+  let previewMode = false;
   const requestedSeasonId = querySeasonIdFromUrl();
   const requestedMatchdayId = Number(params.get("matchday_id"));
   const requestedPlayerId = Number(params.get("player_id"));
@@ -2868,8 +2868,36 @@ document.addEventListener("DOMContentLoaded", () => {
     syncSubmissionWizard();
   });
 
+  async function ensurePreviewAccess() {
+    if (!previewRequested) {
+      previewMode = false;
+      return true;
+    }
+
+    const adminAuth = window.MandarinasAdminAuth;
+    const fallbackHref = window.MandarinasShell?.bussesAccessHref?.(window.location.href) || "./busses.html";
+
+    if (!adminAuth) {
+      window.location.replace(fallbackHref);
+      return false;
+    }
+
+    const access = await adminAuth.resolveAccess();
+    if (!access.ok || !access.isAdmin) {
+      window.location.replace(adminAuth.accessPageHref(window.location.href));
+      return false;
+    }
+
+    previewMode = true;
+    return true;
+  }
+
   async function init() {
     try {
+      if (!(await ensurePreviewAccess())) {
+        return;
+      }
+
       setSubmissionView(activeSubmissionView, { updateHistory: false });
       seasons = await fetchSeasons();
 

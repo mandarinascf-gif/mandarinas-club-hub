@@ -32,10 +32,18 @@ The browser app reads Supabase config from:
 
 For local env reference, see `.env.example`.
 
-The busses gate reads from `window.__MANDARINAS_APP_CONFIG__` first. For this static site, the
-default local source of truth is `assets/js/core/runtime_config.js`, where `adminCode` is defined
-in one place. `window.__MANDARINAS_SUPABASE_CONFIG__`, `ADMIN_CODE`, and `NEXT_PUBLIC_ADMIN_CODE`
-are still accepted as fallback override keys. If no override is present, it falls back to `1234`.
+## Busses admin access
+
+Busses pages now require a real Supabase Auth session plus an active `public.player_accounts` row
+with `role = 'admin'`.
+
+For an existing live project:
+
+- run `sql/09_admin_auth_hardening.sql`
+- create at least one admin account in Supabase Auth
+- insert or update the matching `public.player_accounts` row with `role = 'admin'`
+
+For fresh setups, `sql/01_schema.sql` now creates the same table/function/policies directly.
 
 For workbook-backed reseed scripts, the folder source of truth is
 `data/reseed_config/season_inventory.csv`. Current-season generation, historical repair helpers,
@@ -44,6 +52,6 @@ machine-specific `Downloads` paths.
 
 ## Current caveats
 
-- Busses access is currently a client-side code gate, not real authentication.
+- Public player submissions and idea-board writes still use the existing open client workflow.
 - Some player-report actions may remain in view mode until the related Supabase migration is applied.
 - This repo includes club data artifacts under `data/` and SQL seed files. Review that content before publishing publicly.

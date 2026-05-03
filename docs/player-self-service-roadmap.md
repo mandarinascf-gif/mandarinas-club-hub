@@ -18,8 +18,8 @@ The current app has **no player authentication model**.
 
 Today:
 
-- The app uses an admin code in the browser.
-- The public/client database policies are effectively open to anonymous reads and writes.
+- Busses admin pages now use Supabase Auth plus `public.player_accounts`.
+- Public read paths and player-submission writes still rely on the open client model.
 - There is no stable relationship between a logged-in user and a specific `players.id`.
 
 That means player-submitted stats and ratings should **not** be implemented on top of the current
@@ -31,8 +31,7 @@ The product flow is ready to be designed now, but the security model is **not re
 
 Today the app still relies on:
 
-- a browser-side admin code
-- anonymous client access to core tables
+- anonymous client access for public reads and player submission flows
 - no verified mapping between an authenticated person and a `players.id`
 
 So the honest answer is:

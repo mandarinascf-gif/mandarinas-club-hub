@@ -12,8 +12,12 @@
     <link rel="apple-touch-icon" sizes="180x180" href="./assets/icons/apple-touch-icon.png" />
     <link rel="stylesheet" href="./assets/css/app.css?v=20260502c" />
     <title>Busses · Setup</title>
-    <script src="./assets/js/core/runtime_config.js?v=20260427a"></script>
-    <script src="./assets/js/ui/shell.js?v=20260427a" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./assets/js/core/supabase_config.js?v=20260503b"></script>
+    <script src="./assets/js/core/runtime_config.js?v=20260503b"></script>
+    <script src="./assets/js/core/admin_auth.js?v=20260503b"></script>
+    <script src="./assets/js/core/admin_page.js?v=20260503b"></script>
+    <script src="./assets/js/ui/shell.js?v=20260503b" defer></script>
   </head>
   <body class="manager-touch admin-app page-setup">
     <nav class="site-nav">
@@ -40,9 +44,8 @@
           <div class="section-label">Busses · Setup</div>
           <h1>Admin setup and help</h1>
           <p>
-            This page keeps the current static workflow easy to reopen on a phone. It points Busses
-            back to the existing season, matchday, squad, standings, and tier tools without adding a
-            second access system.
+            This page keeps the static workflow easy to reopen on a phone. It points Busses back to
+            the season, matchday, squad, standings, and tier tools behind the admin sign-in flow.
           </p>
         </div>
         <div class="actions">
@@ -58,8 +61,8 @@
         <div class="summary-grid">
           <div class="summary-card">
             <span>Entry</span>
-            <strong>Busses</strong>
-            <span class="summary-copy">Use the existing shared shell unlock flow before protected pages.</span>
+            <strong>Admin sign-in</strong>
+            <span class="summary-copy">Protected pages now rely on Supabase Auth plus an active admin role.</span>
           </div>
           <div class="summary-card">
             <span>Season</span>
@@ -128,13 +131,13 @@
           <summary class="disclosure-summary">
             <div class="disclosure-copy">
               <div class="disclosure-title">What stays unchanged in this build</div>
-              <div class="micro-note">The mobile refactor keeps the current static deployment and current admin gate behavior.</div>
+              <div class="micro-note">The mobile refactor keeps the static deployment, but the Busses gate now uses real auth.</div>
             </div>
           </summary>
           <div class="disclosure-body">
             <ul>
               <li>Public pages remain public and keep their current URLs.</li>
-              <li>Protected pages still rely on the existing shared shell unlock flow.</li>
+              <li>Protected pages require a signed-in Supabase admin account.</li>
               <li>`season_id` stays in the URL flow for season-aware pages.</li>
               <li>Supabase browser data loading remains in the existing static HTML, CSS, and JS structure.</li>
             </ul>
@@ -146,5 +149,6 @@
     <footer class="club-footer">
       <div class="club-footer-copy">Busses · Setup</div>
     </footer>
+    <script src="./assets/js/pages/admin/setup.js?v=20260503b"></script>
   </body>
 </html>

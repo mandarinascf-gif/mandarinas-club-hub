@@ -1,4 +1,15 @@
-document.addEventListener("DOMContentLoaded", async () => {
+(function () {
+  "use strict";
+
+  let started = false;
+
+  async function initSharedStandings() {
+    if (started) {
+      return;
+    }
+
+    started = true;
+
   if (!window.MandarinasPublic) {
     const statusLine = document.getElementById("standings-status-line");
     if (statusLine) {
@@ -482,5 +493,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderTable();
   });
 
-  await init();
-});
+    await init();
+  }
+
+  window.MandarinasSharedStandings = Object.freeze({
+    init: initSharedStandings,
+  });
+
+  if (window.__MANDARINAS_DEFER_SHARED_STANDINGS__ === true) {
+    return;
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      void initSharedStandings();
+    });
+    return;
+  }
+
+  void initSharedStandings();
+})();

@@ -1,7 +1,19 @@
-      const supabaseConfig = window.MandarinasSupabaseConfig;
-      const { url: SUPABASE_URL } = supabaseConfig;
+(async function () {
+  "use strict";
 
-      const supabaseClient = supabaseConfig.createClient();
+      const adminPage = window.MandarinasAdminPage;
+      if (!adminPage) {
+        return;
+      }
+
+      const access = await adminPage.requireAccess({
+        pageTitle: "Busses seasons",
+      });
+      if (!access.ok) {
+        return;
+      }
+
+      const { supabaseClient } = access;
       const sortSeasonsChronologically =
         window.MandarinasLogic?.sortSeasonsChronologically || ((rows) => [...(rows || [])]);
       const normalizeTierValue =
@@ -2793,4 +2805,4 @@
 
       setSeasonView(resolveSeasonView(), { updateHash: false });
       loadSeasons();
-    
+})();

@@ -1,5 +1,20 @@
-const supabaseConfig = window.MandarinasSupabaseConfig;
-const supabaseClient = supabaseConfig.createClient();
+(async function () {
+  "use strict";
+
+  const adminPage = window.MandarinasAdminPage;
+  if (!adminPage) {
+    return;
+  }
+
+  const access = await adminPage.requireAccess({
+    pageTitle: "Busses player card",
+    requireLogic: true,
+  });
+  if (!access.ok) {
+    return;
+  }
+
+  const { supabaseClient } = access;
 
 const params = new URLSearchParams(window.location.search);
 const playerId = Number(params.get("player_id"));
@@ -849,3 +864,4 @@ deleteButton.addEventListener("click", async () => {
 });
 
 loadPlayer();
+})();
