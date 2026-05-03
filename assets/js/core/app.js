@@ -522,6 +522,11 @@
     return apps ? Number((points / apps).toFixed(2)) : 0;
   }
 
+  function badgeMinimumAppsForRank(completedMatchdaysCount) {
+    const completedCount = Math.max(0, Number(completedMatchdaysCount || 0));
+    return Math.max(4, Math.ceil(completedCount * 0.4));
+  }
+
   function compareBadgeStandingsByMode(mode, left, right) {
     if (mode === "points") {
       const pointsDiff = Number(right?.total_points || 0) - Number(left?.total_points || 0);
@@ -574,24 +579,59 @@
       }, new Map());
   }
 
-  function finalizeBadgeStandings(entries) {
+  function finalizeBadgeStandings(entries, options = {}) {
     const normalizedEntries = [...(entries || [])]
       .map((entry) => ({
         ...entry,
         points_per_game: badgePointsPerGame(entry),
       }));
+    const minimumApps = badgeMinimumAppsForRank(options.completedMatchdaysCount);
+    const qualifiedEntries = normalizedEntries.filter(
+      (entry) => Number(entry?.days_attended || 0) >= minimumApps
+    );
+    const provisionalEntries = normalizedEntries.filter(
+      (entry) => Number(entry?.days_attended || 0) < minimumApps
+    );
     const pointsRankMap = buildBadgeRankMap(normalizedEntries, "points");
+    const qualifiedPpgRankMap = buildBadgeRankMap(qualifiedEntries, "ppg");
+    const provisionalPpgRankMap = buildBadgeRankMap(provisionalEntries, "ppg");
 
-    return normalizedEntries
-      .sort(compareBadgeStandings)
-      .map((entry, index) => {
+    return [
+      ...qualifiedEntries.sort(compareBadgeStandings),
+      ...provisionalEntries.sort(compareBadgeStandings),
+    ].map((entry) => {
         const entryKey = badgeEntryKey(entry);
-        const ppgRank = index + 1;
+        const qualifiedForPpgRank = Number(entry?.days_attended || 0) >= minimumApps;
+        const ppgRank = entryKey != null
+          ? (
+            qualifiedForPpgRank
+              ? qualifiedPpgRankMap.get(entryKey)
+              : provisionalPpgRankMap.get(entryKey)
+          ) ?? null
+          : null;
+        const ppgRankDisplay =
+          ppgRank == null
+            ? "--"
+            : qualifiedForPpgRank
+              ? String(ppgRank)
+              : `P${ppgRank}`;
+        const ppgRankLabel = qualifiedForPpgRank
+          ? "Qualified PPG Rank"
+          : "Provisional PPG Rank";
+        const pointsRank = entryKey != null ? pointsRankMap.get(entryKey) ?? null : null;
+
         return {
           ...entry,
-          rank: ppgRank,
+          rank: qualifiedForPpgRank ? ppgRank : null,
+          rank_status: qualifiedForPpgRank ? "qualified" : "provisional",
+          qualified_for_ppg_rank: qualifiedForPpgRank,
+          minimum_apps_for_rank: minimumApps,
           ppg_rank: ppgRank,
-          points_rank: entryKey != null ? pointsRankMap.get(entryKey) ?? ppgRank : ppgRank,
+          ppg_rank_display: ppgRankDisplay,
+          ppg_rank_label: ppgRankLabel,
+          points_rank: pointsRank,
+          points_rank_display: pointsRank != null ? String(pointsRank) : "--",
+          points_rank_label: "Points Rank",
         };
       });
   }
@@ -604,7 +644,9 @@
       completedMatchdays,
       scoringSource
     );
-    return finalizeBadgeStandings(standings);
+    return finalizeBadgeStandings(standings, {
+      completedMatchdaysCount: completedMatchdays?.length || 0,
+    });
   }
 
   function buildAllTimeStandings(players, seasons, matchdays, matches, assignments, playerStats) {
@@ -646,6 +688,7 @@
     const seasonAssignments = new Map();
     const seasonPlayerStats = new Map();
     const matchdaySeasonMap = new Map();
+    let totalCompletedMatchdays = 0;
 
     (matchdays || []).forEach((matchday) => {
       const seasonId = Number(matchday.season_id);
@@ -700,6 +743,7 @@
 
       const matchesForSeason = seasonMatches.get(seasonId) || [];
       const completedMatchdays = buildCompletedMatchdays(matchdaysForSeason, matchesForSeason);
+      totalCompletedMatchdays += completedMatchdays.length;
       const standings = buildStandings(
         normalizedPlayers,
         seasonAssignments.get(seasonId) || [],
@@ -722,7 +766,8 @@
     });
 
     return finalizeBadgeStandings(
-      Array.from(standingsSeed.values()).filter((entry) => entry.days_attended > 0)
+      Array.from(standingsSeed.values()).filter((entry) => entry.days_attended > 0),
+      { completedMatchdaysCount: totalCompletedMatchdays }
     );
   }
 
