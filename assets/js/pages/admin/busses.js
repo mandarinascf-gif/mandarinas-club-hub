@@ -272,8 +272,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    if (codeValue().length !== 6) {
-      setStatus("Enter the 6-digit code from the email.", "error");
+    if (!codeValue()) {
+      setStatus("Enter the code from the email.", "error");
       codeInput?.focus();
       codeInput?.select();
       return;
