@@ -1,0 +1,564 @@
+-- Production live-readiness patch
+-- Generated from the 2026-05-03 repo + live Supabase audit.
+--
+-- What this fixes:
+-- 1. Canonicalizes any lingering legacy tier labels in live data.
+-- 2. Adds matchdays.final_captain_order_enabled if it is missing.
+-- 3. Creates public.matchday_team_captains if it is missing.
+-- 4. Rebuilds the live tier views so they emit canonical core/flex/sub values
+--    and restore the flex rotation-priority board.
+--
+-- What this does NOT auto-delete:
+-- - Summer 2026. An optional commented cleanup block is included at the end
+--   because live production already has seeded rows tied to that season.
+
+begin;
+
+-- Normalize any lingering legacy tier labels before the views are rebuilt.
+update public.players
+set status = 'flex'
+where status = 'rotation';
+
+update public.players
+set status = 'sub'
+where status in ('flex_sub', 'flex/sub');
+
+update public.players
+set desired_tier = 'flex'
+where desired_tier = 'rotation';
+
+update public.players
+set desired_tier = 'sub'
+where desired_tier in ('flex_sub', 'flex/sub');
+
+update public.season_players
+set tier_status = 'flex'
+where tier_status = 'rotation';
+
+update public.season_players
+set tier_status = 'sub'
+where tier_status in ('flex_sub', 'flex/sub');
+
+update public.season_players
+set registration_tier = 'flex'
+where registration_tier = 'rotation';
+
+update public.season_players
+set registration_tier = 'sub'
+where registration_tier in ('flex_sub', 'flex/sub');
+
+update public.season_roster_requests
+set requested_tier = 'flex'
+where requested_tier = 'rotation';
+
+update public.season_roster_requests
+set requested_tier = 'sub'
+where requested_tier in ('flex_sub', 'flex/sub');
+
+alter table public.matchdays
+  add column if not exists final_captain_order_enabled boolean;
+
+update public.matchdays
+set final_captain_order_enabled = true
+where final_captain_order_enabled is null;
+
+alter table public.matchdays
+  alter column final_captain_order_enabled set default true,
+  alter column final_captain_order_enabled set not null;
+
+create or replace function public.enforce_matchday_team_captain_eligibility()
+returns trigger
+language plpgsql
+as $$
+declare
+  target_season_id bigint;
+  current_tier_status text;
+  assignment_exists boolean;
+begin
+  select md.season_id
+  into target_season_id
+  from public.matchdays md
+  where md.id = new.matchday_id;
+
+  if target_season_id is null then
+    raise exception using
+      errcode = '23503',
+      message = format(
+        'Matchday %s must exist before saving matchday_team_captains.',
+        new.matchday_id
+      ),
+      detail = format(
+        'matchday_id=%s, team_code=%s, player_id=%s',
+        new.matchday_id,
+        new.team_code,
+        new.player_id
+      );
+  end if;
+
+  select lower(coalesce(sp.tier_status, ''))
+  into current_tier_status
+  from public.season_players sp
+  where sp.season_id = target_season_id
+    and sp.player_id = new.player_id
+  limit 1;
+
+  if current_tier_status not in ('core', 'flex') then
+    raise exception using
+      errcode = '23514',
+      message = format(
+        'Player %s must be core or flex before saving a captain row for matchday %s.',
+        new.player_id,
+        new.matchday_id
+      ),
+      detail = format(
+        'matchday_id=%s, team_code=%s, player_id=%s, tier_status=%s',
+        new.matchday_id,
+        new.team_code,
+        new.player_id,
+        coalesce(current_tier_status, '<missing>')
+      ),
+      hint = 'Choose a core or flex player from the same season roster.';
+  end if;
+
+  if lower(coalesce(new.captain_tier, '')) <> current_tier_status then
+    raise exception using
+      errcode = '23514',
+      message = format(
+        'Captain tier %s does not match the current season tier %s for player %s.',
+        coalesce(new.captain_tier, '<missing>'),
+        current_tier_status,
+        new.player_id
+      ),
+      detail = format(
+        'matchday_id=%s, team_code=%s, player_id=%s',
+        new.matchday_id,
+        new.team_code,
+        new.player_id
+      ),
+      hint = 'Save the captain row with the player''s current core/flex season tier.';
+  end if;
+
+  select exists (
+    select 1
+    from public.matchday_assignments ma
+    where ma.matchday_id = new.matchday_id
+      and ma.player_id = new.player_id
+      and ma.team_code = new.team_code
+  )
+  into assignment_exists;
+
+  if not assignment_exists then
+    raise exception using
+      errcode = '23514',
+      message = format(
+        'Player %s must be assigned to team %s on matchday %s before saving a captain row.',
+        new.player_id,
+        new.team_code,
+        new.matchday_id
+      ),
+      detail = format(
+        'matchday_id=%s, team_code=%s, player_id=%s',
+        new.matchday_id,
+        new.team_code,
+        new.player_id
+      ),
+      hint = 'Assign the player to that team first, then save the captain selection.';
+  end if;
+
+  return new;
+end;
+$$;
+
+create table if not exists public.matchday_team_captains (
+  id bigint generated by default as identity primary key,
+  matchday_id bigint not null references public.matchdays(id) on delete cascade,
+  team_code text not null,
+  player_id bigint not null references public.players(id) on delete cascade,
+  captain_tier text not null default 'flex',
+  selection_method text not null default 'auto',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.matchday_team_captains
+  add column if not exists matchday_id bigint references public.matchdays(id) on delete cascade,
+  add column if not exists team_code text,
+  add column if not exists player_id bigint references public.players(id) on delete cascade,
+  add column if not exists captain_tier text,
+  add column if not exists selection_method text,
+  add column if not exists created_at timestamptz not null default now(),
+  add column if not exists updated_at timestamptz not null default now();
+
+update public.matchday_team_captains mtc
+set captain_tier = lower(coalesce(sp.tier_status, 'flex'))
+from public.matchdays md,
+     public.season_players sp
+where md.id = mtc.matchday_id
+  and sp.season_id = md.season_id
+  and sp.player_id = mtc.player_id
+  and (
+    mtc.captain_tier is null
+    or lower(coalesce(mtc.captain_tier, '')) not in ('core', 'flex')
+  );
+
+update public.matchday_team_captains
+set selection_method = 'auto'
+where selection_method is null
+   or lower(coalesce(selection_method, '')) not in ('auto', 'replacement', 'manual');
+
+alter table public.matchday_team_captains
+  alter column matchday_id set not null,
+  alter column team_code set not null,
+  alter column player_id set not null,
+  alter column captain_tier set default 'flex',
+  alter column captain_tier set not null,
+  alter column selection_method set default 'auto',
+  alter column selection_method set not null,
+  alter column created_at set default now(),
+  alter column created_at set not null,
+  alter column updated_at set default now(),
+  alter column updated_at set not null;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'matchday_team_captains_team_code_allowed'
+  ) then
+    alter table public.matchday_team_captains
+      add constraint matchday_team_captains_team_code_allowed check (
+        team_code in ('magenta', 'blue', 'green', 'orange')
+      );
+  end if;
+
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'matchday_team_captains_captain_tier_allowed'
+  ) then
+    alter table public.matchday_team_captains
+      add constraint matchday_team_captains_captain_tier_allowed check (
+        captain_tier in ('core', 'flex')
+      );
+  end if;
+
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'matchday_team_captains_selection_method_allowed'
+  ) then
+    alter table public.matchday_team_captains
+      add constraint matchday_team_captains_selection_method_allowed check (
+        selection_method in ('auto', 'replacement', 'manual')
+      );
+  end if;
+end;
+$$;
+
+create unique index if not exists matchday_team_captains_matchday_team_idx
+on public.matchday_team_captains (matchday_id, team_code);
+
+create unique index if not exists matchday_team_captains_matchday_player_idx
+on public.matchday_team_captains (matchday_id, player_id);
+
+create index if not exists matchday_team_captains_player_idx
+on public.matchday_team_captains (player_id, created_at desc);
+
+drop trigger if exists matchday_team_captains_set_updated_at on public.matchday_team_captains;
+
+create trigger matchday_team_captains_set_updated_at
+before update on public.matchday_team_captains
+for each row
+execute procedure public.set_updated_at();
+
+drop trigger if exists matchday_team_captains_require_assignment on public.matchday_team_captains;
+
+create constraint trigger matchday_team_captains_require_assignment
+after insert or update of matchday_id, team_code, player_id, captain_tier on public.matchday_team_captains
+deferrable initially deferred
+for each row
+execute procedure public.enforce_matchday_team_captain_eligibility();
+
+alter table public.matchday_team_captains enable row level security;
+
+drop policy if exists "Anyone can read matchday team captains" on public.matchday_team_captains;
+drop policy if exists "Anyone can add matchday team captains" on public.matchday_team_captains;
+drop policy if exists "Anyone can update matchday team captains" on public.matchday_team_captains;
+drop policy if exists "Anyone can delete matchday team captains" on public.matchday_team_captains;
+drop policy if exists "Admins can add matchday team captains" on public.matchday_team_captains;
+drop policy if exists "Admins can update matchday team captains" on public.matchday_team_captains;
+drop policy if exists "Admins can delete matchday team captains" on public.matchday_team_captains;
+
+create policy "Anyone can read matchday team captains"
+on public.matchday_team_captains
+for select
+to anon, authenticated
+using (true);
+
+create policy "Anyone can add matchday team captains"
+on public.matchday_team_captains
+for insert
+to anon, authenticated
+with check (true);
+
+create policy "Anyone can update matchday team captains"
+on public.matchday_team_captains
+for update
+to anon, authenticated
+using (true)
+with check (true);
+
+create policy "Anyone can delete matchday team captains"
+on public.matchday_team_captains
+for delete
+to anon, authenticated
+using (true);
+
+create or replace view public.v_season_tier_scores as
+with completed_matchdays as (
+  select
+    md.id,
+    md.season_id,
+    md.matchday_number
+  from public.matchdays md
+  join public.seasons s
+    on s.id = md.season_id
+  left join public.matchday_matches mm
+    on mm.matchday_id = md.id
+  group by md.id, md.season_id, md.matchday_number, s.model_start_matchday
+  having md.matchday_number >= coalesce(s.model_start_matchday, 1)
+     and count(*) filter (
+       where mm.round_number in (1, 2)
+         and mm.match_order in (1, 2)
+     ) = 4
+     and count(*) filter (
+       where mm.round_number in (1, 2)
+         and mm.match_order in (1, 2)
+         and mm.home_score is not null
+         and mm.away_score is not null
+     ) = 4
+),
+stats_with_status as (
+  select
+    cmd.id as matchday_id,
+    cmd.season_id,
+    cmd.matchday_number,
+    mps.player_id,
+    case
+      when coalesce(mps.attendance_status, 'out') = 'out' and mps.attended then 'in'
+      when coalesce(mps.attendance_status, 'out') = 'attended' then 'in'
+      else coalesce(mps.attendance_status, 'out')
+    end as effective_attendance_status
+  from completed_matchdays cmd
+  join public.matchday_player_stats mps
+    on mps.matchday_id = cmd.id
+),
+season_attendance as (
+  select
+    sws.season_id,
+    sws.player_id,
+    count(*) filter (where sws.effective_attendance_status = 'in') as games_attended,
+    count(*) filter (where sws.effective_attendance_status = 'available') as games_available,
+    count(*) filter (where sws.effective_attendance_status = 'late_cancel') as late_cancels,
+    count(*) filter (where sws.effective_attendance_status = 'no_show') as no_shows
+  from stats_with_status sws
+  group by sws.season_id, sws.player_id
+),
+recent_matchdays as (
+  select
+    cmd.id,
+    cmd.season_id,
+    row_number() over (
+      partition by cmd.season_id
+      order by cmd.matchday_number desc
+    ) as recent_rank
+  from completed_matchdays cmd
+),
+recent_attendance as (
+  select
+    rm.season_id,
+    sws.player_id,
+    count(*) filter (where sws.effective_attendance_status = 'in') as recent_games_attended,
+    count(*) filter (where sws.effective_attendance_status = 'available') as recent_games_available,
+    count(*) filter (where sws.effective_attendance_status = 'late_cancel') as recent_late_cancels,
+    count(*) filter (where sws.effective_attendance_status = 'no_show') as recent_no_shows
+  from recent_matchdays rm
+  join stats_with_status sws
+    on sws.matchday_id = rm.id
+  where rm.recent_rank <= 8
+  group by rm.season_id, sws.player_id
+),
+base as (
+  select
+    sp.id as season_player_id,
+    sp.season_id,
+    sp.player_id,
+    sp.tier_status,
+    coalesce(p.desired_tier, p.status) as default_status,
+    coalesce(sa.games_attended, 0) as games_attended,
+    coalesce(sa.games_available, 0) as games_available,
+    coalesce(sa.late_cancels, 0) as late_cancels,
+    coalesce(sa.no_shows, 0) as no_shows,
+    ((coalesce(sa.games_attended, 0) * 2) + coalesce(sa.games_available, 0) - coalesce(sa.late_cancels, 0) - (coalesce(sa.no_shows, 0) * 2)) as attendance_score,
+    coalesce(ra.recent_games_attended, 0) as recent_games_attended,
+    coalesce(ra.recent_games_available, 0) as recent_games_available,
+    coalesce(ra.recent_late_cancels, 0) as recent_late_cancels,
+    coalesce(ra.recent_no_shows, 0) as recent_no_shows,
+    ((coalesce(ra.recent_games_attended, 0) * 2) + coalesce(ra.recent_games_available, 0) - coalesce(ra.recent_late_cancels, 0) - (coalesce(ra.recent_no_shows, 0) * 2)) as recent_attendance_score,
+    sp.tier_reason,
+    sp.movement_note,
+    sp.is_eligible,
+    sp.created_at,
+    sp.updated_at
+  from public.season_players sp
+  join public.players p
+    on p.id = sp.player_id
+  left join season_attendance sa
+    on sa.season_id = sp.season_id
+   and sa.player_id = sp.player_id
+  left join recent_attendance ra
+    on ra.season_id = sp.season_id
+   and ra.player_id = sp.player_id
+),
+scored as (
+  select
+    base.*,
+    case
+      when not base.is_eligible then 'sub'
+      when base.attendance_score >= 8
+        and base.games_attended >= 4
+        and base.no_shows <= 1 then 'core'
+      when base.attendance_score >= 2
+        and base.games_attended >= 1
+        and base.no_shows <= 2 then 'flex'
+      else 'sub'
+    end as recommended_tier_status,
+    case
+      when not base.is_eligible then 'down'
+      when base.attendance_score >= 8
+        and base.games_attended >= 4
+        and base.no_shows <= 1 then
+        case
+          when coalesce(base.tier_status, 'sub') = 'core' then 'steady'
+          else 'up'
+        end
+      when base.attendance_score >= 2
+        and base.games_attended >= 1
+        and base.no_shows <= 2 then
+        case
+          when coalesce(base.tier_status, 'sub') = 'core' then 'down'
+          when coalesce(base.tier_status, 'sub') = 'flex' then 'steady'
+          else 'up'
+        end
+      else
+        case
+          when coalesce(base.tier_status, 'sub') = 'sub' then 'steady'
+          else 'down'
+        end
+    end as trend
+  from base
+)
+select
+  scored.*,
+  case
+    when not scored.is_eligible then 'Ineligible. Restore eligibility before tier movement.'
+    when scored.recommended_tier_status = 'core' and coalesce(scored.tier_status, 'sub') <> 'core' then 'Promotion case. Full-season attendance now clears the core line.'
+    when scored.recommended_tier_status = 'flex' and coalesce(scored.tier_status, 'sub') = 'sub' then 'Trending up. Full-season attendance now supports rotation minutes.'
+    when scored.recommended_tier_status = 'sub' and coalesce(scored.tier_status, 'sub') <> 'sub' then 'Season attendance has slipped below the current tier range.'
+    else coalesce(scored.movement_note, 'Stable in current tier range.')
+  end as transparency_note,
+  case
+    when not scored.is_eligible then 'Restore eligibility'
+    when scored.recommended_tier_status = 'core' then 'Keep attendance high and avoid no-shows'
+    when scored.recommended_tier_status = 'flex' and scored.games_attended < 3 then 'Build a longer attendance record'
+    when scored.recommended_tier_status = 'flex' then 'Keep stacking attendance and push toward core'
+    else 'Build stronger attendance and reduce late changes'
+  end as next_step
+from scored;
+
+create or replace view public.v_season_tier_transparency as
+select
+  v.season_id,
+  s.name as season_name,
+  s.model_start_matchday,
+  v.player_id,
+  p.first_name,
+  p.last_name,
+  p.nickname,
+  p.nationality,
+  v.default_status,
+  v.tier_status,
+  v.recommended_tier_status,
+  v.games_attended,
+  v.games_available,
+  v.late_cancels,
+  v.no_shows,
+  v.attendance_score,
+  v.recent_games_attended,
+  v.recent_games_available,
+  v.recent_late_cancels,
+  v.recent_no_shows,
+  v.recent_attendance_score,
+  v.is_eligible,
+  v.tier_reason,
+  v.movement_note,
+  v.transparency_note,
+  v.next_step,
+  v.trend,
+  v.created_at,
+  v.updated_at
+from public.v_season_tier_scores v
+join public.players p
+  on p.id = v.player_id
+join public.seasons s
+  on s.id = v.season_id;
+
+create or replace view public.v_rotation_priority as
+select
+  vt.season_id,
+  vt.season_name,
+  vt.model_start_matchday,
+  vt.player_id,
+  vt.first_name,
+  vt.last_name,
+  vt.nickname,
+  vt.nationality,
+  vt.default_status,
+  vt.tier_status,
+  vt.recommended_tier_status,
+  vt.games_attended,
+  vt.games_available,
+  vt.late_cancels,
+  vt.no_shows,
+  vt.attendance_score,
+  vt.recent_games_attended,
+  vt.recent_games_available,
+  vt.recent_late_cancels,
+  vt.recent_no_shows,
+  vt.recent_attendance_score,
+  vt.is_eligible,
+  vt.tier_reason,
+  vt.movement_note,
+  vt.transparency_note,
+  vt.next_step,
+  vt.trend,
+  row_number() over (
+    partition by vt.season_id
+    order by vt.games_attended asc, vt.attendance_score desc, vt.no_shows asc, lower(trim(vt.last_name)), lower(trim(vt.first_name))
+  ) as rotation_priority_rank
+from public.v_season_tier_transparency vt
+where vt.tier_status = 'flex'
+  and vt.is_eligible = true;
+
+commit;
+
+-- Optional cleanup: production currently includes a ninth pre-created season:
+--   id = 12, name = 'Summer 2026'
+-- The row already has seeded matchdays, roster rows, assignments, and stats.
+-- Uncomment only after confirming you want to remove that pre-created season
+-- and all of its attached season-specific rows via ON DELETE CASCADE.
+--
+-- delete from public.seasons
+-- where id = 12
+--   and lower(trim(name)) = 'summer 2026';
