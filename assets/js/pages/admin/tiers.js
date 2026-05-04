@@ -35,6 +35,21 @@
       const suggestionSlotLimit = logic.TIER_SUGGESTION_SLOT_LIMIT || 36;
       const sortSeasonsChronologically =
         logic.sortSeasonsChronologically || ((rows) => [...(rows || [])]);
+      const pickDefaultSeasonId =
+        logic.pickDefaultSeasonId ||
+        ((rows, requestedId = null) => {
+          const orderedRows = sortSeasonsChronologically(rows || []);
+          if (!orderedRows.length) {
+            return null;
+          }
+          if (
+            Number.isFinite(Number(requestedId)) &&
+            orderedRows.some((season) => Number(season.id) === Number(requestedId))
+          ) {
+            return Number(requestedId);
+          }
+          return Number(orderedRows[orderedRows.length - 1].id);
+        });
       const historicalSeasonIds = logic.historicalSeasonIds || (() => []);
       const summarizeHistoricalAttendance =
         logic.summarizeHistoricalAttendance || ((rows) => [...(rows || [])]);
@@ -774,11 +789,11 @@
           seasons = sortSeasonsChronologically(seasonRows || []);
 
           if (!selectedSeasonId && seasons.length) {
-            selectedSeasonId = seasons[seasons.length - 1].id;
+            selectedSeasonId = pickDefaultSeasonId(seasons);
           }
 
           if (selectedSeasonId && !seasons.some((season) => season.id === selectedSeasonId)) {
-            selectedSeasonId = seasons[seasons.length - 1]?.id || null;
+            selectedSeasonId = pickDefaultSeasonId(seasons);
           }
 
           renderSeasonOptions();
