@@ -27,6 +27,7 @@
         teamDisplayLabel,
         applyTeamDisplayConfig,
         sortSeasonsChronologically,
+        pickDefaultSeasonId,
         normalizeTierValue,
         normalizePlayerDesiredTier,
         summarizeBalancedAssignments,
@@ -756,7 +757,7 @@
         const selectedSeasonId =
           launcherSeasons.some((entry) => entry.id === requestedSeasonId)
             ? requestedSeasonId
-            : launcherSeasons[launcherSeasons.length - 1].id;
+            : pickDefaultSeasonId(launcherSeasons);
 
         matchdaySeasonSelect.innerHTML = launcherSeasons
           .map(
