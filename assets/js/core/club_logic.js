@@ -195,6 +195,43 @@
     return [...(seasons || [])].sort(compareSeasonsChronologically);
   }
 
+  function localIsoDate(value = new Date()) {
+    const date = value instanceof Date ? value : new Date(value);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  function isFutureScheduledSeason(season, todayIsoDate = localIsoDate()) {
+    const seasonStartDate = normalizeText(season?.season_start_date || "");
+    return /^\d{4}-\d{2}-\d{2}$/.test(seasonStartDate) && seasonStartDate > todayIsoDate;
+  }
+
+  function pickDefaultSeasonId(seasons, requestedId = null) {
+    const orderedSeasons = sortSeasonsChronologically(seasons || []);
+
+    if (!orderedSeasons.length) {
+      return null;
+    }
+
+    if (
+      Number.isFinite(Number(requestedId)) &&
+      orderedSeasons.some((season) => Number(season.id) === Number(requestedId))
+    ) {
+      return Number(requestedId);
+    }
+
+    const todayIsoDate = localIsoDate();
+    const startedSeasons = orderedSeasons.filter(
+      (season) => !isFutureScheduledSeason(season, todayIsoDate)
+    );
+    const defaultSeason =
+      startedSeasons[startedSeasons.length - 1] || orderedSeasons[orderedSeasons.length - 1];
+
+    return defaultSeason ? Number(defaultSeason.id) : null;
+  }
+
   function normalizeCountryKey(value) {
     return normalizeText(value)
       .normalize("NFD")
@@ -2369,6 +2406,7 @@
     parseSeasonChronology,
     compareSeasonsChronologically,
     sortSeasonsChronologically,
+    pickDefaultSeasonId,
     nationalityCode,
     nationalityFlag,
     flagAssetPath,
