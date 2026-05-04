@@ -16,6 +16,21 @@
       const { supabaseClient } = access;
       const sortSeasonsChronologically =
         window.MandarinasLogic?.sortSeasonsChronologically || ((rows) => [...(rows || [])]);
+      const pickDefaultSeasonId =
+        window.MandarinasLogic?.pickDefaultSeasonId ||
+        ((rows, requestedId = null) => {
+          const orderedRows = sortSeasonsChronologically(rows || []);
+          if (!orderedRows.length) {
+            return null;
+          }
+          if (
+            Number.isFinite(Number(requestedId)) &&
+            orderedRows.some((season) => Number(season.id) === Number(requestedId))
+          ) {
+            return Number(requestedId);
+          }
+          return Number(orderedRows[orderedRows.length - 1].id);
+        });
       const normalizeTierValue =
         window.MandarinasLogic?.normalizeTierValue ||
         ((value, fallback = "flex") => {
@@ -2786,11 +2801,11 @@
         );
 
         if (!selectedSeasonId && seasons.length) {
-          selectedSeasonId = seasons[seasons.length - 1].id;
+          selectedSeasonId = pickDefaultSeasonId(seasons);
         }
 
         if (selectedSeasonId && !seasons.some((season) => season.id === selectedSeasonId)) {
-          selectedSeasonId = seasons[seasons.length - 1]?.id || null;
+          selectedSeasonId = pickDefaultSeasonId(seasons);
         }
 
         setSeasonView(activeSeasonView);
