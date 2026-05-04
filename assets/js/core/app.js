@@ -32,6 +32,7 @@
     teamDisplayLabel,
     applyTeamDisplayConfig,
     sortSeasonsChronologically,
+    pickDefaultSeasonId,
     nationalityCode,
     nationalityFlag,
     flagAssetPath,
@@ -65,7 +66,7 @@
     orange: "orange",
   });
   const BASE_SEASON_SELECT =
-    "id, name, total_matchdays, core_spots, rotation_spots, attendance_points, win_points, draw_points, loss_points, goal_keep_points, team_goal_points, created_at";
+    "id, name, total_matchdays, core_spots, rotation_spots, attendance_points, win_points, draw_points, loss_points, goal_keep_points, team_goal_points, season_start_date, created_at";
   const SEASON_SELECT_WITH_TEAM_DISPLAY = `${BASE_SEASON_SELECT}, team_display_config`;
   const PLAYER_DIRECTORY_SELECT =
     "id, first_name, last_name, nickname, nationality, birth_date, positions, skill_rating, desired_tier, status, dominant_foot, created_at";
@@ -274,14 +275,11 @@
       return null;
     }
 
-    if (requestedId) {
-      return (
-        orderedSeasons.find((season) => Number(season.id) === Number(requestedId)) ||
-        orderedSeasons[orderedSeasons.length - 1]
-      );
-    }
-
-    return orderedSeasons[orderedSeasons.length - 1];
+    const defaultSeasonId = pickDefaultSeasonId(orderedSeasons, requestedId);
+    return (
+      orderedSeasons.find((season) => Number(season.id) === Number(defaultSeasonId)) ||
+      orderedSeasons[orderedSeasons.length - 1]
+    );
   }
 
   async function fetchSeasonBundle(seasonId) {
